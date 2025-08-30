@@ -1,0 +1,5 @@
+venv/
+# data/indicators/
+# data/scans/
+# data/tickers/
+# data/tickers_nasdaq_A2S/

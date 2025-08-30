@@ -1,0 +1,54 @@
+- use bearish aVWAPs from overbought zones
+  - use as long range support zone
+  - find when current price in long range aVWAP level
+  - try to find the breakout from long consolidations
+
+- align StDev values and candle-coloring with conventional trading zones
+  - in order to find natural support/resistance levels
+
+- update aVWAP ind function
+  - param to: 
+    - only start creating VALLEYS starting from the LOWEST price
+    - only start creating PEAKS starting from the HIGHEST price
+  - to get a better idea of the true range of the current price
+
+- OB beneath SMA
+
+- cross-timeframe - aVWAP bottom + OB
+
+- cross-timeframe
+  - try to stack the S/R zones
+  - examples:
+    - T1 aVWAP bottom + T2 aVWAP avg
+    - T1 aVWAP bottom + T2 aVWAP bottom
+    - T1 aVWAP avg + T2 aVWAP avg
+    - etc
+
+- banker_RSI scan that checks for a number of previous zero candles
+  - to find new breakouts
+
+- control the vertical relative position of the valleys_avg and peaks_avg to get a sense of the support level
+
+- aVWAP liquidity check
+  - calculate aVWAP_avg indicators and filter for the ones that receive the most liquidity 
+  - liquidity = price touches this price the most times
+
+- calculate how many times dips below aVWAP_channel leads to rise to top of aVWAP channel
+
+# HOW TO ADD CUSTOM INDICATOR PARAMS
+- add final indicator param version suffix to the end of filename, ie ticker_time_timestamp_ind1
+
+- determine an important market structure event  
+  - plant aVWAP
+  - look for mean reversions from StDev
+
+- CONFLUENCES!!!
+  - aVWAPChannelSupport + liquidity
+  - aVWAPChannelSupport + OBSupport
+  - aVWAPChannelSupport + aVWAPValleysavg
+  - prolonged high StDev + OBBearishaVWAP
+  - OBBullishaVWAP + aVWAPChannelSupport
+  - OBBearishaVWAP + aVWAPChannelResistance
+
+- aVWAP below aVWAP_Channel + compatible price action above OBBullishaVWAP OR OBBullishDivaVWAP
+- reverse logic for above aVWAP_Channel
