@@ -151,57 +151,6 @@ from tiingo import TiingoClient
 import time
 from typing import Optional
 
-def robust_api_call(url: str, headers: dict, params: dict = None, max_retries: int = 5) -> dict:
-    """
-    Wrapper around requests.get with exponential backoff retry logic
-    - Retries on network errors and timeouts
-    - Does NOT retry on HTTP errors (404, 403, 400, etc.)
-    """
-    for attempt in range(max_retries):
-        try:
-            response = requests.get(url, headers=headers, params=params, timeout=30)
-            
-            # Check for HTTP errors that shouldn't be retried
-            if response.status_code >= 400:
-                response.raise_for_status()  # This will raise an HTTPError immediately
-            
-            return response.json()
-            
-        except requests.exceptions.HTTPError as e:
-            # HTTP errors (404, 403, 400, etc.) - don't retry, just re-raise
-            raise e
-            
-        except requests.exceptions.RequestException as e:
-            # Network errors, timeouts, etc. - retry with exponential backoff
-            if attempt == max_retries - 1:
-                raise e
-            wait_time = 2 ** attempt
-            print(f"Network error (attempt {attempt+1}/{max_retries}), retrying in {wait_time}s... Error: {e}")
-            time.sleep(wait_time)
-    
-    raise requests.exceptions.RequestException("All retries failed")
-
-def robust_tiingo_call(client, ticker: str, start_date: str, end_date: str, frequency: str, max_retries: int = 5):
-    """
-    Wrapper around TiingoClient.get_ticker_price with exponential backoff retry logic
-    """
-    for attempt in range(max_retries):
-        try:
-            data = client.get_ticker_price(ticker, startDate=start_date, endDate=end_date, frequency=frequency)
-            return data
-        except Exception as e:
-            # Check if it's a network-related error
-            if any(network_error in str(e).lower() for network_error in ['connection', 'network', 'timeout', 'unreachable']):
-                if attempt == max_retries - 1:
-                    raise e
-                wait_time = 2 ** attempt
-                print(f"TiingoClient network error (attempt {attempt+1}/{max_retries}), retrying in {wait_time}s... Error: {e}")
-                time.sleep(wait_time)
-            else:
-                # For non-network errors, re-raise immediately
-                raise e
-    raise Exception("All retries failed for TiingoClient call")
-
 def fetch_ticker(timeframe='daily', ticker='BTCUSD', start_date=None, end_date=None, api_key='Tiingo-API-Key'):
     """
     Fetch historical price data for a given ticker and time period.
@@ -331,3 +280,57 @@ def create_df(data, timeframe='daily'):
     df.set_index('date', inplace=True) 
 
     return df
+
+# Functions to manage Network instability -----------------
+
+def robust_api_call(url: str, headers: dict, params: dict = None, max_retries: int = 5) -> dict:
+    """
+    Wrapper around requests.get with exponential backoff retry logic
+    - Retries on network errors and timeouts
+    - Does NOT retry on HTTP errors (404, 403, 400, etc.)
+    """
+    for attempt in range(max_retries):
+        try:
+            response = requests.get(url, headers=headers, params=params, timeout=30)
+            
+            # Check for HTTP errors that shouldn't be retried
+            if response.status_code >= 400:
+                response.raise_for_status()  # This will raise an HTTPError immediately
+            
+            return response.json()
+            
+        except requests.exceptions.HTTPError as e:
+            # HTTP errors (404, 403, 400, etc.) - don't retry, just re-raise
+            raise e
+            
+        except requests.exceptions.RequestException as e:
+            # Network errors, timeouts, etc. - retry with exponential backoff
+            if attempt == max_retries - 1:
+                raise e
+            wait_time = 2 ** attempt
+            print(f"Network error (attempt {attempt+1}/{max_retries}), retrying in {wait_time}s... Error: {e}")
+            time.sleep(wait_time)
+    
+    raise requests.exceptions.RequestException("All retries failed")
+
+def robust_tiingo_call(client, ticker: str, start_date: str, end_date: str, frequency: str, max_retries: int = 5):
+    """
+    Wrapper around TiingoClient.get_ticker_price with exponential backoff retry logic
+    """
+    for attempt in range(max_retries):
+        try:
+            data = client.get_ticker_price(ticker, startDate=start_date, endDate=end_date, frequency=frequency)
+            return data
+        except Exception as e:
+            # Check if it's a network-related error
+            if any(network_error in str(e).lower() for network_error in ['connection', 'network', 'timeout', 'unreachable']):
+                if attempt == max_retries - 1:
+                    raise e
+                wait_time = 2 ** attempt
+                print(f"TiingoClient network error (attempt {attempt+1}/{max_retries}), retrying in {wait_time}s... Error: {e}")
+                time.sleep(wait_time)
+            else:
+                # For non-network errors, re-raise immediately
+                raise e
+    raise Exception("All retries failed for TiingoClient call")
+
