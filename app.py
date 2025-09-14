@@ -138,12 +138,12 @@ def full_run(fetch, ind, scan) -> None:
 
     # FETCH
 
-    dm.clear_all_buffers()
-    dm.delete_all_versions(dm.tickers_dir)
-    dm.delete_all_versions(dm.indicators_dir)
-    dm.delete_all_versions(dm.scanner_dir)
+    # dm.clear_all_buffers()
+    # dm.delete_all_versions(dm.tickers_dir)
+    # dm.delete_all_versions(dm.indicators_dir)
+    # dm.delete_all_versions(dm.scanner_dir)
 
-    fetch()
+    # fetch()
 
     # INDICATORS
 

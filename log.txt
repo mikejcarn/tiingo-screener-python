@@ -1,0 +1,175 @@
+Collecting aiohappyeyeballs==2.4.3 (from -r requirements.txt (line 1))
+  Using cached aiohappyeyeballs-2.4.3-py3-none-any.whl.metadata (6.1 kB)
+Collecting aiohttp==3.10.11 (from -r requirements.txt (line 2))
+  Using cached aiohttp-3.10.11-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl.metadata (7.7 kB)
+Collecting aiosignal==1.3.1 (from -r requirements.txt (line 3))
+  Using cached aiosignal-1.3.1-py3-none-any.whl.metadata (4.0 kB)
+Collecting alpha_vantage==3.0.0 (from -r requirements.txt (line 4))
+  Using cached alpha_vantage-3.0.0-py3-none-any.whl.metadata (12 kB)
+Collecting appdirs==1.4.4 (from -r requirements.txt (line 5))
+  Using cached appdirs-1.4.4-py2.py3-none-any.whl.metadata (9.0 kB)
+Collecting async-timeout==5.0.1 (from -r requirements.txt (line 6))
+  Using cached async_timeout-5.0.1-py3-none-any.whl.metadata (5.1 kB)
+Collecting attrs==24.2.0 (from -r requirements.txt (line 7))
+  Using cached attrs-24.2.0-py3-none-any.whl.metadata (11 kB)
+Collecting Backtesting==0.3.3 (from -r requirements.txt (line 8))
+  Using cached Backtesting-0.3.3.tar.gz (175 kB)
+  Installing build dependencies: started
+  Installing build dependencies: finished with status 'done'
+  Getting requirements to build wheel: started
+  Getting requirements to build wheel: finished with status 'done'
+  Installing backend dependencies: started
+  Installing backend dependencies: finished with status 'done'
+  Preparing metadata (pyproject.toml): started
+  Preparing metadata (pyproject.toml): finished with status 'done'
+Collecting beautifulsoup4==4.12.2 (from -r requirements.txt (line 9))
+  Using cached beautifulsoup4-4.12.2-py3-none-any.whl.metadata (3.6 kB)
+Collecting bokeh==3.3.2 (from -r requirements.txt (line 10))
+  Using cached bokeh-3.3.2-py3-none-any.whl.metadata (12 kB)
+Collecting bottle==0.13.2 (from -r requirements.txt (line 11))
+  Using cached bottle-0.13.2-py2.py3-none-any.whl.metadata (1.8 kB)
+Collecting certifi==2025.1.31 (from -r requirements.txt (line 12))
+  Using cached certifi-2025.1.31-py3-none-any.whl.metadata (2.5 kB)
+Collecting charset-normalizer==3.4.1 (from -r requirements.txt (line 13))
+  Using cached charset_normalizer-3.4.1-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl.metadata (35 kB)
+Collecting contourpy==1.3.1 (from -r requirements.txt (line 14))
+  Using cached contourpy-1.3.1-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl.metadata (5.4 kB)
+Requirement already satisfied: cycler==0.12.1 in /home/mjc/.pyenv/versions/3.10.6/lib/python3.10/site-packages (from -r requirements.txt (line 15)) (0.12.1)
+Collecting distlib==0.3.6 (from -r requirements.txt (line 16))
+  Using cached distlib-0.3.6-py2.py3-none-any.whl.metadata (5.1 kB)
+Collecting filelock==3.12.0 (from -r requirements.txt (line 17))
+  Using cached filelock-3.12.0-py3-none-any.whl.metadata (2.5 kB)
+Collecting fonttools==4.56.0 (from -r requirements.txt (line 18))
+  Using cached fonttools-4.56.0-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl.metadata (101 kB)
+Collecting frozendict==2.3.10 (from -r requirements.txt (line 19))
+  Using cached frozendict-2.3.10-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl.metadata (20 kB)
+Collecting frozenlist==1.5.0 (from -r requirements.txt (line 20))
+  Using cached frozenlist-1.5.0-cp310-cp310-manylinux_2_5_x86_64.manylinux1_x86_64.manylinux_2_17_x86_64.manylinux2014_x86_64.whl.metadata (13 kB)
+Collecting html5lib==1.1 (from -r requirements.txt (line 21))
+  Using cached html5lib-1.1-py2.py3-none-any.whl.metadata (16 kB)
+Collecting idna==3.10 (from -r requirements.txt (line 22))
+  Using cached idna-3.10-py3-none-any.whl.metadata (10 kB)
+Collecting Jinja2==3.1.2 (from -r requirements.txt (line 23))
+  Using cached Jinja2-3.1.2-py3-none-any.whl.metadata (3.5 kB)
+Collecting kiwisolver==1.4.8 (from -r requirements.txt (line 24))
+  Using cached kiwisolver-1.4.8-cp310-cp310-manylinux_2_12_x86_64.manylinux2010_x86_64.whl.metadata (6.2 kB)
+Collecting lightweight-charts==2.1 (from -r requirements.txt (line 25))
+  Using cached lightweight_charts-2.1-py3-none-any.whl.metadata (8.0 kB)
+Collecting llvmlite==0.41.1 (from -r requirements.txt (line 26))
+  Using cached llvmlite-0.41.1-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl.metadata (4.8 kB)
+Collecting lxml==4.9.4 (from -r requirements.txt (line 27))
+  Using cached lxml-4.9.4-cp310-cp310-manylinux_2_28_x86_64.whl.metadata (3.7 kB)
+Collecting MarkupSafe==2.1.3 (from -r requirements.txt (line 28))
+  Using cached MarkupSafe-2.1.3-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl.metadata (3.0 kB)
+Requirement already satisfied: matplotlib==3.10.1 in /home/mjc/.pyenv/versions/3.10.6/lib/python3.10/site-packages (from -r requirements.txt (line 29)) (3.10.1)
+Collecting mplfinance==0.12.10b0 (from -r requirements.txt (line 30))
+  Using cached mplfinance-0.12.10b0-py3-none-any.whl.metadata (19 kB)
+Collecting multidict==6.1.0 (from -r requirements.txt (line 31))
+  Using cached multidict-6.1.0-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl.metadata (5.0 kB)
+Collecting multitasking==0.0.11 (from -r requirements.txt (line 32))
+  Using cached multitasking-0.0.11-py3-none-any.whl.metadata (5.5 kB)
+Collecting numba==0.58.1 (from -r requirements.txt (line 33))
+  Using cached numba-0.58.1-cp310-cp310-manylinux2014_x86_64.manylinux_2_17_x86_64.whl.metadata (2.7 kB)
+Requirement already satisfied: numpy==1.24.3 in /home/mjc/.pyenv/versions/3.10.6/lib/python3.10/site-packages (from -r requirements.txt (line 34)) (1.24.3)
+Collecting packaging==24.2 (from -r requirements.txt (line 35))
+  Using cached packaging-24.2-py3-none-any.whl.metadata (3.2 kB)
+Requirement already satisfied: pandas==2.0.2 in /home/mjc/.pyenv/versions/3.10.6/lib/python3.10/site-packages (from -r requirements.txt (line 36)) (2.0.2)
+Collecting pandas-datareader==0.10.0 (from -r requirements.txt (line 37))
+  Using cached pandas_datareader-0.10.0-py3-none-any.whl.metadata (2.9 kB)
+Collecting peewee==3.17.0 (from -r requirements.txt (line 38))
+  Using cached peewee-3.17.0.tar.gz (2.9 MB)
+  Installing build dependencies: started
+  Installing build dependencies: finished with status 'done'
+  Getting requirements to build wheel: started
+  Getting requirements to build wheel: finished with status 'done'
+  Preparing metadata (pyproject.toml): started
+  Preparing metadata (pyproject.toml): finished with status 'done'
+Collecting pillow==11.1.0 (from -r requirements.txt (line 39))
+  Using cached pillow-11.1.0-cp310-cp310-manylinux_2_28_x86_64.whl.metadata (9.1 kB)
+Collecting platformdirs==3.2.0 (from -r requirements.txt (line 40))
+  Using cached platformdirs-3.2.0-py3-none-any.whl.metadata (9.5 kB)
+Collecting propcache==0.2.0 (from -r requirements.txt (line 41))
+  Using cached propcache-0.2.0-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl.metadata (7.7 kB)
+Collecting proxy-tools==0.1.0 (from -r requirements.txt (line 42))
+  Using cached proxy_tools-0.1.0.tar.gz (3.0 kB)
+  Installing build dependencies: started
+  Installing build dependencies: finished with status 'done'
+  Getting requirements to build wheel: started
+  Getting requirements to build wheel: finished with status 'done'
+  Preparing metadata (pyproject.toml): started
+  Preparing metadata (pyproject.toml): finished with status 'done'
+Collecting pycairo==1.27.0 (from -r requirements.txt (line 43))
+  Using cached pycairo-1.27.0.tar.gz (661 kB)
+  Installing build dependencies: started
+  Installing build dependencies: finished with status 'done'
+  Getting requirements to build wheel: started
+  Getting requirements to build wheel: finished with status 'done'
+  Installing backend dependencies: started
+  Installing backend dependencies: finished with status 'done'
+  Preparing metadata (pyproject.toml): started
+  Preparing metadata (pyproject.toml): finished with status 'error'
+  error: subprocess-exited-with-error
+  
+  × Preparing metadata (pyproject.toml) did not run successfully.
+  │ exit code: 1
+  ╰─> [50 lines of output]
+      + meson setup /tmp/pip-install-lbxqhknj/pycairo_bdbd3ef908b94302aea639050a644565 /tmp/pip-install-lbxqhknj/pycairo_bdbd3ef908b94302aea639050a644565/.mesonpy-04f7wscl -Dbuildtype=release -Db_ndebug=if-release -Db_vscrt=md -Dwheel=true -Dtests=false --native-file=/tmp/pip-install-lbxqhknj/pycairo_bdbd3ef908b94302aea639050a644565/.mesonpy-04f7wscl/meson-python-native-file.ini
+      The Meson build system
+      Version: 1.9.0
+      Source dir: /tmp/pip-install-lbxqhknj/pycairo_bdbd3ef908b94302aea639050a644565
+      Build dir: /tmp/pip-install-lbxqhknj/pycairo_bdbd3ef908b94302aea639050a644565/.mesonpy-04f7wscl
+      Build type: native build
+      Project name: pycairo
+      Project version: 1.27.0
+      C compiler for the host machine: cc (gcc 13.3.0 "cc (Ubuntu 13.3.0-6ubuntu2~24.04) 13.3.0")
+      C linker for the host machine: cc ld.bfd 2.42
+      Host machine cpu family: x86_64
+      Host machine cpu: x86_64
+      Program python3 found: YES (/home/mjc/.pyenv/versions/3.10.6/bin/python)
+      Compiler for C supports arguments -Wall: YES
+      Compiler for C supports arguments -Warray-bounds: YES
+      Compiler for C supports arguments -Wcast-align: YES
+      Compiler for C supports arguments -Wconversion: YES
+      Compiler for C supports arguments -Wextra: YES
+      Compiler for C supports arguments -Wformat=2: YES
+      Compiler for C supports arguments -Wformat-nonliteral: YES
+      Compiler for C supports arguments -Wformat-security: YES
+      Compiler for C supports arguments -Wimplicit-function-declaration: YES
+      Compiler for C supports arguments -Winit-self: YES
+      Compiler for C supports arguments -Winline: YES
+      Compiler for C supports arguments -Wmissing-format-attribute: YES
+      Compiler for C supports arguments -Wmissing-noreturn: YES
+      Compiler for C supports arguments -Wnested-externs: YES
+      Compiler for C supports arguments -Wold-style-definition: YES
+      Compiler for C supports arguments -Wpacked: YES
+      Compiler for C supports arguments -Wpointer-arith: YES
+      Compiler for C supports arguments -Wreturn-type: YES
+      Compiler for C supports arguments -Wshadow: YES
+      Compiler for C supports arguments -Wsign-compare: YES
+      Compiler for C supports arguments -Wstrict-aliasing: YES
+      Compiler for C supports arguments -Wundef: YES
+      Compiler for C supports arguments -Wunused-but-set-variable: YES
+      Compiler for C supports arguments -Wswitch-default: YES
+      Compiler for C supports arguments -Wno-missing-field-initializers: YES
+      Compiler for C supports arguments -Wno-unused-parameter: YES
+      Compiler for C supports arguments -fno-strict-aliasing: YES
+      Compiler for C supports arguments -fvisibility=hidden: YES
+      Did not find pkg-config by name 'pkg-config'
+      Found pkg-config: NO
+      Did not find CMake 'cmake'
+      Found CMake: NO
+      Run-time dependency cairo found: NO
+      
+      ../cairo/meson.build:31:12: ERROR: Dependency lookup for cairo with method 'pkgconfig' failed: Pkg-config for machine host machine not found. Giving up.
+      
+      A full log can be found at /tmp/pip-install-lbxqhknj/pycairo_bdbd3ef908b94302aea639050a644565/.mesonpy-04f7wscl/meson-logs/meson-log.txt
+      [end of output]
+  
+  note: This error originates from a subprocess, and is likely not a problem with pip.
+error: metadata-generation-failed
+
+× Encountered error while generating package metadata.
+╰─> See above for output.
+
+note: This is an issue with the package mentioned above, not pip.
+hint: See above for details.
