@@ -1,15 +1,11 @@
-import os
 import time
-import argparse
-import pandas as pd
 from pathlib import Path
-from datetime import datetime
 from src.indicators.get_indicators import get_indicators
 from src.indicators.run_indicators import run_indicators
-from src.fetch_data.fetch_tickers  import fetch_tickers
-from src.fetch_data.fetch_ticker   import fetch_ticker
-from src.scanner.scanner           import run_scanner
-from src.visualization.subcharts   import subcharts
+from src.fetch_data.fetch_tickers import fetch_tickers
+from src.fetch_data.fetch_ticker import fetch_ticker
+from src.scanner.scanner import run_scanner
+from src.visualization.subcharts import subcharts
 from src.scanner.scan_configs.scan_configs import scan_configs
 from src.indicators.ind_configs.ind_configs import indicators, params
 from config.CLI import init_cli
@@ -21,11 +17,12 @@ API_KEY = '9807b06bf5b97a8b26f5ff14bff18ee992dfaa13'
 
 # VISUALIZATION ------------------------------------------
 
+
 def vis(scan_file=None, ticker=None, timeframe=None, version=None):
 
     if not scan_file:
 
-        if not ticker: ticker = 'BTCUSD'
+        ticker = ticker or 'BTCUSD'
 
         if timeframe:
 
@@ -34,9 +31,9 @@ def vis(scan_file=None, ticker=None, timeframe=None, version=None):
             df = get_indicators(df, indicators[ind_conf_ver], params[ind_conf_ver])
 
             subcharts(
-                      [df], 
-                      ticker=ticker, 
-                      show_volume=False, 
+                      [df],
+                      ticker=ticker,
+                      show_volume=False,
                       show_banker_RSI=True
                      )
             return
@@ -76,6 +73,7 @@ def vis(scan_file=None, ticker=None, timeframe=None, version=None):
 
 # FETCH TICKERS -------------------------------------------
 
+
 def fetch():
 
     fetch_tickers(['weekly'], api_key=API_KEY)
@@ -86,9 +84,16 @@ def fetch():
 
 # INDICATORS ----------------------------------------------
 
+
 def ind(ind_conf=None):
 
     match ind_conf:
+
+        case 'ind_conf_0':
+            run_indicators(indicators['weekly_0'], params['weekly_0'], "weekly")
+            run_indicators(indicators['daily_0'],  params['daily_0'],  "daily")
+            run_indicators(indicators['4hour_0'],  params['4hour_0'],  "4hour")
+            run_indicators(indicators['1hour_0'],  params['1hour_0'],  "1hour")
 
         case 'ind_conf_1':
             run_indicators(indicators['weekly_1'], params['weekly_1'], "weekly")
@@ -116,6 +121,7 @@ def ind(ind_conf=None):
 
 # SCANNER -------------------------------------------------
 
+
 def scan(scan_list='scan_list_2'):
 
     scans = scan_lists[scan_list]
@@ -131,10 +137,12 @@ def scan(scan_list='scan_list_2'):
 
 # FULL RUN ------------------------------------------------
 
+
 def full_run(fetch, ind, scan) -> None:
     """Standard full run pipeline"""
 
-    start_time = time.time() # Start timer
+    # Start timer
+    start_time = time.time()
 
     # FETCH
 
@@ -150,15 +158,15 @@ def full_run(fetch, ind, scan) -> None:
     ind('ind_conf_1')
     dm.save_indicators('ind_conf_1')
     dm.clear_buffer(dm.indicators_dir)
-    
+
     ind('ind_conf_2')
     dm.save_indicators('ind_conf_2')
     dm.clear_buffer(dm.indicators_dir)
-    
+
     ind('ind_conf_3')
     dm.save_indicators('ind_conf_3')
     dm.clear_buffer(dm.indicators_dir)
-    
+
     ind('ind_conf_4')
     dm.save_indicators('ind_conf_4')
     dm.clear_buffer(dm.indicators_dir)

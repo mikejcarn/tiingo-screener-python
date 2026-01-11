@@ -99,46 +99,45 @@ def show_help() -> None:
     print("""
   STOCK ANALYSIS TOOLKIT - COMMAND REFERENCE:
 
-  CORE FUNCTIONS:
-  --fetch                     Download ticker data
-  --ind                       Calculate indicators
-  --ind-conf CONFIG           Indicator configuration to use
-  --scan                      Run scanner
-  --scan-list VERSION         Specify scan list version (e.g., scan_list_1)
+  MAIN FUNCTIONS:
+  --full-run                  Run full process: fetch > indicators > scan
+  --fetch                     Download tickers from API to tickers buffer
+  --ind                       Calculate indicators from tickers buffer
+      --ind-conf              Specify indicator config ("ind_conf_1")
+  --scan                      Run scanner on indicators buffer
+      --scan-list             Specify scan list ("scan_list_1")
   --vis                       Launch visualization
-  --ticker TICKER             Specify ticker for visualization (e.g., MSFT)
-  --timeframe TIMEFRAME       Specify timeframe for visualization (e.g., d, w, 4h, h, 5min)
-  --ver VERSION               Specify indicator version for visualization (e.g., 1, 2, 3, 4)
-  --scan-file FILE            Specify scan file for visualization
-  --full-run                  Standard pipeline (fetch + indicators + scan)
+      --ticker                Specify ticker ("MSFT")
+      --timeframe             Specify timeframe ("d", "w", "4h", "h", "5min")
+      --ver                   Specify indicator version ("1", "2", "3", "4")
+      --scan-file             Specify scan file ("scan_results_*.csv") 
 
-  DATA INSPECTION:
-  --list-scans                Show recent scan files
-  --list-ind                  Show recent indicator files
-  --list-tickers              List available ticker files
-  --ticker-timeframe          Filter tickers by timeframe (e.g., daily, weekly)
-  --list-scans-ver            List saved scan versions
-  --list-ind-ver              List saved indicator versions
+  LIST DATA:
+  --list-tickers              List ticker files in buffer
+  --list-ind                  List indicator files in buffer
+  --list-scans                List scan files in buffer
   --list-tickers-ver          List saved ticker versions
+  --list-ind-ver              List saved indicator versions
+  --list-scans-ver            List saved scan versions
 
-  VERSION CONTROL:
-  --save-ind NAME             Save current indicators
-  --load-ind NAME             Load indicator version  
-  --delete-ind NAME           Delete specific version
+  SAVE/LOAD/DELETE DATA:
+  --save-tickers              Save tickers in buffer to version ("tickers_1")
+  --load-tickers              Load tickers version to buffer ("tickers_1")
+  --delete-tickers            Delete tickers version ("tickers_1")
+  --delete-tickers-all        Delete ALL tickers versions
+  --save-ind                  Save indicators in buffer to version ("ind_conf_1")
+  --load-ind                  Load indicators version to buffer ("ind_conf_1")
+  --delete-ind                Delete indicators version ("ind_conf_1")
   --delete-ind-all            Delete ALL indicator versions
-  --save-scan NAME            Save current scans
-  --load-scan NAME            Load scan version
-  --delete-scan NAME          Delete specific version  
-  --delete-scan-all           Delete ALL scan versions
-  --save-tickers NAME         Save current tickers
-  --load-tickers NAME         Load ticker version
-  --delete-tickers NAME       Delete specific ticker version
-  --delete-tickers-all        Delete ALL ticker versions
+  --save-scan                 Save current scans to version ("scan_list_1")
+  --load-scan                 Load scans version 
+  --delete-scan               Delete scans version  
+  --delete-scan-all           Delete ALL scans versions
 
-  FOLDER MANAGEMENT:           
-  --clear-all                 Reset all folders (keep versions)
-  --clear-tickers             Clear ticker data
+  BUFFER MANAGEMENT:           
+  --clear-all                 Reset all buffers (keep versions)
+  --clear-tickers             Clear tickers buffer
   --clear-indicators          Clear indicator buffer
   --clear-scans               Clear scan buffer
-  --clear-screenshots         Clear screenshots
+  --clear-screenshots         Clear screenshots buffer
 """)

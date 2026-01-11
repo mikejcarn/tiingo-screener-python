@@ -1,5 +1,21 @@
 scan_lists = {
 
+    'scan_list_0': [
+
+        'd_SMAAbove'
+
+        # 'd_CHoCHBullish',
+        # 'd_CHoCHBearish',
+        # 'd_BoSBullish',
+        # 'd_BoSBearish',
+
+        # 'h_OBResistance',
+        # 'h_OBSupport',
+        # 'd_OBResistance',
+        # 'd_OBSupport',
+
+    ],
+
     'scan_list_1': [
 
         # --- Multi-Timeframe Scans ---

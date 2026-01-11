@@ -9,6 +9,7 @@ from config.settings import (
                              SCREENSHOTS_DIR
                             )
 
+
 class DataManager:
 
     def __init__(self, config):
@@ -24,11 +25,11 @@ class DataManager:
         """Save current buffer files to a version folder"""
         version_dir = buffer_dir / version_name
         version_dir.mkdir(exist_ok=True)
-        
+
         # Clear existing version files
         for f in version_dir.glob('*'):
             f.unlink()
-        
+
         # Copy matching files
         for f in buffer_dir.glob(pattern):
             if f.is_file():
