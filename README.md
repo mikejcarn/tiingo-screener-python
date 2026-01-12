@@ -1,6 +1,6 @@
 # Tiingo-Screener-Python
 
-Stock screener application that fetches CSV ticker data from the Tiingo API, calculates technical indicators, runs scans, and provides advanced visualization capabilities.
+Stock screener application that fetches ticker data from the Tiingo API, calculates technical indicators, runs scans, and provides advanced visualization capabilities.
 
 ## ✨ Features
 - **Automated Data Pipeline**: Tickers → Indicators → Scans → Visualization
@@ -13,12 +13,14 @@ Stock screener application that fetches CSV ticker data from the Tiingo API, cal
 
 ### Buffer Architecture
 
+```bash
 ./data/
 ├── tickers/ # Raw API data buffer
 ├── indicators/ # Calculated indicators buffer
 ├── scans/ # Scan results buffer
 ├── versions/ # Saved versions subfolders
 └── screenshots/ # Visualization screenshots
+```
 
 ### Workflow
 1. **API Fetch**: Tiingo API → `./data/tickers/`
@@ -27,7 +29,9 @@ Stock screener application that fetches CSV ticker data from the Tiingo API, cal
 4. **Versioning**: Collections can be saved/loaded from version subfolders
 
 ### Data Format
-- All data stored as CSV files
+- Stock data fetched as JSON from Tiingo API (www.tiingo.com)
+- JSON data converted to Dataframes via pandas library for manipulation
+- Manipulated data is stored locally as CSV files in buffer and storage folders
 - Standardized naming conventions
 
 ## 📊 Visualization Application
@@ -83,9 +87,9 @@ Values in `[brackets]` represent application CLI inputs.
 
 ## 🚀 Installation
 
-1. **Clone the repository:**
-   ```bash
-   git clone https://github.com/yourusername/tiingo-screener-python.git
-   cd tiingo-screener-python
-
-2. pip install -r requirements.txt
+**Clone the repository and install requirements:**
+```bash
+git clone https://github.com/yourusername/tiingo-screener-python.git
+cd tiingo-screener-python
+pip install -r requirements.txt
+```
