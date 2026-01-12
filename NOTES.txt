@@ -60,3 +60,5 @@ numpy==1.24.3
 requests==2.32.3
 tiingo==0.15.6
 lightweight-charts==2.1
+smartmoneyconcepts==0.0.26
+ta==0.11.0
