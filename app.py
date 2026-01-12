@@ -122,9 +122,9 @@ def ind(ind_conf=None):
 # SCANNER -------------------------------------------------
 
 
-def scan(scan_list='scan_list_2'):
+def scan(scan_list='2'):
 
-    scans = scan_lists[scan_list]
+    scans = scan_lists["scan_list_" + scan_list]
 
     for scan in scans:
         kwargs = {

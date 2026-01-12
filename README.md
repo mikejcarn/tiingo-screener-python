@@ -28,7 +28,7 @@ Stock screener application that fetches ticker data from the Tiingo API, calcula
 1. **API Fetch**: Tiingo API → `./data/tickers/`
 2. **Indicator Calculation**: Tickers buffer → `./data/indicators/`
 3. **Scan Execution**: Indicators buffer → `./data/scans/`
-4. **Storage**: Collections can be saved/loaded/deleted from/to buffers and version subfolders
+4. **Storage**: Version subfolders can be saved/loaded/deleted in buffers 
 
 ### Data Format
 - Stock data fetched as JSON from Tiingo API (www.tiingo.com)
@@ -50,14 +50,20 @@ Values in `[brackets]` represent application CLI inputs.
 |---------|-------------|---------|
 | `--full-run` | Complete process: fetch > indicators > scan | `--full-run` |
 | `--fetch` | Download tickers from API to buffer | `--fetch` |
-| `--ind` | Calculate indicators from tickers buffer | `--ind --ind-conf ind_conf_1` |
-| `--scan` | Run scanner on indicators buffer | `--scan --scan-list scan_list_1` |
-| `--vis` | Launch visualization | `--vis --ticker MSFT --timeframe d --ver 1` |
+| `--ind` | Calculate indicators from tickers buffer | `--ind --ind-conf 1` |
+| `--scan` | Run scanner on indicators buffer | `--scan --scan-list 1` |
+| `--vis` | Launch visualization | `--vis --ticker MSFT --timeframe d --ind-conf 1` |
 
-**Visualization Options:**
-- `--ticker [SYMBOL]` - Specify ticker symbol (`BTCUSD`)
+**--Ind Options:**
+- `--ind-conf [VERSION]` - Specify indicator list & config (`1`, `2`, `3`, `4`)
+
+**--Scan Options:**
+- `--scan-list [VERSION]` - Specify scan list (`1`, `2`, `3`, `4`)
+
+**--Vis Options:**
+- `--ticker [SYMBOL]` - Specify ticker symbol (`BTCUSD`, `SOFI`)
 - `--timeframe [TF]` - Timeframe (`d`, `w`, `4h`, `h`, `5min`)
-- `--ver [VERSION]` - Indicator version (`1`, `2`, `3`, `4`)
+- `--ind-conf [VERSION]` - Indicator list & config (`1`, `2`, `3`, `4`)
 - `--scan-file [FILE]` - Scan results file (`scan_results_*.csv`)
 
 ### LIST DATA COMMANDS
