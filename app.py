@@ -89,31 +89,31 @@ def ind(ind_conf=None):
 
     match ind_conf:
 
-        case 'ind_conf_0':
+        case '0':
             run_indicators(indicators['weekly_0'], params['weekly_0'], "weekly")
             run_indicators(indicators['daily_0'],  params['daily_0'],  "daily")
             run_indicators(indicators['4hour_0'],  params['4hour_0'],  "4hour")
             run_indicators(indicators['1hour_0'],  params['1hour_0'],  "1hour")
 
-        case 'ind_conf_1':
+        case '1':
             run_indicators(indicators['weekly_1'], params['weekly_1'], "weekly")
             run_indicators(indicators['daily_1'],  params['daily_1'],  "daily")
             run_indicators(indicators['4hour_1'],  params['4hour_1'],  "4hour")
             run_indicators(indicators['1hour_1'],  params['1hour_1'],  "1hour")
 
-        case 'ind_conf_2':
+        case '2':
             run_indicators(indicators['weekly_2'], params['weekly_2'], "weekly")
             run_indicators(indicators['daily_2'],  params['daily_2'],  "daily")
             run_indicators(indicators['4hour_2'],  params['4hour_2'],  "4hour")
             run_indicators(indicators['1hour_2'],  params['1hour_2'],  "1hour")
 
-        case 'ind_conf_3':
+        case '3':
             run_indicators(indicators['weekly_3'], params['weekly_3'], "weekly")
             run_indicators(indicators['daily_3'],  params['daily_3'],  "daily")
             run_indicators(indicators['4hour_3'],  params['4hour_3'],  "4hour")
             run_indicators(indicators['1hour_3'],  params['1hour_3'],  "1hour")
 
-        case 'ind_conf_4':
+        case '4':
             run_indicators(indicators['weekly_4'], params['weekly_4'], "weekly")
             run_indicators(indicators['daily_4'],  params['daily_4'],  "daily")
             run_indicators(indicators['4hour_4'],  params['4hour_4'],  "4hour")

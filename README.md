@@ -6,33 +6,34 @@ Stock screener application that fetches ticker data from the Tiingo API, calcula
 - **Automated Data Pipeline**: Tickers → Indicators → Scans → Visualization
 - **Multi-Timeframe Analysis**: Support for daily, weekly, hourly, and minute timeframes
 - **Advanced Visualization**: TradingView-style charts using lightweight-charts library
-- **Flexible Data Management**: Version-controlled buffer system with save/load capabilities
+- **Flexible Data Management**: Version-controlled buffer system with save/load/delete capabilities
 - **Comprehensive Scanning**: Multiple indicator-based scan criteria
 
 ## 📁 Data System Framework
 
-### Buffer Architecture
+### Buffer & Storage Architecture
 
 ```bash
 ./data/
-├── tickers/ # Raw API data buffer
-├── indicators/ # Calculated indicators buffer
-├── scans/ # Scan results buffer
-├── versions/ # Saved versions subfolders
-└── screenshots/ # Visualization screenshots
+├── tickers/              # Raw API data buffer
+│   └── tickers_date_*/
+├── indicators/           # Calculated indicators buffer
+│   └── ind_conf_*/
+├── scans/                # Scan results buffer
+│   └── scan_list_*/
+└── screenshots/          # Visualization screenshots
 ```
 
 ### Workflow
 1. **API Fetch**: Tiingo API → `./data/tickers/`
 2. **Indicator Calculation**: Tickers buffer → `./data/indicators/`
 3. **Scan Execution**: Indicators buffer → `./data/scans/`
-4. **Versioning**: Collections can be saved/loaded from version subfolders
+4. **Storage**: Collections can be saved/loaded/deleted from/to buffers and version subfolders
 
 ### Data Format
 - Stock data fetched as JSON from Tiingo API (www.tiingo.com)
-- JSON data converted to Dataframes via pandas library for manipulation
-- Manipulated data is stored locally as CSV files in buffer and storage folders
-- Standardized naming conventions
+- JSON data converted to pandas Dataframes for manipulation
+- Data is stored locally as CSV files in buffer and storage folders
 
 ## 📊 Visualization Application
 - **Multi-Timeframe Panels**: View multiple timeframes simultaneously
@@ -54,7 +55,7 @@ Values in `[brackets]` represent application CLI inputs.
 | `--vis` | Launch visualization | `--vis --ticker MSFT --timeframe d --ver 1` |
 
 **Visualization Options:**
-- `--ticker [SYMBOL]` - Specify ticker symbol
+- `--ticker [SYMBOL]` - Specify ticker symbol (`BTCUSD`)
 - `--timeframe [TF]` - Timeframe (`d`, `w`, `4h`, `h`, `5min`)
 - `--ver [VERSION]` - Indicator version (`1`, `2`, `3`, `4`)
 - `--scan-file [FILE]` - Scan results file (`scan_results_*.csv`)
