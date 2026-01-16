@@ -67,9 +67,13 @@ Values in `[brackets]` represent application CLI inputs.
 - `--scan-file [FILE]` - Scan results file (`scan_results_*.csv`)
 
 ![--vis --ticker BTCUSD --ind-conf 0](images/single_1.png)
+*--vis --ticker BTCUSD --ind-conf 0*
 ![--vis --ticker BTCUSD --ind-conf 2](images/single_2.png)
+*--vis --ticker BTCUSD --ind-conf 2*
 ![--vis --ticker AAPL,BTCUSD,SOFI --timeframe w,d,4h --ind-conf 2,1,3](images/3charts.png)
+*--vis --ticker AAPL,BTCUSD,SOFI --timeframe w,d,4h --ind-conf 2,1,3*
 ![--vis --ticker AAPL --timeframe w,d,4h,h --ind-conf 1](images/4charts.png)
+*--vis --ticker AAPL --timeframe w,d,4h,h --ind-conf 1*
 
 ### LIST DATA COMMANDS
 | Command | Description |
