@@ -56,6 +56,95 @@ def _load_indicator_data(ticker, timeframe=None):
     df.attrs = {'timeframe': timeframe, 'ticker': ticker}
     return df
 
+# def subcharts(
+#     df_list=None,
+#     ticker='',
+#     show_volume=True,
+#     show_banker_RSI=False,
+#     scan_file=None,
+# ):
+#     """
+#     Visualize data with prioritized loading:
+#     1. Manual DataFrames (df_list)
+#     2. Specified scan file (scan_file)
+#     3. Specified ticker (ticker)
+#     4. First available indicator file
+#    
+#     Usage:
+#     - subcharts([df1, df2])  # Manual DataFrames
+#     - subcharts(scan_file='scan.csv')  # Specific scan file
+#     - subcharts(ticker='AAPL')  # Specific ticker
+#     - subcharts()  # First available indicator
+#     """
+#     global CURRENT_SCAN_FILE
+#    
+#     # Mode 1: Manual DataFrames
+#     if df_list is not None:
+#         dfs = df_list
+#         CURRENT_SCAN_FILE = None
+#         print("\n  📊 Using manually provided DataFrame(s)")
+#    
+#     else:
+#         # Mode 2: Scan File Specified
+#         if scan_file:
+#             scan_path = Path(scan_file) if isinstance(scan_file, Path) else SCANNER_DIR / scan_file
+#             print(f"\n  📊 Loading scan: {scan_path.name}\n")
+#            
+#             scan_df = _load_scan_data(scan_path)
+#             first_valid = scan_df.iloc[0]
+#             ticker, timeframe = first_valid['Ticker'], first_valid['Timeframe']
+#             CURRENT_SCAN_FILE = scan_path
+#            
+#             df = _load_indicator_data(ticker, timeframe)
+#             dfs = [df]
+#        
+#         # Mode 3: Ticker Specified
+#         elif ticker:
+#             print(f"📊 Loading data for {ticker}")
+#             CURRENT_SCAN_FILE = None
+#             df = _load_indicator_data(ticker)
+#             dfs = [df]
+#        
+#         # Mode 4: Default - First Indicator File
+#         else:
+#             indicator_files = sorted(INDICATORS_DIR.glob("*_*_*.csv"))
+#             if not indicator_files:
+#                 raise FileNotFoundError("No indicator files found in indicators directory")
+#            
+#             indicator_file = indicator_files[0]
+#             print(f"📊 Loading first available indicator: {indicator_file.name}")
+#            
+#             ticker, timeframe = indicator_file.stem.split('_')[:2]
+#             CURRENT_SCAN_FILE = None
+#             df = _load_indicator_data(ticker, timeframe)
+#             dfs = [df]
+#
+#     # Initialize and configure charts
+#     main_chart, charts = get_charts(dfs)
+#    
+#     for i, chart in enumerate(charts):
+#         chart.name = str(i)
+#    
+#     for i, (df, chart) in enumerate(zip(dfs, charts)):
+#         prepared_df, timeframe = prepare_dataframe(df, show_volume)
+#         configure_base_chart(prepared_df, chart, show_volume, show_banker_RSI)
+#         add_ui_elements(
+#             chart, 
+#             charts, 
+#             df.attrs.get('ticker', ticker),
+#             timeframe,
+#             show_volume,
+#             show_banker_RSI,
+#         )
+#         add_visualizations(chart, prepared_df, show_banker_RSI)
+#         chart.set(prepared_df)
+#    
+#     main_chart.show(block=True)
+
+
+
+
+
 def subcharts(
     df_list=None,
     ticker='',
@@ -71,18 +160,34 @@ def subcharts(
     4. First available indicator file
     
     Usage:
-    - subcharts([df1, df2])  # Manual DataFrames
+    - subcharts([df1, df2], ticker=['AAPL', 'MSFT'])  # Manual DataFrames with individual tickers
     - subcharts(scan_file='scan.csv')  # Specific scan file
     - subcharts(ticker='AAPL')  # Specific ticker
     - subcharts()  # First available indicator
     """
     global CURRENT_SCAN_FILE
     
+    # Prepare ticker list - can be string or list
+    if isinstance(ticker, str) and ticker:
+        ticker_list = [ticker.strip() for ticker in ticker.split(',')] if ',' in ticker else [ticker]
+    elif isinstance(ticker, list):
+        ticker_list = ticker
+    else:
+        ticker_list = []
+    
     # Mode 1: Manual DataFrames
     if df_list is not None:
-        dfs = df_list
+        dfs = df_list if isinstance(df_list, list) else [df_list]
         CURRENT_SCAN_FILE = None
-        print("\n  📊 Using manually provided DataFrame(s)")
+        
+        # Match tickers to DataFrames
+        if ticker_list and len(ticker_list) == len(dfs):
+            print(f"\n  📊 Using manually provided DataFrames for: {', '.join(ticker_list)}")
+        elif ticker_list and len(ticker_list) != len(dfs):
+            print(f"\n  ⚠️ Warning: {len(ticker_list)} tickers provided but {len(dfs)} DataFrames")
+            print(f"  Using provided tickers for first {min(len(ticker_list), len(dfs))} charts")
+        else:
+            print("\n  📊 Using manually provided DataFrame(s)")
     
     else:
         # Mode 2: Scan File Specified
@@ -97,13 +202,17 @@ def subcharts(
             
             df = _load_indicator_data(ticker, timeframe)
             dfs = [df]
+            ticker_list = [ticker]
         
         # Mode 3: Ticker Specified
-        elif ticker:
-            print(f"📊 Loading data for {ticker}")
+        elif ticker_list:
+            print(f"📊 Loading data for {', '.join(ticker_list)}")
             CURRENT_SCAN_FILE = None
-            df = _load_indicator_data(ticker)
-            dfs = [df]
+            
+            dfs = []
+            for ticker_symbol in ticker_list:
+                df = _load_indicator_data(ticker_symbol)
+                dfs.append(df)
         
         # Mode 4: Default - First Indicator File
         else:
@@ -118,6 +227,7 @@ def subcharts(
             CURRENT_SCAN_FILE = None
             df = _load_indicator_data(ticker, timeframe)
             dfs = [df]
+            ticker_list = [ticker]
 
     # Initialize and configure charts
     main_chart, charts = get_charts(dfs)
@@ -126,13 +236,24 @@ def subcharts(
         chart.name = str(i)
     
     for i, (df, chart) in enumerate(zip(dfs, charts)):
+        # Get ticker for this specific chart
+        chart_ticker = ticker_list[i] if i < len(ticker_list) else f"Chart_{i+1}"
+        
+        # Get timeframe from DataFrame attributes or file
+        df_timeframe = df.attrs.get('timeframe', '')
+        
         prepared_df, timeframe = prepare_dataframe(df, show_volume)
+        
+        # If timeframe not in attributes, use the one from prepare_dataframe
+        if not df_timeframe:
+            df_timeframe = timeframe
+        
         configure_base_chart(prepared_df, chart, show_volume, show_banker_RSI)
         add_ui_elements(
             chart, 
             charts, 
-            df.attrs.get('ticker', ticker),
-            timeframe,
+            chart_ticker,  # Use individual ticker for each chart
+            df_timeframe,
             show_volume,
             show_banker_RSI,
         )

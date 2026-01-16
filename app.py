@@ -18,58 +18,285 @@ API_KEY = '9807b06bf5b97a8b26f5ff14bff18ee992dfaa13'
 # VISUALIZATION ------------------------------------------
 
 
-def vis(scan_file=None, ticker=None, timeframe=None, version=None):
+# def vis(scan_file=None, ticker=None, timeframe=None, version=None):
+#
+#     if not scan_file:
+#
+#         ticker = ticker or 'BTCUSD'
+#
+#         if timeframe:
+#
+#             df = fetch_ticker(timeframe=timeframe, ticker=ticker, api_key=API_KEY)
+#             ind_conf_ver = f"{timeframe}_{version}" if version else f"{timeframe}"
+#             df = get_indicators(df, indicators[ind_conf_ver], params[ind_conf_ver])
+#
+#             subcharts(
+#                       [df],
+#                       ticker=ticker,
+#                       show_volume=False,
+#                       show_banker_RSI=True
+#                      )
+#             return
+#
+#         # df1 = fetch_ticker(timeframe='w',  ticker=ticker, api_key=API_KEY)
+#         df2 = fetch_ticker(timeframe='d',  ticker=ticker, api_key=API_KEY)
+#         # df3 = fetch_ticker(timeframe='4h', ticker=ticker, api_key=API_KEY)
+#         # df4 = fetch_ticker(timeframe='h',  ticker=ticker, api_key=API_KEY)
+#
+#         # df1 = get_indicators(df1, indicators['weekly_2'], params['weekly_2'])
+#         df2 = get_indicators(df2, indicators['daily_2'],  params['daily_2'])
+#         # df3 = get_indicators(df3, indicators['4hour_2'],  params['4hour_2'])
+#         # df4 = get_indicators(df4, indicators['1hour_2'],  params['1hour_2'])
+#
+#         subcharts(
+#                   [df2],
+#                   ticker=ticker,
+#                   show_volume=False,
+#                   show_banker_RSI=True
+#                  )
+#         return
+#
+#     scan_path = Path(scan_file)
+#     if not scan_path.exists():
+#         scan_path = SCANNER_DIR / scan_path.name
+#
+#     if not scan_path.exists():
+#         print(f"Error: Scan file not found at {scan_path}")
+#         dm.list_scans()
+#         return
+#
+#     subcharts(
+#               scan_file=scan_path,
+#               show_volume=False,
+#               show_banker_RSI=False
+#              )
 
-    if not scan_file:
 
-        ticker = ticker or 'BTCUSD'
+# VISUALIZATION ------------------------------------------
 
-        if timeframe:
 
-            df = fetch_ticker(timeframe=timeframe, ticker=ticker, api_key=API_KEY)
-            ind_conf_ver = f"{timeframe}_{version}" if version else f"{timeframe}"
-            df = get_indicators(df, indicators[ind_conf_ver], params[ind_conf_ver])
-
-            subcharts(
-                      [df],
-                      ticker=ticker,
-                      show_volume=False,
-                      show_banker_RSI=True
-                     )
+def vis(tickers=None, timeframes=None, ind_confs=None, scan_file=None):
+    """
+    Enhanced visualization supporting multiple tickers, timeframes, and indicator configs
+    
+    Parameters:
+    - tickers: List of ticker symbols (e.g., ['MSFT', 'AAPL'])
+    - timeframes: List of timeframes (e.g., ['d', 'w', '4h'])
+    - ind_confs: List of indicator config versions (e.g., ['1', '2', '3'])
+    - scan_file: Path to scan file (single visualization mode)
+    """
+    
+    if scan_file:
+        # Single scan file visualization (existing behavior)
+        scan_path = Path(scan_file)
+        if not scan_path.exists():
+            scan_path = SCANNER_DIR / scan_path.name
+        
+        if not scan_path.exists():
+            print(f"Error: Scan file not found at {scan_path}")
+            dm.list_scans()
             return
-
-        # df1 = fetch_ticker(timeframe='w',  ticker=ticker, api_key=API_KEY)
-        df2 = fetch_ticker(timeframe='d',  ticker=ticker, api_key=API_KEY)
+        
+        subcharts(scan_file=scan_path, show_volume=False, show_banker_RSI=False)
+        return
+    
+    # Helper function to get indicator config
+    def get_indicator_config(timeframe_str, ind_conf_num=None):
+        """Get indicator config based on timeframe and version"""
+        timeframe_map = {
+            'd': 'daily', 'w': 'weekly', '4h': '4hour', 
+            'h': '1hour', '5min': '5min'
+        }
+        full_timeframe = timeframe_map.get(timeframe_str, timeframe_str)
+        
+        if ind_conf_num:
+            # Try to get the specific version
+            ind_conf_ver = f"{full_timeframe}_{ind_conf_num}"
+            if ind_conf_ver in indicators and ind_conf_ver in params:
+                return indicators[ind_conf_ver], params[ind_conf_ver]
+        
+        # Default to version 2 if version not specified or not found
+        ind_conf_ver = f"{full_timeframe}_2"
+        if ind_conf_ver in indicators and ind_conf_ver in params:
+            return indicators[ind_conf_ver], params[ind_conf_ver]
+        
+        # If still not found, try version 0
+        ind_conf_ver = f"{full_timeframe}_0"
+        if ind_conf_ver in indicators and ind_conf_ver in params:
+            return indicators[ind_conf_ver], params[ind_conf_ver]
+        
+        # Last resort - return empty configs
+        print(f"Warning: No indicator config found for {full_timeframe}")
+        return {}, {}
+    
+    # Parse inputs - ensure they're lists
+    if isinstance(tickers, str):
+        tickers = [tickers]
+    if isinstance(timeframes, str):
+        timeframes = [timeframes]
+    if isinstance(ind_confs, str):
+        ind_confs = [ind_confs]
+    
+    # Handle multiple tickers/timeframes/ind_confs
+    if tickers and timeframes:
+        # Ensure tickers and timeframes are lists
+        if isinstance(tickers, str):
+            tickers = [tickers]
+        if isinstance(timeframes, str):
+            timeframes = [timeframes]
+        
+        # Expand if single timeframe for multiple tickers
+        if len(timeframes) == 1 and len(tickers) > 1:
+            timeframes = timeframes * len(tickers)
+        
+        # Expand if single ticker for multiple timeframes
+        elif len(tickers) == 1 and len(timeframes) > 1:
+            tickers = tickers * len(timeframes)
+        
+        # Handle indicator configs
+        if ind_confs:
+            if len(ind_confs) == 1:
+                # Single ind-conf: apply to all charts
+                ind_confs = ind_confs * len(timeframes)
+            elif len(ind_confs) != len(timeframes):
+                # Mismatch: show error
+                print(f"Error: {len(ind_confs)} ind-confs provided for {len(timeframes)} charts")
+                print("  Options:")
+                print("  1. Use single ind-conf for all (e.g., '--ind-conf 2')")
+                print(f"  2. Use {len(timeframes)} ind-confs (e.g., '--ind-conf {','.join(['2']*len(timeframes))}')")
+                return
+        else:
+            # No ind-conf specified: default to '2' for all
+            ind_confs = ['2'] * len(timeframes)
+        
+        # Check for length mismatch
+        if len(tickers) != len(timeframes):
+            print(f"Error: Mismatch between {len(tickers)} tickers and {len(timeframes)} timeframes")
+            print("  Options:")
+            print("  1. Use same number of tickers and timeframes")
+            print("  2. Use 1 timeframe for all tickers (will be repeated)")
+            print("  3. Use 1 ticker for all timeframes (will be repeated)")
+            return
+        
+        dfs = []
+        for i, (ticker, timeframe) in enumerate(zip(tickers, timeframes)):
+            # Map timeframe codes to full names if needed
+            timeframe_map = {
+                'd': 'daily', 'w': 'weekly', '4h': '4hour', 
+                'h': '1hour', '5min': '5min'
+            }
+            full_timeframe = timeframe_map.get(timeframe, timeframe)
+            
+            # Fetch data
+            df = fetch_ticker(timeframe=full_timeframe, ticker=ticker, api_key=API_KEY)
+            
+            # Apply indicators with specific ind-conf if available
+            ind_conf_num = ind_confs[i] if i < len(ind_confs) else '2'
+            ind_config, ind_params = get_indicator_config(timeframe, ind_conf_num)
+            df = get_indicators(df, ind_config, ind_params)
+            
+            dfs.append(df)
+        
+        # Visualize all DataFrames with individual ticker labels
+        subcharts(df_list=dfs, ticker=tickers, show_volume=False, show_banker_RSI=True)
+    
+    elif tickers:
+        # Multiple tickers with default daily timeframe
+        if isinstance(tickers, str):
+            tickers = [tickers]
+        
+        # Handle indicator configs for tickers-only mode
+        if ind_confs:
+            if len(ind_confs) == 1:
+                ind_confs = ind_confs * len(tickers)
+            elif len(ind_confs) != len(tickers):
+                print(f"Error: {len(ind_confs)} ind-confs provided for {len(tickers)} tickers")
+                print(f"  Use single ind-conf or {len(tickers)} ind-confs")
+                return
+        else:
+            ind_confs = ['2'] * len(tickers)
+        
+        dfs = []
+        for i, ticker in enumerate(tickers):
+            df = fetch_ticker(timeframe='daily', ticker=ticker, api_key=API_KEY)
+            
+            # Apply indicators with specific ind-conf
+            ind_conf_num = ind_confs[i]
+            ind_config, ind_params = get_indicator_config('d', ind_conf_num)
+            df = get_indicators(df, ind_config, ind_params)
+            
+            dfs.append(df)
+        
+        # Visualize with individual ticker labels
+        subcharts(df_list=dfs, ticker=tickers, show_volume=False, show_banker_RSI=True)
+    
+    elif timeframes:
+        # Single default ticker (BTCUSD) with multiple timeframes
+        if isinstance(timeframes, str):
+            timeframes = [timeframes]
+        
+        # Handle indicator configs for timeframes-only mode
+        if ind_confs:
+            if len(ind_confs) == 1:
+                ind_confs = ind_confs * len(timeframes)
+            elif len(ind_confs) != len(timeframes):
+                print(f"Error: {len(ind_confs)} ind-confs provided for {len(timeframes)} timeframes")
+                print(f"  Use single ind-conf or {len(timeframes)} ind-confs")
+                return
+        else:
+            ind_confs = ['2'] * len(timeframes)
+        
+        dfs = []
+        for i, timeframe in enumerate(timeframes):
+            timeframe_map = {
+                'd': 'daily', 'w': 'weekly', '4h': '4hour', 
+                'h': '1hour', '5min': '5min'
+            }
+            full_timeframe = timeframe_map.get(timeframe, timeframe)
+            
+            df = fetch_ticker(timeframe=full_timeframe, ticker='BTCUSD', api_key=API_KEY)
+            
+            # Apply indicators with specific ind-conf
+            ind_conf_num = ind_confs[i]
+            ind_config, ind_params = get_indicator_config(timeframe, ind_conf_num)
+            df = get_indicators(df, ind_config, ind_params)
+            
+            dfs.append(df)
+        
+        # Create ticker list with BTCUSD repeated for each timeframe
+        ticker_list = ['BTCUSD'] * len(timeframes)
+        subcharts(df_list=dfs, ticker=ticker_list, show_volume=False, show_banker_RSI=True)
+    
+    else:
+        # Default behavior - single ticker, default timeframes
+        ticker = 'BTCUSD'
+        
+        # Use ind-conf if specified, otherwise default to 2
+        ind_conf_to_use = ind_confs[0] if ind_confs else '2'
+        
+        # Apply ind-conf to all fetched timeframes
+        # df1 = fetch_ticker(timeframe='w', ticker=ticker, api_key=API_KEY)
+        df2 = fetch_ticker(timeframe='d', ticker=ticker, api_key=API_KEY)
         # df3 = fetch_ticker(timeframe='4h', ticker=ticker, api_key=API_KEY)
-        # df4 = fetch_ticker(timeframe='h',  ticker=ticker, api_key=API_KEY)
+        # df4 = fetch_ticker(timeframe='h', ticker=ticker, api_key=API_KEY)
 
-        # df1 = get_indicators(df1, indicators['weekly_2'], params['weekly_2'])
-        df2 = get_indicators(df2, indicators['daily_2'],  params['daily_2'])
-        # df3 = get_indicators(df3, indicators['4hour_2'],  params['4hour_2'])
-        # df4 = get_indicators(df4, indicators['1hour_2'],  params['1hour_2'])
+        # if ind_conf_to_use in ['0', '1', '2', '3', '4']:
+        #     df1 = get_indicators(df1, indicators.get(f'weekly_{ind_conf_to_use}', {}), 
+        #                          params.get(f'weekly_{ind_conf_to_use}', {}))
+        
+        if ind_conf_to_use in ['0', '1', '2', '3', '4']:
+            df2 = get_indicators(df2, indicators.get(f'daily_{ind_conf_to_use}', {}), 
+                                 params.get(f'daily_{ind_conf_to_use}', {}))
+        
+        # if ind_conf_to_use in ['0', '1', '2', '3', '4']:
+        #     df3 = get_indicators(df3, indicators.get(f'4hour_{ind_conf_to_use}', {}), 
+        #                          params.get(f'4hour_{ind_conf_to_use}', {}))
+        
+        # if ind_conf_to_use in ['0', '1', '2', '3', '4']:
+        #     df4 = get_indicators(df4, indicators.get(f'1hour_{ind_conf_to_use}', {}), 
+        #                          params.get(f'1hour_{ind_conf_to_use}', {}))
 
-        subcharts(
-                  [df2],
-                  ticker=ticker,
-                  show_volume=False,
-                  show_banker_RSI=True
-                 )
-        return
-
-    scan_path = Path(scan_file)
-    if not scan_path.exists():
-        scan_path = SCANNER_DIR / scan_path.name
-
-    if not scan_path.exists():
-        print(f"Error: Scan file not found at {scan_path}")
-        dm.list_scans()
-        return
-
-    subcharts(
-              scan_file=scan_path,
-              show_volume=False,
-              show_banker_RSI=False
-             )
+        subcharts(df_list=[df2], ticker=['BTCUSD'], show_volume=False, show_banker_RSI=True)
 
 # FETCH TICKERS -------------------------------------------
 
@@ -194,3 +421,9 @@ def full_run(fetch, ind, scan) -> None:
 
 # RUN 'python app.py' for HELP command list
 if __name__ == "__main__": init_cli(vis, fetch, ind, scan, full_run)
+
+
+
+
+
+
