@@ -2,7 +2,7 @@
 
 Stock screener application that fetches ticker data from the Tiingo API, calculates technical indicators, runs scans, and provides advanced visualization capabilities.
 
-## ✨ Features
+## ✨ Application Features
 - **Automated Data Pipeline**: Tickers → Indicators → Scans → Visualization
 - **Multi-Timeframe Analysis**: Support for daily, weekly, hourly, and minute timeframes
 - **Advanced Visualization**: TradingView-style charts using lightweight-charts library
@@ -36,10 +36,30 @@ Stock screener application that fetches ticker data from the Tiingo API, calcula
 - Data is stored locally as CSV files in buffer and storage folders
 
 ## 📊 Visualization Application
-- **Multi-Timeframe Panels**: View multiple timeframes simultaneously
-- **Custom Indicators**: Plot multiple technical indicators (customizable)
-- **Interactive Navigation**: Manually toggle through tickers and timeframes
+
+### Visualization Features
+- **Multi-Charts**: Load up to 4 charts simultaneously in an app window
+- **Custom Indicators**: Plot customized technical indicators
+- **Interactive Navigation**: Toggle through tickers, timeframes, and scan results
 - **TradingView Style**: Clean, professional charts using lightweight-charts
+
+### Visualization Controls
+
+**Global Controls:**
+- `Spacebar` – Toggle minimize all panels
+- `Ctrl+C` – Exit application
+- `Mouse Drag` – Pan charts
+- `Scroll Wheel` – Zoom in/out
+- `Text Input` – Manual ticker entry
+
+**Per-Chart Controls:**
+
+| Action | Chart 1 | Chart 2 | Chart 3 | Chart 4 |
+|--------|---------|---------|---------|---------|
+| Maximize | `1` | `2` | `3` | `4` |
+| Timeframe | `6` | `7` | `8` | `9` |
+| Ticker | `-` | `=` | `[` | `]` |
+| Screenshot | `_` | `+` | `{` | `}` |
 
 ## 🖥️ CLI Usage Guide
 
@@ -55,15 +75,15 @@ Values in `[brackets]` represent application CLI inputs.
 | `--vis` | Launch visualization | `--vis --ticker MSFT --timeframe d --ind-conf 1` `--vis --ticker MSFT --timeframe w,d,4h,h --ind-conf 1,2,3,4` `--vis --ticker MSFT,BTCUSD,AAPL,SOFI --timeframe w,d,4h,h --ind-conf 1` |
 
 **--Ind Options:**
-- `--ind-conf [VERSION]` - Specify indicator list & config (`1`, `2`, `3`)
+- `--ind-conf [VERSION]` - Specify indicator config (`1`, `2`, `3`, `4`)
 
 **--Scan Options:**
 - `--scan-list [VERSION]` - Specify scan list (`1`, `2`, `3`, `4`)
 
 **--Vis Options:**
-- `--ticker [SYMBOL]` - Specify ticker symbol (`BTCUSD`, `BTCUSD,SOFI`, `BTCUSD,SOFI,AAPL,MSFT`)
-- `--timeframe [TF]` - Timeframe (`d`, `w`, `4h`, `h`, `5min`, `w,d,4h`)
-- `--ind-conf [VERSION]` - Indicator list & config (`1`, `2`, `3`, `1,2,3,4`)
+- `--ticker [SYMBOL]` - Specify ticker symbol (`BTCUSD`, `BTCUSD,SOFI,AAPL,MSFT`)
+- `--timeframe [TF]` - Timeframe (`5min`, `w,d,4h,h`)
+- `--ind-conf [VERSION]` - Indicator list & config (`1`, `1,2,3,4`)
 - `--scan-file [FILE]` - Scan results file (`scan_results_*.csv`)
 
 ![--vis --ticker BTCUSD --ind-conf 0](images/single_1.png)
