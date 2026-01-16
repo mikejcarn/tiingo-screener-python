@@ -156,7 +156,7 @@ params = {
                 'qqe_factor': 3.5, 'qqe_factor2': 2.0, 'threshold': 4,
                 'bb_length': 50, 'bb_multi': 0.4
             },
-            'SMA': {'periods': [50, 200]},
+            'SMA': {'periods': [200, 100, 50, 20]},
             'WAE': {
                 'fast_period': 20, 'slow_period': 40, 
                 'atr_period': 20, 'explosion_multiplier': 2.0
@@ -229,7 +229,7 @@ params = {
                 'qqe_factor': 3.0, 'qqe_factor2': 1.61, 'threshold': 3,
                 'bb_length': 50, 'bb_multi': 0.35
             },
-            'SMA': {'periods': [200]},
+            'SMA': {'periods': [200, 100, 50, 20]},
             'WAE': {
                 'fast_period': 20, 'slow_period': 40, 
                 'atr_period': 20, 'explosion_multiplier': 2.0
@@ -303,7 +303,7 @@ params = {
                 'qqe_factor': 2.5, 'qqe_factor2': 1.3, 'threshold': 2,
                 'bb_length': 40, 'bb_multi': 0.3
             },
-            'SMA': {'periods': [50, 200]},
+            'SMA': {'periods': [200, 100, 50, 20]},
             'WAE': {
                 'fast_period': 20, 'slow_period': 40, 
                 'atr_period': 20, 'explosion_multiplier': 2.0
@@ -377,7 +377,7 @@ params = {
                 'qqe_factor': 2.5, 'qqe_factor2': 1.3, 'threshold': 2,
                 'bb_length': 40, 'bb_multi': 0.3
             },
-            'SMA': {'periods': [50, 200]},
+            'SMA': {'periods': [200, 100, 50, 20]},
             'WAE': {
                 'fast_period': 20, 'slow_period': 40, 
                 'atr_period': 20, 'explosion_multiplier': 2.0
@@ -452,7 +452,7 @@ params = {
                 'qqe_factor': 2.0, 'qqe_factor2': 1.0, 'threshold': 1.5,
                 'bb_length': 30, 'bb_multi': 0.25
             },
-            'SMA': {'periods': [50, 100]},
+            'SMA': {'periods': [200, 100, 50, 20]},
             'WAE': {
                 'fast_period': 20, 'slow_period': 40, 
                 'atr_period': 20, 'explosion_multiplier': 2.0

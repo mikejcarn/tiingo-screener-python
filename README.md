@@ -52,19 +52,24 @@ Values in `[brackets]` represent application CLI inputs.
 | `--fetch` | Download tickers from API to buffer | `--fetch` |
 | `--ind` | Calculate indicators from tickers buffer | `--ind --ind-conf 1` |
 | `--scan` | Run scanner on indicators buffer | `--scan --scan-list 1` |
-| `--vis` | Launch visualization | `--vis --ticker MSFT --timeframe d --ind-conf 1` |
+| `--vis` | Launch visualization | `--vis --ticker MSFT --timeframe d --ind-conf 1` `--vis --ticker MSFT --timeframe w,d,4h,h --ind-conf 1,2,3,4` `--vis --ticker MSFT,BTCUSD,AAPL,SOFI --timeframe w,d,4h,h --ind-conf 1` |
 
 **--Ind Options:**
-- `--ind-conf [VERSION]` - Specify indicator list & config (`1`, `2`, `3`, `4`)
+- `--ind-conf [VERSION]` - Specify indicator list & config (`1`, `2`, `3`)
 
 **--Scan Options:**
 - `--scan-list [VERSION]` - Specify scan list (`1`, `2`, `3`, `4`)
 
 **--Vis Options:**
-- `--ticker [SYMBOL]` - Specify ticker symbol (`BTCUSD`, `SOFI`)
-- `--timeframe [TF]` - Timeframe (`d`, `w`, `4h`, `h`, `5min`)
-- `--ind-conf [VERSION]` - Indicator list & config (`1`, `2`, `3`, `4`)
+- `--ticker [SYMBOL]` - Specify ticker symbol (`BTCUSD`, `BTCUSD,SOFI`, `BTCUSD,SOFI,AAPL,MSFT`)
+- `--timeframe [TF]` - Timeframe (`d`, `w`, `4h`, `h`, `5min`, `w,d,4h`)
+- `--ind-conf [VERSION]` - Indicator list & config (`1`, `2`, `3`, `1,2,3,4`)
 - `--scan-file [FILE]` - Scan results file (`scan_results_*.csv`)
+
+![--vis --ticker BTCUSD --ind-conf 0](images/single_1.png)
+![--vis --ticker BTCUSD --ind-conf 2](images/single_2.png)
+![--vis --ticker AAPL,BTCUSD,SOFI --timeframe w,d,4h --ind-conf 2,1,3](images/3charts.png)
+![--vis --ticker AAPL --timeframe w,d,4h,h --ind-conf 1](images/4charts.png)
 
 ### LIST DATA COMMANDS
 | Command | Description |
