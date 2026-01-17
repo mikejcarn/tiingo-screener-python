@@ -43,13 +43,16 @@ Stock screener application that fetches ticker data from the Tiingo API, calcula
 - **Interactive Navigation**: Toggle through tickers, timeframes, and scan results
 - **TradingView Style**: Clean, professional charts using lightweight-charts
 
+![multichart](images/multichart.png)
+![maximized](images/maximized.png)
+
 ### Visualization Controls
 
 **Global Controls:**
-- `Spacebar` – Toggle minimize all panels
-- `Ctrl+C` – Exit application
 - `Mouse Drag` – Pan charts
 - `Scroll Wheel` – Zoom in/out
+- `Spacebar` – Toggle minimize all panels
+- `Ctrl+C` – Exit application
 - `Text Input` – Manual ticker entry
 
 **Per-Chart Controls:**
@@ -74,13 +77,13 @@ Values in `[brackets]` represent application CLI inputs.
 | `--scan` | Run scanner on indicators buffer | `--scan --scan-list 1` |
 | `--vis` | Launch visualization | `--vis --ticker MSFT --timeframe d --ind-conf 1` `--vis --ticker MSFT --timeframe w,d,4h,h --ind-conf 1,2,3,4` `--vis --ticker MSFT,BTCUSD,AAPL,SOFI --timeframe w,d,4h,h --ind-conf 1` |
 
-**--Ind Options:**
+**--ind Options:**
 - `--ind-conf [VERSION]` - Specify indicator config (`1`, `2`, `3`, `4`)
 
-**--Scan Options:**
+**--scan Options:**
 - `--scan-list [VERSION]` - Specify scan list (`1`, `2`, `3`, `4`)
 
-**--Vis Options:**
+**--vis Options:**
 - `--ticker [SYMBOL]` - Specify ticker symbol (`BTCUSD`, `BTCUSD,SOFI,AAPL,MSFT`)
 - `--timeframe [TF]` - Timeframe (`5min`, `w,d,4h,h`)
 - `--ind-conf [VERSION]` - Indicator list & config (`1`, `1,2,3,4`)
