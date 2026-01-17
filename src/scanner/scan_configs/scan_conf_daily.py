@@ -458,7 +458,7 @@ scan_conf = {
             'SMA': {
                 'daily': {'sma_periods': [200], 
                           'mode': 'above', 
-                          'distance_pct': 30.0, 
+                          'distance_pct': 50.0, 
                           'outside_range': True},
             }
         }

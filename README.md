@@ -60,9 +60,13 @@ Stock screener application that fetches ticker data from the Tiingo API, calcula
 | Action | Chart 1 | Chart 2 | Chart 3 | Chart 4 |
 |--------|---------|---------|---------|---------|
 | Maximize | `1` | `2` | `3` | `4` |
-| Timeframe | `6` | `7` | `8` | `9` |
-| Ticker | `-` | `=` | `[` | `]` |
+| Cycle Timeframes | `6` | `7` | `8` | `9` |
+| Cycle Tickers | `-` | `=` | `[` | `]` |
 | Screenshot | `_` | `+` | `{` | `}` |
+
+**Ticker/Timeframe Cycling is context-dependent**
+- If scan_results file is loaded, `-` will cycle through scan results
+- If indicator buffer file is loaded, keys will cycle indicator buffer files
 
 ## 🖥️ CLI Usage Guide
 
