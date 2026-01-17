@@ -8,6 +8,7 @@ Stock screener application that fetches ticker data from the Tiingo API, calcula
 - **Advanced Visualization**: TradingView-style charts using lightweight-charts library
 - **Flexible Data Management**: Version-controlled buffer system with save/load/delete capabilities
 - **Comprehensive Scanning**: Multiple indicator-based scan criteria
+- **Dynamic CLI**: Flexible timeframe specification across all commands
 
 ## 📁 Data System Framework
 
@@ -16,7 +17,7 @@ Stock screener application that fetches ticker data from the Tiingo API, calcula
 ```bash
 ./data/
 ├── tickers/              # Raw API data buffer
-│   └── tickers_date_*/
+│   └── tickers_*_*/
 ├── indicators/           # Calculated indicators buffer
 │   └── ind_conf_*/
 ├── scans/                # Scan results buffer
@@ -34,6 +35,7 @@ Stock screener application that fetches ticker data from the Tiingo API, calcula
 - Stock data fetched as JSON from Tiingo API (www.tiingo.com)
 - JSON data converted to pandas Dataframes for manipulation
 - Data is stored locally as CSV files in buffer and storage folders
+- Data Formats: Tickers/Indicators: `[TICKER]_[TF]_[DATE]`, Scans: `scan_results_[DATE]_[TYPE]`
 
 ## 📊 Visualization Application
 
@@ -68,7 +70,9 @@ Stock screener application that fetches ticker data from the Tiingo API, calcula
 
 ## 🖥️ CLI Usage Guide
 
-Values in `[brackets]` represent application CLI inputs.
+- Values in `[brackets]` represent application CLI inputs.
+- Shared `--timeframe` parameter [TF]: Use the same parameter for fetch, indicators, and visualization
+- Dynamic timeframes: Specify exactly which timeframes to process for each command
 
 ### MAIN FUNCTIONS
 | Command | Description | Example |
@@ -79,17 +83,64 @@ Values in `[brackets]` represent application CLI inputs.
 | `--scan` | Run scanner on indicators buffer | `--scan --scan-list 1` |
 | `--vis` | Launch visualization | `--vis --ticker MSFT --timeframe d --ind-conf 1` `--vis --ticker MSFT --timeframe w,d,4h,h --ind-conf 1,2,3,4` `--vis --ticker MSFT,BTCUSD,AAPL,SOFI --timeframe w,d,4h,h --ind-conf 1` |
 
-**--ind Options:**
-- `--ind-conf [VERSION]` - Specify indicator config (`1`, `2`, `3`, `4`)
+**`--fetch` Options:**
+- `--timeframe [TF]` - Timeframes(s) to fetch (comma-separated e.g., "daily,weekly")
+- Default: `weekly,daily,4hour,1hour`
 
-**--scan Options:**
+**`--ind` Options:**
+- `--ind-conf [VERSION]` - Indicator config (`1`, `2`, `3`, `4`)
+- `--timeframe [TF]` - Timeframe(s) to process (comma-separated, e.g., "daily,weekly,4hour")
+- Default: All timeframes in tickers buffer
+
+**`--scan` Options:**
 - `--scan-list [VERSION]` - Specify scan list (`1`, `2`, `3`, `4`)
 
-**--vis Options:**
-- `--ticker [SYMBOL]` - Specify ticker symbol (`BTCUSD`, `BTCUSD,SOFI,AAPL,MSFT`)
-- `--timeframe [TF]` - Timeframe (`5min`, `w,d,4h,h`)
-- `--ind-conf [VERSION]` - Indicator list & config (`1`, `1,2,3,4`)
+**`--vis` Options:**
+- `--ticker [SYMBOL]` - Ticker symbol(s) (`BTCUSD`, `BTCUSD,SOFI,AAPL,MSFT`)
+- `--timeframe [TF]` - Timeframe(s) (`5min`, `w,d,4h,h`)
+- `--ind-conf [VERSION]` - Indicator config(s) (`1`, `1,2,3,4`)
 - `--scan-file [FILE]` - Scan results file (`scan_results_*.csv`)
+
+## EXAMPLES
+
+### Fetch Data:
+```
+# Fetch default timeframes (weekly, daily, 4hour, 1hour)
+python app.py --fetch
+
+# Fetch specific timeframes
+python app.py --fetch --timeframe daily,weekly
+
+# Fetch single timeframe
+python app.py --fetch --timeframe daily
+```
+
+### Calculate Indicators:
+```
+# Process all timeframes with config 2
+python app.py --ind --ind-conf 2
+
+# Process specific timeframes with config 3
+python app.py --ind --ind-conf 3 --timeframe daily,weekly
+
+# Process single timeframe with config 1
+python app.py --ind --ind-conf 1 --timeframe daily
+```
+
+### Visualization:
+```
+# Single chart with default timeframe
+python app.py --vis --ticker MSFT --ind-conf 2
+
+# Multiple tickers with same timeframe
+python app.py --vis --ticker MSFT,AAPL,GOOGL --timeframe d --ind-conf 2,2,2
+
+# Multiple timeframes with multiple configs
+python app.py --vis --ticker MSFT --timeframe d,w,4h --ind-conf 2,3,4
+
+# Scan file visualization
+python app.py --vis --scan-file scan_results_20240101.csv
+```
 
 ![--vis --ticker BTCUSD --ind-conf 0](images/single_1.png)
 *--vis --ticker BTCUSD --ind-conf 0*
@@ -122,9 +173,30 @@ Values in `[brackets]` represent application CLI inputs.
 |---------|-------------|
 | `--clear-all` | Reset all buffers (preserves versions) |
 | `--clear-tickers` | Clear tickers buffer |
-| `--clear-indicators` | Clear indicators buffer |
+| `--clear-ind` | Clear indicators buffer |
 | `--clear-scans` | Clear scans buffer |
 | `--clear-screenshots` | Clear screenshots buffer |
+
+## Advanced Indicator Configurations
+
+### 🔧 Indicator Configuration Files
+
+Located in `./src/indicators/ind_configs/`:
+- ind_conf_0.py - Minimal indicators
+- ind_conf_1.py - aVWAPavg
+- ind_conf_2.py - aVWAP
+- ind_conf_3.py
+- ind_conf_4.py - Support/Resistance
+
+Each config file contains:
+- `indicators` - Dictionary of timeframes with indicator lists
+- `params` - Dictionary of parameters for each indicator/timeframe
+
+Customizing Configurations
+- Edit the appropriate `ind_conf_X.py` file
+- Add/remove indicators from the lists
+- Adjust parameters for your analysis
+- Run with: `python app.py --ind --ind-conf X`
 
 ## 🚀 Installation
 
@@ -133,4 +205,14 @@ Values in `[brackets]` represent application CLI inputs.
 git clone https://github.com/yourusername/tiingo-screener-python.git
 cd tiingo-screener-python
 pip install -r requirements.txt
+```
+
+**Set up your Tiingo API Key in `app.py`:**
+```bash
+API_KEY = 'your_tiingo_api_key_here'
+```
+
+**Run the application:**
+```bash
+python app.py --help  # View all available commands
 ```
