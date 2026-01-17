@@ -9,12 +9,17 @@ DATE_STAMP = datetime.now().strftime('%d%m%y')
 
 PROJECT_ROOT = Path(__file__).parent.parent
 
-# Data Output Directories
+# Buffer & Storage Directories
 
 SCANNER_DIR     = PROJECT_ROOT / "data" / "scans"
 INDICATORS_DIR  = PROJECT_ROOT / "data" / "indicators"
 TICKERS_DIR     = PROJECT_ROOT / "data" / "tickers"
 SCREENSHOTS_DIR = PROJECT_ROOT / "data" / "screenshots"
+
+# Indicator Configs & Scan Lists Directories
+
+IND_CONF_DIR     = PROJECT_ROOT / "src" / "indicators" / "ind_configs"
+SCAN_LIST_DIR    = PROJECT_ROOT / "config" / "scan_lists"
 
 # List Directories
 

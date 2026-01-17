@@ -13,64 +13,9 @@ from config.settings import SCANNER_DIR
 from config.data_manager import dm
 from config.scan_lists import scan_lists
 
+from config.settings import IND_CONF_DIR, SCAN_LIST_DIR
+
 API_KEY = '9807b06bf5b97a8b26f5ff14bff18ee992dfaa13'
-
-# VISUALIZATION ------------------------------------------
-
-
-# def vis(scan_file=None, ticker=None, timeframe=None, version=None):
-#
-#     if not scan_file:
-#
-#         ticker = ticker or 'BTCUSD'
-#
-#         if timeframe:
-#
-#             df = fetch_ticker(timeframe=timeframe, ticker=ticker, api_key=API_KEY)
-#             ind_conf_ver = f"{timeframe}_{version}" if version else f"{timeframe}"
-#             df = get_indicators(df, indicators[ind_conf_ver], params[ind_conf_ver])
-#
-#             subcharts(
-#                       [df],
-#                       ticker=ticker,
-#                       show_volume=False,
-#                       show_banker_RSI=True
-#                      )
-#             return
-#
-#         # df1 = fetch_ticker(timeframe='w',  ticker=ticker, api_key=API_KEY)
-#         df2 = fetch_ticker(timeframe='d',  ticker=ticker, api_key=API_KEY)
-#         # df3 = fetch_ticker(timeframe='4h', ticker=ticker, api_key=API_KEY)
-#         # df4 = fetch_ticker(timeframe='h',  ticker=ticker, api_key=API_KEY)
-#
-#         # df1 = get_indicators(df1, indicators['weekly_2'], params['weekly_2'])
-#         df2 = get_indicators(df2, indicators['daily_2'],  params['daily_2'])
-#         # df3 = get_indicators(df3, indicators['4hour_2'],  params['4hour_2'])
-#         # df4 = get_indicators(df4, indicators['1hour_2'],  params['1hour_2'])
-#
-#         subcharts(
-#                   [df2],
-#                   ticker=ticker,
-#                   show_volume=False,
-#                   show_banker_RSI=True
-#                  )
-#         return
-#
-#     scan_path = Path(scan_file)
-#     if not scan_path.exists():
-#         scan_path = SCANNER_DIR / scan_path.name
-#
-#     if not scan_path.exists():
-#         print(f"Error: Scan file not found at {scan_path}")
-#         dm.list_scans()
-#         return
-#
-#     subcharts(
-#               scan_file=scan_path,
-#               show_volume=False,
-#               show_banker_RSI=False
-#              )
-
 
 # VISUALIZATION ------------------------------------------
 
@@ -301,50 +246,58 @@ def vis(tickers=None, timeframes=None, ind_confs=None, scan_file=None):
 # FETCH TICKERS -------------------------------------------
 
 
-def fetch():
+# def fetch():
+#
+#     fetch_tickers(['weekly'], api_key=API_KEY)
+#     fetch_tickers(['daily'],  api_key=API_KEY)
+#     fetch_tickers(['4hour'],  api_key=API_KEY)
+#     fetch_tickers(['1hour'],  api_key=API_KEY)
 
-    fetch_tickers(['weekly'], api_key=API_KEY)
-    fetch_tickers(['daily'],  api_key=API_KEY)
-    fetch_tickers(['4hour'],  api_key=API_KEY)
-    fetch_tickers(['1hour'],  api_key=API_KEY)
-    # fetch_tickers(['5min'],   api_key=API_KEY)
+def fetch(timeframes=None):
+    """
+    Fetch ticker data for specified timeframes.
+    
+    Parameters:
+    - timeframes: List of timeframes to fetch (e.g., ['daily', 'weekly'])
+                 If None, uses default timeframes
+    """
+    if timeframes is None:
+        # Default timeframes
+        timeframes = ['weekly', 'daily', '4hour', '1hour']
+        # timeframes = ['weekly', 'daily', '4hour', '1hour', '5min']  # Optional: include 5min
+    
+    # Handle string input (from CLI)
+    if isinstance(timeframes, str):
+        if ',' in timeframes:
+            timeframes = [tf.strip() for tf in timeframes.split(',')]
+        else:
+            timeframes = [timeframes]
+    
+    print(f"\n=== FETCHING TICKERS ===\n")
+    print(f"Fetching timeframes: {', '.join(timeframes)}")
+    
+    for timeframe in timeframes:
+        print(f"\nFetching {timeframe} data...")
+        fetch_tickers([timeframe], api_key=API_KEY)
+    
+    print(f"\n✅ Fetch complete for {len(timeframes)} timeframe(s)")
 
 # INDICATORS ----------------------------------------------
 
 
-def ind(ind_conf=None):
-
-    match ind_conf:
-
-        case '0':
-            run_indicators(indicators['weekly_0'], params['weekly_0'], "weekly")
-            run_indicators(indicators['daily_0'],  params['daily_0'],  "daily")
-            run_indicators(indicators['4hour_0'],  params['4hour_0'],  "4hour")
-            run_indicators(indicators['1hour_0'],  params['1hour_0'],  "1hour")
-
-        case '1':
-            run_indicators(indicators['weekly_1'], params['weekly_1'], "weekly")
-            run_indicators(indicators['daily_1'],  params['daily_1'],  "daily")
-            run_indicators(indicators['4hour_1'],  params['4hour_1'],  "4hour")
-            run_indicators(indicators['1hour_1'],  params['1hour_1'],  "1hour")
-
-        case '2':
-            run_indicators(indicators['weekly_2'], params['weekly_2'], "weekly")
-            run_indicators(indicators['daily_2'],  params['daily_2'],  "daily")
-            run_indicators(indicators['4hour_2'],  params['4hour_2'],  "4hour")
-            run_indicators(indicators['1hour_2'],  params['1hour_2'],  "1hour")
-
-        case '3':
-            run_indicators(indicators['weekly_3'], params['weekly_3'], "weekly")
-            run_indicators(indicators['daily_3'],  params['daily_3'],  "daily")
-            run_indicators(indicators['4hour_3'],  params['4hour_3'],  "4hour")
-            run_indicators(indicators['1hour_3'],  params['1hour_3'],  "1hour")
-
-        case '4':
-            run_indicators(indicators['weekly_4'], params['weekly_4'], "weekly")
-            run_indicators(indicators['daily_4'],  params['daily_4'],  "daily")
-            run_indicators(indicators['4hour_4'],  params['4hour_4'],  "4hour")
-            run_indicators(indicators['1hour_4'],  params['1hour_4'],  "1hour")
+def ind(ind_conf=None, timeframes=None):
+    """
+    Simple wrapper that passes timeframes directly to run_indicators
+    """
+    if ind_conf is None:
+        print("Error: Please specify --ind-conf (1, 2, 3, or 4)")
+        return
+    
+    # Parse comma-separated string into list
+    if isinstance(timeframes, str) and ',' in timeframes:
+        timeframes = [tf.strip() for tf in timeframes.split(',')]
+    
+    run_indicators(ind_conf=ind_conf, timeframe=timeframes)
 
 # SCANNER -------------------------------------------------
 
