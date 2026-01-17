@@ -421,9 +421,3 @@ def full_run(fetch, ind, scan) -> None:
 
 # RUN 'python app.py' for HELP command list
 if __name__ == "__main__": init_cli(vis, fetch, ind, scan, full_run)
-
-
-
-
-
-

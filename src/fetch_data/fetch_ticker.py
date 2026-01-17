@@ -177,6 +177,7 @@ def fetch_ticker(timeframe='daily', ticker='BTCUSD', start_date=None, end_date=N
         'hourly':    {'resampleFreq':  '1hour', 'default_timedelta': timedelta(hours=5000)},
         'hour':      {'resampleFreq':  '1hour', 'default_timedelta': timedelta(hours=5000)},
         '1hour':     {'resampleFreq':  '1hour', 'default_timedelta': timedelta(hours=5000)},
+        '1h':        {'resampleFreq':  '1hour', 'default_timedelta': timedelta(hours=5000)},
         'h':         {'resampleFreq':  '1hour', 'default_timedelta': timedelta(hours=5000)},
         'minute':    {'resampleFreq':   '1min', 'default_timedelta': timedelta(hours=100)},
         '1min':      {'resampleFreq':   '1min', 'default_timedelta': timedelta(hours=100)},
