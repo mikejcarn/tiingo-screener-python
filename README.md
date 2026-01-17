@@ -100,7 +100,7 @@ Values in `[brackets]` represent application CLI inputs.
 ![--vis --ticker AAPL --timeframe w,d,4h,h --ind-conf 1](images/4charts.png)
 *--vis --ticker AAPL --timeframe w,d,4h,h --ind-conf 1*
 
-### LIST DATA COMMANDS
+### LIST BUFFER & STORAGE DATA
 | Command | Description |
 |---------|-------------|
 | `--list-tickers` | List ticker files in buffer |
@@ -110,7 +110,7 @@ Values in `[brackets]` represent application CLI inputs.
 | `--list-ind-ver` | List saved indicator versions |
 | `--list-scans-ver` | List saved scan versions |
 
-### DATA MANAGEMENT COMMANDS
+### STORAGE DATA MANAGEMENT
 | Category | Save | Load | Delete Single | Delete All |
 |----------|------|------|---------------|------------|
 | **Tickers** | `--save-tickers [NAME]` | `--load-tickers [NAME]` | `--delete-tickers [NAME]` | `--delete-tickers-all` |
