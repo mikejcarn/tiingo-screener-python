@@ -63,8 +63,6 @@ Stock screener application that fetches ticker data from the Tiingo API, calcula
 | Cycle Timeframes | `6` | `7` | `8` | `9` |
 | Cycle Tickers | `-` | `=` | `[` | `]` |
 | Screenshot | `_` | `+` | `{` | `}` |
-
-**Ticker/Timeframe Cycling is context-dependent**
 - If scan_results file is loaded, `-` will cycle through scan results
 - Otherwise, button controls will cycle through indicator buffer files
 
