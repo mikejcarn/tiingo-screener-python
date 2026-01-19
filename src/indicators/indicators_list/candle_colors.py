@@ -1,5 +1,5 @@
 import pandas as pd
-from src.indicators.get_indicators import get_indicators
+from src.indicators.indicators import get_indicators
 from src.visualization.src.color_palette import get_color_palette
 
 

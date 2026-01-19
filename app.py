@@ -1,19 +1,16 @@
 import time
 from pathlib import Path
-from src.indicators.get_indicators import get_indicators
-from src.indicators.run_indicators import run_indicators
+from src.indicators.indicators import get_indicators, run_indicators, load_indicator_config
 from src.fetch_data.fetch_tickers import fetch_tickers
 from src.fetch_data.fetch_ticker import fetch_ticker
 from src.scanner.scanner import run_scanner
 from src.visualization.subcharts import subcharts
 from src.scanner.scan_configs.scan_configs import scan_configs
-from src.indicators.ind_configs.ind_configs import indicators, params
 from config.CLI import init_cli
-from config.settings import SCANNER_DIR
 from config.data_manager import dm
 from config.scan_lists import scan_lists
 
-from config.settings import IND_CONF_DIR, SCAN_LIST_DIR
+from config.settings import IND_CONF_DIR, SCAN_LIST_DIR, SCANNER_DIR
 
 API_KEY = '9807b06bf5b97a8b26f5ff14bff18ee992dfaa13'
 
@@ -44,35 +41,6 @@ def vis(tickers=None, timeframes=None, ind_confs=None, scan_file=None):
         
         subcharts(scan_file=scan_path, show_volume=False, show_banker_RSI=False)
         return
-    
-    # Helper function to get indicator config
-    def get_indicator_config(timeframe_str, ind_conf_num=None):
-        """Get indicator config based on timeframe and version"""
-        timeframe_map = {
-            'd': 'daily', 'w': 'weekly', '4h': '4hour', 
-            'h': '1hour', '5min': '5min'
-        }
-        full_timeframe = timeframe_map.get(timeframe_str, timeframe_str)
-        
-        if ind_conf_num:
-            # Try to get the specific version
-            ind_conf_ver = f"{full_timeframe}_{ind_conf_num}"
-            if ind_conf_ver in indicators and ind_conf_ver in params:
-                return indicators[ind_conf_ver], params[ind_conf_ver]
-        
-        # Default to version 2 if version not specified or not found
-        ind_conf_ver = f"{full_timeframe}_2"
-        if ind_conf_ver in indicators and ind_conf_ver in params:
-            return indicators[ind_conf_ver], params[ind_conf_ver]
-        
-        # If still not found, try version 0
-        ind_conf_ver = f"{full_timeframe}_0"
-        if ind_conf_ver in indicators and ind_conf_ver in params:
-            return indicators[ind_conf_ver], params[ind_conf_ver]
-        
-        # Last resort - return empty configs
-        print(f"Warning: No indicator config found for {full_timeframe}")
-        return {}, {}
     
     # Parse inputs - ensure they're lists
     if isinstance(tickers, str):
@@ -137,8 +105,24 @@ def vis(tickers=None, timeframes=None, ind_confs=None, scan_file=None):
             
             # Apply indicators with specific ind-conf if available
             ind_conf_num = ind_confs[i] if i < len(ind_confs) else '2'
-            ind_config, ind_params = get_indicator_config(timeframe, ind_conf_num)
-            df = get_indicators(df, ind_config, ind_params)
+            
+            # Use the shared config loader from indicators.py
+            config_result = load_indicator_config(ind_conf_num, full_timeframe)
+            
+            if config_result is None:
+                # Config loading failed
+                print(f"Warning: Using raw data for {ticker}_{full_timeframe} (no indicators)")
+                dfs.append(df)
+                continue
+            
+            # Unpack the config (returns (indicator_list, params_dict) when timeframe specified)
+            ind_config, ind_params = config_result
+            
+            # Only apply indicators if config was loaded successfully
+            if ind_config is not None and ind_params is not None:
+                df = get_indicators(df, ind_config, ind_params)
+            else:
+                print(f"Warning: Using raw data for {ticker}_{full_timeframe} (no indicators)")
             
             dfs.append(df)
         
@@ -167,8 +151,22 @@ def vis(tickers=None, timeframes=None, ind_confs=None, scan_file=None):
             
             # Apply indicators with specific ind-conf
             ind_conf_num = ind_confs[i]
-            ind_config, ind_params = get_indicator_config('d', ind_conf_num)
-            df = get_indicators(df, ind_config, ind_params)
+            
+            # Use the shared config loader from indicators.py
+            config_result = load_indicator_config(ind_conf_num, 'daily')
+            
+            if config_result is None:
+                print(f"Warning: Using raw data for {ticker}_daily (no indicators)")
+                dfs.append(df)
+                continue
+            
+            ind_config, ind_params = config_result
+            
+            # Only apply indicators if config was loaded successfully
+            if ind_config is not None and ind_params is not None:
+                df = get_indicators(df, ind_config, ind_params)
+            else:
+                print(f"Warning: Using raw data for {ticker}_daily (no indicators)")
             
             dfs.append(df)
         
@@ -203,8 +201,22 @@ def vis(tickers=None, timeframes=None, ind_confs=None, scan_file=None):
             
             # Apply indicators with specific ind-conf
             ind_conf_num = ind_confs[i]
-            ind_config, ind_params = get_indicator_config(timeframe, ind_conf_num)
-            df = get_indicators(df, ind_config, ind_params)
+            
+            # Use the shared config loader from indicators.py
+            config_result = load_indicator_config(ind_conf_num, full_timeframe)
+            
+            if config_result is None:
+                print(f"Warning: Using raw data for BTCUSD_{full_timeframe} (no indicators)")
+                dfs.append(df)
+                continue
+            
+            ind_config, ind_params = config_result
+            
+            # Only apply indicators if config was loaded successfully
+            if ind_config is not None and ind_params is not None:
+                df = get_indicators(df, ind_config, ind_params)
+            else:
+                print(f"Warning: Using raw data for BTCUSD_{full_timeframe} (no indicators)")
             
             dfs.append(df)
         
@@ -219,27 +231,20 @@ def vis(tickers=None, timeframes=None, ind_confs=None, scan_file=None):
         # Use ind-conf if specified, otherwise default to 2
         ind_conf_to_use = ind_confs[0] if ind_confs else '2'
         
-        # Apply ind-conf to all fetched timeframes
-        # df1 = fetch_ticker(timeframe='w', ticker=ticker, api_key=API_KEY)
+        # Load config for daily timeframe
         df2 = fetch_ticker(timeframe='d', ticker=ticker, api_key=API_KEY)
-        # df3 = fetch_ticker(timeframe='4h', ticker=ticker, api_key=API_KEY)
-        # df4 = fetch_ticker(timeframe='h', ticker=ticker, api_key=API_KEY)
-
-        # if ind_conf_to_use in ['0', '1', '2', '3', '4']:
-        #     df1 = get_indicators(df1, indicators.get(f'weekly_{ind_conf_to_use}', {}), 
-        #                          params.get(f'weekly_{ind_conf_to_use}', {}))
         
-        if ind_conf_to_use in ['0', '1', '2', '3', '4']:
-            df2 = get_indicators(df2, indicators.get(f'daily_{ind_conf_to_use}', {}), 
-                                 params.get(f'daily_{ind_conf_to_use}', {}))
+        # Use the shared config loader from indicators.py
+        config_result = load_indicator_config(ind_conf_to_use, 'daily')
         
-        # if ind_conf_to_use in ['0', '1', '2', '3', '4']:
-        #     df3 = get_indicators(df3, indicators.get(f'4hour_{ind_conf_to_use}', {}), 
-        #                          params.get(f'4hour_{ind_conf_to_use}', {}))
-        
-        # if ind_conf_to_use in ['0', '1', '2', '3', '4']:
-        #     df4 = get_indicators(df4, indicators.get(f'1hour_{ind_conf_to_use}', {}), 
-        #                          params.get(f'1hour_{ind_conf_to_use}', {}))
+        if config_result is None:
+            print(f"Warning: Using raw data for BTCUSD_daily (no indicators)")
+        else:
+            ind_config, ind_params = config_result
+            if ind_config is not None and ind_params is not None:
+                df2 = get_indicators(df2, ind_config, ind_params)
+            else:
+                print(f"Warning: Using raw data for BTCUSD_daily (no indicators)")
 
         subcharts(df_list=[df2], ticker=['BTCUSD'], show_volume=False, show_banker_RSI=True)
 
@@ -264,7 +269,6 @@ def fetch(timeframes=None):
     if timeframes is None:
         # Default timeframes
         timeframes = ['weekly', 'daily', '4hour', '1hour']
-        # timeframes = ['weekly', 'daily', '4hour', '1hour', '5min']  # Optional: include 5min
     
     # Handle string input (from CLI)
     if isinstance(timeframes, str):
