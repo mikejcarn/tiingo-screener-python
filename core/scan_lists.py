@@ -2,7 +2,10 @@ scan_lists = {
 
     'scan_list_0': [
 
-        'd_SMAAbove'
+        # 'd_SMAAbove',
+        # 'd_OBaVWAPPinch',
+        # 'h_OBaVWAPPinch',
+        'd_aVWAPChannelPinch'
 
         # 'd_CHoCHBullish',
         # 'd_CHoCHBearish',

@@ -2,6 +2,21 @@ scan_conf = {
 
     # 1hour ==============================================
 
+    'h_OBaVWAPPinch': {
+        'criteria': {
+            '1hour': ['OB_aVWAP', 'OB_aVWAP'],
+        },
+        'params': {
+            'OB_aVWAP': {
+                '1hour': [
+                    {'mode': 'bearish', 'distance_pct': 1.0, 'direction': 'below'},
+                    {'mode': 'bullish', 'distance_pct': 1.0, 'direction': 'above'}
+                ]
+            },
+        }
+    },
+
+
     'h_aVWAPChannelOverbought': {
         'criteria': {
             '1hour': ['aVWAP_channel_resistance'],

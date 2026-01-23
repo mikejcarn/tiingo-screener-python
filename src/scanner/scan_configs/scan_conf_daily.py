@@ -2,6 +2,34 @@ scan_conf = {
 
     # Daily ===============================================
 
+    'd_OBaVWAPPinch': {
+        'criteria': {
+            'daily': ['OB_aVWAP', 'OB_aVWAP'],
+        },
+        'params': {
+            'OB_aVWAP': {
+                'daily': [
+                    {'mode': 'bearish', 'distance_pct': 1.0, 'direction': 'below'},
+                    {'mode': 'bullish', 'distance_pct': 1.0, 'direction': 'above'}
+                ]
+            },
+        }
+    },
+
+    'd_aVWAPChannelPinch': {
+        'criteria': {
+            'daily': ['aVWAP_channel', 'aVWAP_channel'],
+        },
+        'params': {
+            'aVWAP_channel': {
+                'daily': [
+                    {'mode': 'resistance', 'distance_pct': 1.0, 'direction': 'below'},
+                    {'mode': 'support', 'distance_pct': 1.0, 'direction': 'above'}
+                ]
+            },
+        }
+    },
+
     'd_aVWAPChannelOverbought': {
         'criteria': {
             'daily': ['aVWAP_channel'],
