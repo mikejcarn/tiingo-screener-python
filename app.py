@@ -5,11 +5,9 @@ from src.indicators.indicators import get_indicators, run_indicators, load_indic
 from src.tickers.tickers import fetch_tickers, fetch_ticker
 from src.scanner.scanner import run_scanner
 from src.visualization.visualization import vis
-# from src.scanner.scan_configs.scan_configs import scan_configs
 from core.CLI import init_cli
 from core.data_manager import dm
 from core.scan_lists import scan_lists
-
 from core.globals import API_KEY, SCAN_CONF_DIR
 
 # VISUALIZATION ------------------------------------------
@@ -52,7 +50,16 @@ def fetch(timeframes=None):
 
 def ind(ind_conf=None, timeframes=None):
     """
-    Simple wrapper that passes timeframes directly to run_indicators
+    Execute indicator calculations with specified configuration.
+    This function serves as a CLI wrapper for `run_indicators()`, providing
+    simplified interface for calculating technical indicators across one or
+    multiple timeframes using a specific indicator configuration.
+
+    Parameters:
+        ind_conf: Indicator configuration ('1', 'ind_conf_2', etc.)
+        timeframes: Timeframe(s) for calculation
+    Example:
+        ind('ind_conf_1', 'daily,weekly')
     """
     if ind_conf is None:
         print("Error: Please specify --ind-conf (1, 2, 3, or 4)")
@@ -68,7 +75,20 @@ def ind(ind_conf=None, timeframes=None):
 
 
 def scan(scan_list='2'):
-    """Simplest scanner using SCAN_CONF_DIR."""
+    """
+    Execute a scanner pipeline using specified scan configurations.
+    1. Dynamically loads scan configurations from `scan_conf_*.py` files
+    2. Retrieves the specified scan list containing scan names
+    3. Executes each scan using its configuration criteria and parameters
+    4. Handles errors and missing configurations gracefully
+    
+    Parameters:
+    scan_list : str, optional
+        Identifier of the scan list to execute (e.g., '0', '1', '2').
+        Corresponds to keys in `scan_lists` dictionary prefixed with 'scan_list_'.
+        Default: '2'
+    """
+    
     # Load configs
     scan_configs = {}
     for config_file in Path(SCAN_CONF_DIR).glob('scan_conf_*.py'):
