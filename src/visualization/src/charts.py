@@ -7,7 +7,7 @@ from datetime import datetime
 from lightweight_charts import Chart
 from src.visualization.src.color_palette import get_color_palette
 from src.visualization.src.indicator_visualizations import add_visualizations
-from config.settings import INDICATORS_DIR
+from core.globals import INDICATORS_DIR
 
 def prepare_dataframe(df, show_volume, padding_ratio=0.25):
     df = df.copy()
@@ -144,7 +144,7 @@ def add_ui_elements(chart, charts, ticker, timeframe, show_volume=False, show_ba
 
 def _load_ticker_csv(charts, key, show_volume=False, show_banker_RSI=False):
     """Automatically uses scan file if available, otherwise falls back to indicators"""
-    from src.visualization.subcharts import CURRENT_SCAN_FILE
+    from src.visualization.src.subcharts import CURRENT_SCAN_FILE
     
     try:
         chart_index = KEY_MAPPINGS[key]

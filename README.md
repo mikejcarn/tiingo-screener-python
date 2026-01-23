@@ -45,8 +45,8 @@ Stock screener application that fetches ticker data from the Tiingo API, calcula
 - **Interactive Navigation**: Toggle through tickers, timeframes, and scan results
 - **TradingView Style**: Clean, professional charts using lightweight-charts
 
-![multichart](images/multichart.png)
-![maximized](images/maximized.png)
+![multichart](docs/images/multichart.png)
+![maximized](docs/images/maximized.png)
 
 ### Visualization Controls
 
@@ -142,13 +142,13 @@ python app.py --vis --ticker MSFT --timeframe d,w,4h --ind-conf 2,3,4
 python app.py --vis --scan-file scan_results_20240101.csv
 ```
 
-![--vis --ticker BTCUSD --ind-conf 0](images/single_1.png)
+![--vis --ticker BTCUSD --ind-conf 0](docs/images/single_1.png)
 *--vis --ticker BTCUSD --ind-conf 0*
-![--vis --ticker BTCUSD --ind-conf 2](images/single_2.png)
+![--vis --ticker BTCUSD --ind-conf 2](docs/images/single_2.png)
 *--vis --ticker BTCUSD --ind-conf 2*
-![--vis --ticker AAPL,BTCUSD,SOFI --timeframe w,d,4h --ind-conf 2,1,3](images/3charts.png)
+![--vis --ticker AAPL,BTCUSD,SOFI --timeframe w,d,4h --ind-conf 2,1,3](docs/images/3charts.png)
 *--vis --ticker AAPL,BTCUSD,SOFI --timeframe w,d,4h --ind-conf 2,1,3*
-![--vis --ticker AAPL --timeframe w,d,4h,h --ind-conf 1](images/4charts.png)
+![--vis --ticker AAPL --timeframe w,d,4h,h --ind-conf 1](docs/images/4charts.png)
 *--vis --ticker AAPL --timeframe w,d,4h,h --ind-conf 1*
 
 ### LIST BUFFER & STORAGE DATA
@@ -207,7 +207,7 @@ cd tiingo-screener-python
 pip install -r requirements.txt
 ```
 
-**Set up your Tiingo API Key in `app.py`:**
+**Set up your Tiingo API Key in `./config/globals.py`:**
 ```bash
 API_KEY = 'your_tiingo_api_key_here'
 ```

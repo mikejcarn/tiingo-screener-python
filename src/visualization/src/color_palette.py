@@ -3,12 +3,11 @@ def get_color_palette():
     colors = {
 
         'teal': f"rgba(38, 166, 154, 1.0)",
-        'red': f"rgba(239, 83, 80, 1.0)",
-
         'teal_dark': f"rgba(0, 96, 100, 1.0)",
-        'red_dark': f"rgba(255, 0, 0, 1.0)",
-
         'teal_OB': f"rgba(38, 166, 154, 0.5)",
+
+        'red': f"rgba(239, 83, 80, 1.0)",
+        'red_dark': f"rgba(255, 0, 0, 1.0)",
         'red_OB': f"rgba(239, 83, 80, 0.5)",
 
         'teal_trans_0': f"rgba(38, 166, 154, 0.1)",
