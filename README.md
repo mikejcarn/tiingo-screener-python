@@ -78,7 +78,7 @@ Stock screener application that fetches ticker data from the Tiingo API, calcula
 | Command | Description | Example |
 |---------|-------------|---------|
 | `--full-run` | Complete process: fetch > indicators > scan | `--full-run` |
-| `--fetch` | Download tickers from API to buffer | `--fetch` |
+| `--fetch` | Download tickers from API to buffer | `--fetch daily` |
 | `--ind` | Calculate indicators from tickers buffer | `--ind --ind-conf 1` |
 | `--scan` | Run scanner on indicators buffer | `--scan --scan-list 1` |
 | `--vis` | Launch visualization | `--vis --ticker MSFT --timeframe d --ind-conf 1` `--vis --ticker MSFT --timeframe w,d,4h,h --ind-conf 1,2,3,4` `--vis --ticker MSFT,BTCUSD,AAPL,SOFI --timeframe w,d,4h,h --ind-conf 1` |
@@ -182,7 +182,7 @@ python app.py --vis --scan-file scan_results_20240101.csv
 ### 🔧 Indicator Configuration Files
 
 Located in `./src/indicators/ind_configs/`:
-- ind_conf_0.py - Minimal indicators
+- ind_conf_0.py - Testing
 - ind_conf_1.py - aVWAPavg
 - ind_conf_2.py - aVWAP
 - ind_conf_3.py
@@ -207,7 +207,7 @@ cd tiingo-screener-python
 pip install -r requirements.txt
 ```
 
-**Set up your Tiingo API Key in `./config/globals.py`:**
+**Set up your Tiingo API Key in `./core/globals.py`:**
 ```bash
 API_KEY = 'your_tiingo_api_key_here'
 ```

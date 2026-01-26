@@ -3,10 +3,10 @@
 indicators = {  # List of available indicator configurations
 
         'weekly': [
-            # 'aVWAP', 
+            'aVWAP', 
             # 'candle_colors', 
             # 'StDev', 
-            'SMA', 
+            # 'SMA', 
             # 'gaps', 
             # 'FVG', 
             # 'BoS_CHoCH', 
@@ -22,10 +22,10 @@ indicators = {  # List of available indicator configurations
         ],
 
         'daily': [
-            # 'aVWAP', 
+            'aVWAP', 
             # 'candle_colors', 
             # 'StDev', 
-            'SMA', 
+            # 'SMA', 
             # 'gaps', 
             # 'FVG', 
             # 'BoS_CHoCH', 
@@ -41,10 +41,10 @@ indicators = {  # List of available indicator configurations
         ],
 
         '4hour': [
-            # 'aVWAP', 
+            'aVWAP', 
             # 'candle_colors', 
             # 'StDev', 
-            'SMA', 
+            # 'SMA', 
             # 'gaps', 
             # 'FVG', 
             # 'BoS_CHoCH', 
@@ -60,10 +60,10 @@ indicators = {  # List of available indicator configurations
         ],
 
         '1hour': [
-            # 'aVWAP', 
+            'aVWAP', 
             # 'candle_colors', 
             # 'StDev', 
-            'SMA', 
+            # 'SMA', 
             # 'gaps', 
             # 'FVG', 
             # 'BoS_CHoCH', 
@@ -79,10 +79,10 @@ indicators = {  # List of available indicator configurations
         ],
 
         '5min': [
-            # 'aVWAP', 
+            'aVWAP', 
             # 'candle_colors', 
             # 'StDev', 
-            'SMA', 
+            # 'SMA', 
             # 'gaps', 
             # 'FVG', 
             # 'BoS_CHoCH', 
@@ -190,11 +190,11 @@ params = {
                 }
             },
             'aVWAP': {
-                'peaks_valleys': True,
-                'peaks_valleys_avg': True,
+                'peaks_valleys': False,
+                'peaks_valleys_avg': False,
                 'peaks_avg': True,
                 'valleys_avg': True,
-                'peaks_valleys_params': {'periods': 20, 'max_aVWAPs': None},
+                'peaks_valleys_params': {'periods': 20, 'max_aVWAPs': 1},
                 'OB': True,
                 'OB_avg': False,
                 'OB_params': {
