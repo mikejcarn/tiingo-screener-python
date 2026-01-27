@@ -2,6 +2,20 @@ scan_conf = {
 
     # 4hour ==============================================
 
+    '4h_aVWAPChannelPinch': {
+        'criteria': {
+            '4hour': ['aVWAP_channel', 'aVWAP_channel'],
+        },
+        'params': {
+            'aVWAP_channel': {
+                '4hour': [
+                    {'mode': 'resistance', 'distance_pct': 1.0, 'direction': 'below'},
+                    {'mode': 'support', 'distance_pct': 1.0, 'direction': 'above'}
+                ]
+            },
+        }
+    },
+
     '4h_aVWAPChannelOverbought': {
         'criteria': {
             '4hour': ['aVWAP_channel_resistance'],

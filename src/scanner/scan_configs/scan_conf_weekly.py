@@ -2,6 +2,20 @@ scan_conf = {
 
     # Weekly ==============================================
 
+    'w_aVWAPChannelPinch': {
+        'criteria': {
+            'weekly': ['aVWAP_channel', 'aVWAP_channel'],
+        },
+        'params': {
+            'aVWAP_channel': {
+                'weekly': [
+                    {'mode': 'resistance', 'distance_pct': 1.0, 'direction': 'below'},
+                    {'mode': 'support', 'distance_pct': 1.0, 'direction': 'above'}
+                ]
+            },
+        }
+    },
+
     'w_supertrendBullish_QQEMODOversold': {
         'criteria': {
             'weekly': ['supertrend', 'QQEMOD'],

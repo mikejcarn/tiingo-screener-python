@@ -5,7 +5,10 @@ scan_lists = {
         # 'd_SMAAbove',
         # 'd_OBaVWAPPinch',
         # 'h_OBaVWAPPinch',
-        'd_aVWAPChannelPinch'
+        'w_aVWAPChannelPinch',
+        'd_aVWAPChannelPinch',
+        'h_aVWAPChannelPinch',
+        '4h_aVWAPChannelPinch',
 
         # 'd_CHoCHBullish',
         # 'd_CHoCHBearish',

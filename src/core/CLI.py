@@ -155,14 +155,13 @@ def show_help() -> None:
   MAIN FUNCTIONS:
   --fetch                     Download tickers from API to tickers buffer
       --timeframe             Specify timeframe(s) to fetch (comma-separated, e.g., "daily,weekly")
-                              Default: weekly,daily,4hour,1hour
   --ind                       Calculate indicators from tickers buffer
       --ind-conf              Specify indicator config for generation ("1", "2", "3", "4")
       --timeframe             Specify timeframe(s) to process (comma-separated, e.g., "daily,weekly,4hour")
   --scan                      Run scanner on indicators buffer
       --scan-list             Specify scan list ("scan_list_1")
   --full-run                  Run full process: fetch > indicators > scan
-  
+
   VISUALIZATION
   --vis                       Launch visualization
       --ticker                Specify ticker(s) ("MSFT" or "MSFT,AAPL,GOOGL")
@@ -175,12 +174,12 @@ def show_help() -> None:
       Default timeframes:     python app.py --fetch
       Specific timeframes:    python app.py --fetch --timeframe daily,weekly
       Single timeframe:       python app.py --fetch --timeframe daily
-    
+
     Visualization:
       Single ticker:          python app.py --vis --ticker MSFT --timeframe d --ind-conf 2
       Multiple tickers:       python app.py --vis --ticker MSFT,AAPL,GOOGL --timeframe d --ind-conf 2,2,2
       Multiple timeframes:    python app.py --vis --ticker MSFT --timeframe d,w,4h --ind-conf 2,3,4
-    
+ 
     Indicators:
       All timeframes:         python app.py --ind --ind-conf 2
       Single timeframe:       python app.py --ind --ind-conf 2 --timeframe daily

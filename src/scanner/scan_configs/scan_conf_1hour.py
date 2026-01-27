@@ -2,6 +2,20 @@ scan_conf = {
 
     # 1hour ==============================================
 
+    'h_aVWAPChannelPinch': {
+        'criteria': {
+            '1hour': ['aVWAP_channel', 'aVWAP_channel'],
+        },
+        'params': {
+            'aVWAP_channel': {
+                '1hour': [
+                    {'mode': 'resistance', 'distance_pct': 1.0, 'direction': 'below'},
+                    {'mode': 'support', 'distance_pct': 1.0, 'direction': 'above'}
+                ]
+            },
+        }
+    },
+
     'h_OBaVWAPPinch': {
         'criteria': {
             '1hour': ['OB_aVWAP', 'OB_aVWAP'],
