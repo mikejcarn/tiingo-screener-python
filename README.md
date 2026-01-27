@@ -207,7 +207,7 @@ cd tiingo-screener-python
 pip install -r requirements.txt
 ```
 
-**Set up your Tiingo API Key in `./core/globals.py`:**
+**Set up your Tiingo API Key in `.src/core/globals.py`:**
 ```bash
 API_KEY = 'your_tiingo_api_key_here'
 ```

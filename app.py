@@ -12,7 +12,7 @@ from src.core.globals import API_KEY, SCAN_CONF_DIR
 
 # VISUALIZATION ------------------------------------------
 
-# import vis() for init_cli()
+# pass vis() function to init_cli()
 
 # FETCH TICKERS -------------------------------------------
 
