@@ -2,7 +2,7 @@ import shutil
 from pathlib import Path
 from datetime import datetime
 from typing import List, Dict, Optional, Union
-from core.globals import (
+from src.core.globals import (
                              INDICATORS_DIR,
                              SCANNER_DIR,
                              TICKERS_DIR,

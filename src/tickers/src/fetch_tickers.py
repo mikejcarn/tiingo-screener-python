@@ -2,7 +2,7 @@ import os
 import pandas as pd
 from pathlib import Path
 from src.tickers.src.fetch_ticker import fetch_ticker
-from core.globals import TICKERS_DIR, TICKERS_LIST, DATE_STAMP
+from src.core.globals import TICKERS_DIR, TICKERS_LIST, DATE_STAMP
 
 def fetch_tickers(
                   timeframes=['weekly', 'daily', 'hourly', '5min'], 

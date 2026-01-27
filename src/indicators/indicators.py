@@ -3,7 +3,7 @@ import pandas as pd
 from pathlib import Path
 import importlib.util
 import importlib
-from core.globals import TICKERS_DIR, INDICATORS_DIR, IND_CONF_DIR
+from src.core.globals import TICKERS_DIR, INDICATORS_DIR, IND_CONF_DIR
 
 # ===== BATCH PROCESSING FUNCTIONS =====
 

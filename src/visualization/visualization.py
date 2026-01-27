@@ -4,8 +4,8 @@ from typing import Union, List, Optional, Tuple
 from src.indicators.indicators import get_indicators, run_indicators, load_indicator_config
 from src.tickers.tickers import fetch_tickers, fetch_ticker
 from src.visualization.src.subcharts import subcharts
-from core.data_manager import dm
-from core.globals import SCANNER_DIR, API_KEY
+from src.core.data_manager import dm
+from src.core.globals import SCANNER_DIR, API_KEY
 
 # ============================================================================
 # CONSTANTS & HELPER FUNCTIONS

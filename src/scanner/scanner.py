@@ -5,7 +5,7 @@ from pathlib import Path
 from datetime import datetime
 import importlib
 import requests
-from core.globals import SCANNER_DIR, INDICATORS_DIR, DATE_STAMP
+from src.core.globals import SCANNER_DIR, INDICATORS_DIR, DATE_STAMP
 
 def run_scanner(criteria='banker_RSI', criteria_params=None, logic='AND', api_key=None, scan_name=None):
     """Ultimate flexible scanner with support for criteria parameters.

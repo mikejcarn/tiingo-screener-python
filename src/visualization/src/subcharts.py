@@ -1,7 +1,7 @@
 import pandas as pd
 from pathlib import Path
 from src.visualization.src.indicator_visualizations import add_visualizations
-from core.globals import SCANNER_DIR, INDICATORS_DIR
+from src.core.globals import SCANNER_DIR, INDICATORS_DIR
 from src.visualization.src.charts import (
     get_charts,
     prepare_dataframe, 
