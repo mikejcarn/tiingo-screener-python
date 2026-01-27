@@ -190,10 +190,10 @@ params = {
                 }
             },
             'aVWAP': {
-                'peaks_valleys': False,
-                'peaks_valleys_avg': False,
-                'peaks_avg': True,
-                'valleys_avg': True,
+                'peaks_valleys': True,
+                'peaks_valleys_avg': True,
+                'peaks_avg': False,
+                'valleys_avg': False,
                 'peaks_valleys_params': {'periods': 20, 'max_aVWAPs': 1},
                 'OB': True,
                 'OB_avg': False,
