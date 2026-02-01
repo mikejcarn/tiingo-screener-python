@@ -216,7 +216,7 @@ Located in `./src/scanner/scan_configs/`:
 - Suffix indicates criteria type: Pinch, Support, Oversold, etc.
 - Examples: `d_OBOversold` `d_aVWAPChannelPinch` `d_DivBullish_h_DivBullish`
 
-### Scan Configurations Format and Structure
+### ⚙️ Scan Configurations Format and Structure
 
 The scan configs use a configuration system with this **general structure**:
 
@@ -248,6 +248,7 @@ scan_conf = {
 Examples of customizable scan configs include:
 
 ```bash
+
 # Single Timeframe - Single Criteria
 'd_OBBullish': {
     'criteria': {
@@ -259,6 +260,7 @@ Examples of customizable scan configs include:
         }
     }
 }
+
 # Single Timeframe - Multiple Criteria
 'd_aVWAPChannelSupport_OBSupport': {
     'criteria': {
@@ -273,6 +275,7 @@ Examples of customizable scan configs include:
         }
     }
 }
+
 # Multi-Timeframe - Multiple Criteria
 'd_StDevOversold_h_OBSupport': {
     'criteria': {
@@ -288,6 +291,7 @@ Examples of customizable scan configs include:
         }
     }
 }
+
 # Single-Timeframe - Single Criteria with Multiple Params
 'd_aVWAPChannelPinch': {
     'criteria': {
@@ -304,9 +308,9 @@ Examples of customizable scan configs include:
 }
 ```
 
-### 🔧 Scan Lists
+### 📋 Scan Lists
 
-- Scan lists are called to run a series of scans in succession.
+- Custom scan lists are called to run a sequence of scans on indicators data in buffer
 - Scan lists are available in `./src/core/scan_lists.py`:
 
 Scan lists are customizable and have the following format:
@@ -320,16 +324,21 @@ scan_lists = {
         '4h_aVWAPChannelPinch',
         'd_aVWAPChannelPinch',
         'w_aVWAPChannelPinch'
+
     ],
 
     # --- Single-Timeframe Scans ---
     'scan_list_1': [
+        
         'd_StDevOversold_OBBullishaVWAP',
+
     ],
 
     # --- Multi-Timeframe Scans ---
     'scan_list_2': [
+
         'd_OBSupport_h_OBSupport',
+
     ],
 }
 ```
