@@ -9,7 +9,6 @@ from src.core.globals import (
                              SCREENSHOTS_DIR
                             )
 
-
 class DataManager:
 
     def __init__(self, core):

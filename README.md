@@ -198,6 +198,142 @@ Customizing Configurations
 - Adjust parameters for your analysis
 - Run with: `python app.py --ind --ind-conf X`
 
+## Advanced Scanner Configurations
+
+### 🔧 Scan Configuration Files
+Located in `./src/scanner/scan_configs/`:
+- scan_conf_1hour.py
+- scan_conf_4hour.py
+- scan_conf_5min.py
+- scan_conf_daily.py
+- scan_conf_weekly.py
+
+### 🎯 Scan Naming Convention
+**Scans follow a consistent naming pattern:**
+- d_ = Daily timeframe only
+- d_ + _h_ = Daily + 1-hour combination
+- d_ + _4h_ = Daily + 4-hour combination
+- Suffix indicates criteria type: Pinch, Support, Oversold, etc.
+- Examples: `d_OBOversold` `d_aVWAPChannelPinch` `d_DivBullish_h_DivBullish`
+
+### Scan Configurations Format and Structure
+
+The scan configs use a configuration system with this **general structure**:
+
+```bash
+#./src/scanner/scan_configs/scan_conf_timeframe.py
+scan_conf = {
+    'scan_name': {                            # Unique scan identifier
+        'criteria': {                         # Timeframe → criteria mapping
+            'timeframe': 'criteria_name',     # Single criteria per timeframe
+            'timeframe': ['criteria1', 'criteria2'],  # Multiple criteria (ALL must pass)
+        },
+        'params': {                          # Parameter configuration
+            'criteria_name': {               # Criteria-specific parameters
+                'timeframe': {               # Timeframe-specific parameters
+                    'param1': value1,
+                    'param2': value2,
+                },
+                # OR for duplicate criteria on same timeframe:
+                'timeframe': [               # Indexed parameters
+                    {'param1': value1},      # For first instance
+                    {'param1': value2},      # For second instance
+                ]
+            }
+        }
+    }
+}
+```
+
+Examples of customizable scan configs include:
+
+```bash
+# Single Timeframe - Single Criteria
+'d_OBBullish': {
+    'criteria': {
+        'daily': ['OB'],  # Single criteria on daily timeframe
+    },
+    'params': {
+        'OB': {
+            'daily': {'mode': 'bullish'}  # Parameters for OB criteria on daily
+        }
+    }
+}
+# Single Timeframe - Multiple Criteria
+'d_aVWAPChannelSupport_OBSupport': {
+    'criteria': {
+        'daily': ['aVWAP_channel', 'OB'],  # BOTH must pass
+    },
+    'params': {
+        'aVWAP_channel': {
+            'daily': {'mode': 'support', 'distance_pct': 5.0}
+        },
+        'OB': {
+            'daily': {'mode': 'support'}
+        }
+    }
+}
+# Multi-Timeframe - Multiple Criteria
+'d_StDevOversold_h_OBSupport': {
+    'criteria': {
+        'daily': ['StDev'],      # Criteria on daily
+        '1hour': ['OB']          # Criteria on 1-hour
+    },
+    'params': {
+        'StDev': {
+            'daily': {'mode': 'oversold', 'threshold': 2}
+        },
+        'OB': {
+            '1hour': {'mode': 'support'}
+        }
+    }
+}
+# Single-Timeframe - Single Criteria with Multiple Params
+'d_aVWAPChannelPinch': {
+    'criteria': {
+        'daily': ['aVWAP_channel', 'aVWAP_channel'],  # Two channel checks
+    },
+    'params': {
+        'aVWAP_channel': {
+            'daily': [
+                {'mode': 'resistance', 'distance_pct': 1.0, 'direction': 'below'},  # Near resistance
+                {'mode': 'support', 'distance_pct': 1.0, 'direction': 'above'}      # Near support
+            ]
+        }
+    }
+}
+```
+
+### 🔧 Scan Lists
+
+- Scan lists are called to run a series of scans in succession.
+- Scan lists are available in `./src/core/scan_lists.py`:
+
+Scan lists are customizable and have the following format:
+
+```bash
+scan_lists = {
+    # --- Series of Scans ---
+    'scan_list_0': [
+
+        'h_aVWAPChannelPinch',
+        '4h_aVWAPChannelPinch',
+        'd_aVWAPChannelPinch',
+        'w_aVWAPChannelPinch'
+    ],
+
+    # --- Single-Timeframe Scans ---
+    'scan_list_1': [
+        'd_StDevOversold_OBBullishaVWAP',
+    ],
+
+    # --- Multi-Timeframe Scans ---
+    'scan_list_2': [
+        'd_OBSupport_h_OBSupport',
+    ],
+}
+```
+
 ## 🚀 Installation
 
 **Clone the repository and install requirements:**
