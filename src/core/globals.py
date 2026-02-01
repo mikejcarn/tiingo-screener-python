@@ -16,7 +16,7 @@ SCREENSHOTS_DIR = PROJECT_ROOT / "data" / "screenshots"
 # Indicator Configs & Scan Lists Directories
 IND_CONF_DIR     = PROJECT_ROOT / "src" / "indicators" / "ind_configs"
 SCAN_CONF_DIR    = PROJECT_ROOT / "src" / "scanner" / "scan_configs"
-SCAN_LIST_DIR    = PROJECT_ROOT / "core" / "scan_lists"
+SCAN_LIST_DIR    = PROJECT_ROOT / "src" / "scanner" / "scan_lists"
 
 # Tickers Lists for Fetch (eg TSX, QQQ, NASDAQ)
 TICKERS_LIST    = PROJECT_ROOT / 'src/tickers/ticker_lists/TSX.csv'

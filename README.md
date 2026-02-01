@@ -311,7 +311,7 @@ Examples of customizable scan configs include:
 ### 📋 Scan Lists
 
 - Custom scan lists are called to run a sequence of scans on indicators data in buffer
-- Scan lists are available in `./src/core/scan_lists.py`:
+- Scan lists are available in the file `./src/scanner/scan_lists.py`:
 
 Scan lists are customizable and have the following format:
 

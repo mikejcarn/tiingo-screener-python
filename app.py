@@ -4,10 +4,10 @@ from pathlib import Path
 from src.indicators.indicators import get_indicators, run_indicators, load_indicator_config
 from src.tickers.tickers import fetch_tickers, fetch_ticker
 from src.scanner.scanner import run_scanner
+from src.scanner.scan_lists import scan_lists
 from src.visualization.visualization import vis
 from src.core.CLI import init_cli
 from src.core.data_manager import dm
-from src.core.scan_lists import scan_lists
 from src.core.globals import API_KEY, SCAN_CONF_DIR
 
 # VISUALIZATION ------------------------------------------
