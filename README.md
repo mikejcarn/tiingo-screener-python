@@ -78,7 +78,7 @@ Stock screener application that fetches ticker data from the Tiingo API, calcula
 - The fetching system downloads historical price data from Tiingo API for both stocks and cryptocurrencies, supporting multiple timeframes from yearly down to minute-level data
 - It includes robust error handling with exponential backoff retry logic for network stability.# Advanced Indicator Configurations
 
-### Timeframes and Aliases
+### Timeframes: Aliases & Configurations
 | Timeframe | Primary Alias | Other Aliases | Fetched History | Data Type |
 |--------|---------|---------|---------|---------|
 | Weekly | `daily` | `day`,`1day`,`d` | 20+ years | End-of-day |
@@ -92,19 +92,19 @@ Stock screener application that fetches ticker data from the Tiingo API, calcula
 
 ### Core Functions
 
-`fetch_tickers()` - **Batch Fetch**
+`fetch_tickers()` - **Fetch Batch of Tickers by Timeframe**
 
 Processes multiple tickers across multiple timeframes:
 
 ```bash
-# Fetch default timeframes for all tickers in TICKERS_LIST
+# Fetch default timeframes for all tickers in TICKERS_LIST (eg. TSX, QQQ, etc)
 fetch_tickers(
     timeframes=['weekly', 'daily', '4hour', '1hour'],  # Default
     api_key='your_tiingo_key'
 )
 ```
 
-`fetch_ticker()` - **Single Ticker Fetch**
+`fetch_ticker()` - **Fetch Single Ticker**
 
 Fetches historical data for one ticker across specified timeframe:
 
@@ -142,25 +142,88 @@ date,Open,High,Low,Close,Volume
 2024-01-02 00:00:00,151.25,153.00,150.50,152.75,1200000
 ```
 
-## ⚙️ Indicators
+## 📈 Indicators
+The indicator system calculates technical indicators from raw price data, supporting multiple configuration profiles for different analysis styles. It processes ticker data through customizable pipelines to generate signals for scanning and visualization
 
-## Indicator Configuration Files
+### Indicator Configuration Files
 Located in `./src/indicators/ind_configs/`:
-- ind_conf_0.py - Testing
-- ind_conf_1.py - aVWAPavg
-- ind_conf_2.py - aVWAP
+- ind_conf_0.py
+- ind_conf_1.py
+- ind_conf_2.py
 - ind_conf_3.py
-- ind_conf_4.py - Support/Resistance
+- ind_conf_4.py
 
-Each config file contains:
-- `indicators` - Dictionary of timeframes with indicator lists
-- `params` - Dictionary of parameters for each indicator/timeframe
+### Indicator Configuration System
 
-Customizing Configurations
+**Configuration File Structure**
+
+- Each indicator config file (`ind_conf_X.py`) contains:
+```bash
+indicators = {
+    'timeframe': [  # List of indicators to calculate
+        'indicator_name',
+        'another_indicator'
+    ]
+}
+
+params = {
+    'indicator_name': {
+        'timeframe': {  # Timeframe-specific parameters
+            'param1': value1,
+            'param2': value2
+        }
+    }
+}
+```
+
+**Example `ind_conf_X.py`**
+```bash
+indicators = {
+    'daily': ['aVWAP', 'aVWAP_channel', 'OB_aVWAP', 'StDev'],
+    '4hour': ['aVWAP', 'OB_aVWAP', 'QQEMOD'],
+    '1hour': ['aVWAP', 'OB', 'banker_RSI']
+}
+
+params = {
+    'aVWAP_avg': {
+        'daily': {'period': 20, 'smoothing': 2},
+        '4hour': {'period': 50, 'smoothing': 3},
+        '1hour': {'period': 100, 'smoothing': 4}
+    },
+    'OB': {
+        'daily': {'lookback_period': 20},
+        '4hour': {'lookback_period': 50},
+        '1hour': {'lookback_period': 100}
+    }
+}
+
+```
+
+### Customizing Configurations
 - Edit the appropriate `ind_conf_X.py` file
 - Add/remove indicators from the lists
-- Adjust parameters for your analysis
+- Adjust parameters for analysis
 - Run with: `python app.py --ind --ind-conf X`
+
+### File Naming Convention:
+
+```bash
+./data/indicators/ind_conf_{CONFIG}_{DATE_STAMP}/{TICKER}_{TIMEFRAME}_{DATE_STAMP}.csv
+```
+
+### Output Structure
+```bash
+./data/indicators/
+├── ind_conf_1_010124/           # Config-specific folder
+│   ├── AAPL_daily_010124.csv
+│   ├── AAPL_4hour_010124.csv
+│   ├── BTCUSD_daily_010124.csv
+│   └── ...
+└── ind_conf_2_010124/           # Another config
+    ├── AAPL_daily_010124.csv
+    ├── AAPL_4hour_010124.csv
+    └── ...
+```
 
 ## 🎯 Scanner & Advanced Configurations
 
