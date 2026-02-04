@@ -26,7 +26,7 @@ Stock screener application that fetches ticker data from the Tiingo API, calcula
 ```
 
 ### Workflow 
-`Tiingo API` → `Tickers` → `Indicators` → `Scans`
+`Tiingo API` → `./data/tickers` → `./data/indicators` → `./data/scans`
 1. **API Fetch**: Tiingo API → `./data/tickers/`
 2. **Indicator Calculations**: Tickers buffer → `./data/indicators/`
 3. **Scan Execution**: Indicators buffer → `./data/scans/`
@@ -90,7 +90,7 @@ Stock screener application that fetches ticker data from the Tiingo API, calcula
 | 5-Minute | `5min` | `5minutes`,`5m` | ~4 months | Intraday |
 | 1-Minute | `1min` | `minute`,`1m`,`m` | ~4 months | Intraday |
 
-### Core Functions
+### Core Fetch Functions
 
 `fetch_tickers()` - **Fetch Batch of Tickers by Timeframe**
 
@@ -119,23 +119,23 @@ df = fetch_ticker(
 )
 ```
 
-### File Naming Convention:
+### Ticker File Naming Convention:
 ```bash
 {TICKER}_{TIMEFRAME}_{DATE_STAMP}.csv
 ```
 - `DATE_STAMP`: Format `DDMMYY` (e.g., `010124` for Jan 1, 2024)
 
-### File Output Structure
+### Ticker File Output Structure
 ```bash
 ./data/tickers/
 ├── AAPL_daily_010124.csv
-├── AAPL_4hour_010124.csv
+├── AAPL_1hour_010124.csv
 ├── BTCUSD_daily_010124.csv
 ├── BTCUSD_1hour_010124.csv
 └── ...
 ```
 
-### CSV File Contents:
+### Ticker CSV File Contents:
 ```bash
 date,Open,High,Low,Close,Volume
 2024-01-01 00:00:00,150.00,152.50,149.75,151.25,1000000
@@ -143,15 +143,17 @@ date,Open,High,Low,Close,Volume
 ```
 
 ## 📈 Indicators
-The indicator system calculates technical indicators from raw price data, supporting multiple configuration profiles for different analysis styles. It processes ticker data through customizable pipelines to generate signals for scanning and visualization
+- Calculates technical indicators from raw price data, supporting multiple configuration profiles for different analysis styles 
+- Process ticker data through customizable pipelines to generate signals for scanning and visualization
 
 ### Indicator Configuration Files
-Located in `./src/indicators/ind_configs/`:
-- ind_conf_0.py
-- ind_conf_1.py
-- ind_conf_2.py
-- ind_conf_3.py
-- ind_conf_4.py
+`./src/indicators/ind_configs/`:
+├── ind_conf_0.py
+├── ind_conf_1.py
+├── ind_conf_2.py
+├── ind_conf_3.py
+├── ind_conf_4.py
+└── ...
 
 ### Indicator Configuration System
 
@@ -161,13 +163,19 @@ Located in `./src/indicators/ind_configs/`:
 ```bash
 indicators = {
     'timeframe': [  # List of indicators to calculate
-        'indicator_name',
-        'another_indicator'
+        'indicator1',
+        'indicator2'
     ]
 }
 
 params = {
-    'indicator_name': {
+    'indicator1': {
+        'timeframe': {  # Timeframe-specific parameters
+            'param1': value1,
+            'param2': value2
+        }
+    },
+    'indicator2': {
         'timeframe': {  # Timeframe-specific parameters
             'param1': value1,
             'param2': value2
@@ -227,7 +235,7 @@ params = {
 
 ## 🎯 Scanner & Advanced Configurations
 
-### 🔧 Scan Configuration Files
+### Scan Configuration Files
 Located in `./src/scanner/scan_configs/`:
 - scan_conf_1hour.py
 - scan_conf_4hour.py
@@ -426,8 +434,8 @@ python app.py --ind --ind-conf 1 --timeframe daily
 ```
 
 ### Visualization:
-Visualize multi-charts with any valid matrix of `--ticker` x `timeframe` x `--ind-conf` values
-Can also visualize charts for a scan file from `./data/scans/` using `--scan-file`
+- Visualize multi-charts with any valid matrix of `--ticker` x `timeframe` x `--ind-conf` values
+- Visualize charts for scan file from `./data/scans/` using `--scan-file`
 ```
 python app.py --vis --ticker MSFT --ind-conf 1
 
@@ -441,13 +449,13 @@ python app.py --vis --scan-file scan_results_20240101.csv
 ```
 
 ![--vis --ticker BTCUSD --ind-conf 0](docs/images/single_1.png)
-*--vis --ticker BTCUSD --ind-conf 0*
+*`--vis --ticker BTCUSD --ind-conf 0`*
 ![--vis --ticker BTCUSD --ind-conf 2](docs/images/single_2.png)
-*--vis --ticker BTCUSD --ind-conf 2*
+*`--vis --ticker BTCUSD --ind-conf 2`*
 ![--vis --ticker AAPL,BTCUSD,SOFI --timeframe w,d,4h --ind-conf 2,1,3](docs/images/3charts.png)
-*--vis --ticker AAPL,BTCUSD,SOFI --timeframe w,d,4h --ind-conf 2,1,3*
+*`--vis --ticker AAPL,BTCUSD,SOFI --timeframe w,d,4h --ind-conf 2,1,3`*
 ![--vis --ticker AAPL --timeframe w,d,4h,h --ind-conf 1](docs/images/4charts.png)
-*--vis --ticker AAPL --timeframe w,d,4h,h --ind-conf 1*
+*`--vis --ticker AAPL --timeframe w,d,4h,h --ind-conf 1`*
 
 ### LIST BUFFER & STORAGE DATA
 | Command | Description |
