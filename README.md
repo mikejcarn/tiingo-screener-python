@@ -26,7 +26,7 @@ Stock screener application that fetches ticker data from the Tiingo API, calcula
 ```
 
 ### Workflow 
-`API --> Tickers --> Indicators --> Scans`
+`Tiingo API` → `Tickers` → `Indicators` → `Scans`
 1. **API Fetch**: Tiingo API → `./data/tickers/`
 2. **Indicator Calculations**: Tickers buffer → `./data/indicators/`
 3. **Scan Execution**: Indicators buffer → `./data/scans/`
@@ -37,8 +37,8 @@ Stock screener application that fetches ticker data from the Tiingo API, calcula
 - JSON data converted to pandas Dataframes for manipulation
 - Data is stored locally as CSV files in buffer and storage folders
 - Data Formats: 
-    - Tickers/Indicators: `[TICKER]_[TF]_[DATE]` 
-    - Scans: `scan_results_[DATE]_[TYPE]`
+    - Tickers/Indicators: `[TICKER]_[TF]_[DATE].csv` 
+    - Scans: `scan_results_[DATE]_[TYPE].csv`
 
 ## 📊 Visualization Application
 
@@ -75,9 +75,10 @@ Stock screener application that fetches ticker data from the Tiingo API, calcula
 
 ### Fetch Overview
 
-The fetching system downloads historical price data from Tiingo API for both stocks and cryptocurrencies, supporting multiple timeframes from yearly down to minute-level data 
-It includes robust error handling with exponential backoff retry logic for network stability.# Advanced Indicator Configurations
+- The fetching system downloads historical price data from Tiingo API for both stocks and cryptocurrencies, supporting multiple timeframes from yearly down to minute-level data
+- It includes robust error handling with exponential backoff retry logic for network stability.# Advanced Indicator Configurations
 
+### Timeframes and Aliases
 | Timeframe | Primary Alias | Other Aliases | Fetched History | Data Type |
 |--------|---------|---------|---------|---------|
 | Weekly | `daily` | `day`,`1day`,`d` | 20+ years | End-of-day |
@@ -91,23 +92,6 @@ It includes robust error handling with exponential backoff retry logic for netwo
 
 ### Core Functions
 
-`fetch_ticker()` - **Single Ticker Fetch**
-
-Fetches historical data for one ticker across specified timeframe:
-
-```bash
-from src.fetcher.tickers import fetch_ticker
-
-# Fetch daily data for Bitcoin
-df = fetch_ticker(
-    timeframe='daily',
-    ticker='BTCUSD',
-    start_date='2023-01-01',  # Optional, defaults to max available
-    end_date='2023-12-31',    # Optional, defaults to today
-    api_key='your_tiingo_key' # From globals.py
-)
-```
-
 `fetch_tickers()` - **Batch Fetch**
 
 Processes multiple tickers across multiple timeframes:
@@ -117,6 +101,21 @@ Processes multiple tickers across multiple timeframes:
 fetch_tickers(
     timeframes=['weekly', 'daily', '4hour', '1hour'],  # Default
     api_key='your_tiingo_key'
+)
+```
+
+`fetch_ticker()` - **Single Ticker Fetch**
+
+Fetches historical data for one ticker across specified timeframe:
+
+```bash
+# Fetch daily data for Bitcoin
+df = fetch_ticker(
+    timeframe='daily',
+    ticker='BTCUSD',
+    start_date='2023-01-01',  # Optional, defaults to max available
+    end_date='2023-12-31',    # Optional, defaults to today
+    api_key='your_tiingo_key' # From globals.py
 )
 ```
 
