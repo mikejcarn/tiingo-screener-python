@@ -450,13 +450,14 @@ python app.py --vis --scan-file scan_results_20240101.csv
 
 ### Visualization Examples:
 
-- `--vis --ticker BTCUSD --ind-conf 0`
+`--vis --ticker BTCUSD --ind-conf 0`:
+
 ![--vis --ticker BTCUSD --ind-conf 0](docs/images/single_1.png)
-- `--vis --ticker BTCUSD --ind-conf 2`
+`--vis --ticker BTCUSD --ind-conf 2`:
 ![--vis --ticker BTCUSD --ind-conf 2](docs/images/single_2.png)
-- `--vis --ticker AAPL,BTCUSD,SOFI --timeframe w,d,4h --ind-conf 2,1,3`
+`--vis --ticker AAPL,BTCUSD,SOFI --timeframe w,d,4h --ind-conf 2,1,3`:
 ![--vis --ticker AAPL,BTCUSD,SOFI --timeframe w,d,4h --ind-conf 2,1,3](docs/images/3charts.png)
-- `--vis --ticker AAPL --timeframe w,d,4h,h --ind-conf 1`
+`--vis --ticker AAPL --timeframe w,d,4h,h --ind-conf 1`:
 ![--vis --ticker AAPL --timeframe w,d,4h,h --ind-conf 1](docs/images/4charts.png)
 
 ### LIST BUFFER & STORAGE DATA
