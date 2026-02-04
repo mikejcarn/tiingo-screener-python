@@ -70,7 +70,7 @@ Stock screener application that fetches ticker data from the Tiingo API, calcula
 
 ## 📥 Ticker Data Fetching System
 
-### 🎯 Fetch Overview
+### Fetch Overview
 
 The fetching system downloads historical price data from Tiingo API for both stocks and cryptocurrencies, supporting multiple timeframes from yearly down to minute-level data 
 It includes robust error handling with exponential backoff retry logic for network stability.# Advanced Indicator Configurations
@@ -86,7 +86,7 @@ It includes robust error handling with exponential backoff retry logic for netwo
 | 5-Minute | `5min` | `5minutes`,`5m` | ~4 months | Intraday |
 | 1-Minute | `1min` | `minute`,`1m`,`m` | ~4 months | Intraday |
 
-### 🔧 Core Functions
+### Core Functions
 
 `fetch_ticker()` - **Single Ticker Fetch**
 
@@ -117,7 +117,13 @@ fetch_tickers(
 )
 ```
 
-### 📁 File Output Structure
+### File Naming Convention:
+```bash
+{TICKER}_{TIMEFRAME}_{DATE_STAMP}.csv
+```
+- `DATE_STAMP`: Format `DDMMYY` (e.g., `010124` for Jan 1, 2024)
+
+### File Output Structure
 ```bash
 ./data/tickers/
 ├── AAPL_daily_010124.csv
@@ -127,12 +133,6 @@ fetch_tickers(
 └── ...
 ```
 
-### File Naming Convention:
-```bash
-{TICKER}_{TIMEFRAME}_{DATE_STAMP}.csv
-```
-- `DATE_STAMP`: Format `DDMMYY` (e.g., `010124` for Jan 1, 2024)
-
 ### CSV File Contents:
 ```bash
 date,Open,High,Low,Close,Volume
@@ -140,10 +140,9 @@ date,Open,High,Low,Close,Volume
 2024-01-02 00:00:00,151.25,153.00,150.50,152.75,1200000
 ```
 
-## 🔧 Indicators
+## ⚙️ Indicators
 
-## 🔧 Indicator Configuration Files
-
+## Indicator Configuration Files
 Located in `./src/indicators/ind_configs/`:
 - ind_conf_0.py - Testing
 - ind_conf_1.py - aVWAPavg
@@ -179,7 +178,7 @@ Located in `./src/scanner/scan_configs/`:
 - Suffix indicates criteria type: Pinch, Support, Oversold, etc.
 - Examples: `d_OBOversold` `d_aVWAPChannelPinch` `d_DivBullish_h_DivBullish`
 
-### ⚙️ Scan Configurations Format and Structure
+### Scan Configurations Format and Structure
 
 The scan configs use a configuration system with this **general structure**:
 
@@ -271,7 +270,7 @@ Examples of customizable scan configs include:
 }
 ```
 
-### 📋 Scan Lists
+### Scan Lists
 
 - Custom scan lists are called to run a sequence of scans on indicators data in buffer
 - Scan lists are available in the file `./src/scanner/scan_lists.py`:
