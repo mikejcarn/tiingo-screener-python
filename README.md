@@ -86,7 +86,7 @@ It includes robust error handling with exponential backoff retry logic for netwo
 | 5-Minute | `5min` | `5minutes`,`5m` | ~4 months | Intraday |
 | 1-Minute | `1min` | `minute`,`1m`,`m` | ~4 months | Intraday |
 
-## 🔧 Core Functions
+### 🔧 Core Functions
 
 `fetch_ticker()` - **Single Ticker Fetch**
 
