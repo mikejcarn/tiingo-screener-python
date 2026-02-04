@@ -9,6 +9,18 @@ from pathlib import Path
 from src.core.globals import TICKERS_DIR, TICKERS_LIST, DATE_STAMP
 
 
+'''
+- Tickers Functions:
+    - fetch_ticker()
+        - create_df()
+        - robust_api_call()
+        - robust_tiingo_call()
+    - fetch_tickers()
+        - process_ticker()
+        - load_tickers()
+'''
+
+
 # ===========================================================
 # ===========================================================
 
@@ -31,32 +43,44 @@ def fetch_ticker(timeframe='daily', ticker='BTCUSD', start_date=None, end_date=N
 
     # Define time period configurations
     timeframe_config = {
-        'daily':     {   'frequency':  'daily', 'default_timedelta': None},
-        'day':       {   'frequency':  'daily', 'default_timedelta': None},
-        '1day':      {   'frequency':  'daily', 'default_timedelta': None},
-        'd':         {   'frequency':  'daily', 'default_timedelta': None},
-        'weekly':    {   'frequency': 'weekly', 'default_timedelta': None},
+
         '1week':     {   'frequency': 'weekly', 'default_timedelta': None},
+        'weekly':    {   'frequency': 'weekly', 'default_timedelta': None},
         'week':      {   'frequency': 'weekly', 'default_timedelta': None},
         'w':         {   'frequency': 'weekly', 'default_timedelta': None},
+
+        '1day':      {   'frequency':  'daily', 'default_timedelta': None},
+        'daily':     {   'frequency':  'daily', 'default_timedelta': None},
+        'day':       {   'frequency':  'daily', 'default_timedelta': None},
+        'd':         {   'frequency':  'daily', 'default_timedelta': None},
+
         '4hour':     {'resampleFreq':  '4hour', 'default_timedelta': timedelta(hours=15000)},
         '4h':        {'resampleFreq':  '4hour', 'default_timedelta': timedelta(hours=15000)},
+
+        '1hour':     {'resampleFreq':  '1hour', 'default_timedelta': timedelta(hours=5000)},
         'hourly':    {'resampleFreq':  '1hour', 'default_timedelta': timedelta(hours=5000)},
         'hour':      {'resampleFreq':  '1hour', 'default_timedelta': timedelta(hours=5000)},
-        '1hour':     {'resampleFreq':  '1hour', 'default_timedelta': timedelta(hours=5000)},
         '1h':        {'resampleFreq':  '1hour', 'default_timedelta': timedelta(hours=5000)},
         'h':         {'resampleFreq':  '1hour', 'default_timedelta': timedelta(hours=5000)},
-        'minute':    {'resampleFreq':   '1min', 'default_timedelta': timedelta(hours=100)},
+
         '1min':      {'resampleFreq':   '1min', 'default_timedelta': timedelta(hours=100)},
+        'minute':    {'resampleFreq':   '1min', 'default_timedelta': timedelta(hours=100)},
         'min':       {'resampleFreq':   '1min', 'default_timedelta': timedelta(hours=100)},
         '1m':        {'resampleFreq':   '1min', 'default_timedelta': timedelta(hours=100)},
         'm':         {'resampleFreq':   '1min', 'default_timedelta': timedelta(hours=100)},
-        '5minutes':  {'resampleFreq':   '5min', 'default_timedelta': timedelta(hours=100)},
+
         '5min':      {'resampleFreq':   '5min', 'default_timedelta': timedelta(hours=100)},
+        '5minutes':  {'resampleFreq':   '5min', 'default_timedelta': timedelta(hours=100)},
         '5m':        {'resampleFreq':   '5min', 'default_timedelta': timedelta(hours=100)},
-        '15minutes': {'resampleFreq':  '15min', 'default_timedelta': timedelta(hours=3000)},
+
         '15min':     {'resampleFreq':  '15min', 'default_timedelta': timedelta(hours=3000)},
+        '15minutes': {'resampleFreq':  '15min', 'default_timedelta': timedelta(hours=3000)},
         '15m':       {'resampleFreq':  '15min', 'default_timedelta': timedelta(hours=3000)},
+
+        '30min':     {'resampleFreq':  '30min', 'default_timedelta': timedelta(hours=3000)},
+        '30minutes': {'resampleFreq':  '30min', 'default_timedelta': timedelta(hours=3000)},
+        '30m':       {'resampleFreq':  '30min', 'default_timedelta': timedelta(hours=3000)},
+
     }
 
     # Get the configuration for the specified time period
@@ -278,4 +302,3 @@ def load_tickers(csv_path):
             continue
 
     return df
-

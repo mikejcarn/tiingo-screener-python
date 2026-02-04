@@ -27,11 +27,11 @@ Stock screener application that fetches ticker data from the Tiingo API, calcula
 
 ### Workflow
 1. **API Fetch**: Tiingo API → `./data/tickers/`
-2. **Indicator Calculation**: Tickers buffer → `./data/indicators/`
+2. **Indicator Calculations**: Tickers buffer → `./data/indicators/`
 3. **Scan Execution**: Indicators buffer → `./data/scans/`
 4. **Storage**: Version subfolders can be saved/loaded/deleted in buffers 
 
-### Data Format
+### Data Formats
 - Stock data fetched as JSON from Tiingo API (www.tiingo.com)
 - JSON data converted to pandas Dataframes for manipulation
 - Data is stored locally as CSV files in buffer and storage folders
@@ -50,7 +50,7 @@ Stock screener application that fetches ticker data from the Tiingo API, calcula
 
 ### Visualization Controls
 
-**Global Controls:**
+**General Chart Controls:**
 - `Mouse Drag` – Pan charts
 - `Scroll Wheel` – Zoom in/out
 - `Spacebar` – Toggle minimize all panels
@@ -68,118 +68,81 @@ Stock screener application that fetches ticker data from the Tiingo API, calcula
 - If a scan_results file is loaded, `-` will cycle results in scan file
 - Otherwise, cycle buttons will cycle indicator buffer files
 
-## 🖥️ CLI Usage Guide
+## 📥 Ticker Data Fetching System
 
-- Values in `[brackets]` represent application CLI inputs.
-- Shared `--timeframe` parameter [TF]: Use the same parameter for fetch, indicators, and visualization
-- Dynamic timeframes: Specify exactly which timeframes to process for each command
+### 🎯 Fetch Overview
 
-### MAIN FUNCTIONS
-| Command | Description | Example |
-|---------|-------------|---------|
-| `--full-run` | Complete process: fetch > indicators > scan | `--full-run` |
-| `--fetch` | Download tickers from API to buffer | `--fetch daily` |
-| `--ind` | Calculate indicators from tickers buffer | `--ind --ind-conf 1` |
-| `--scan` | Run scanner on indicators buffer | `--scan --scan-list 1` |
-| `--vis` | Launch visualization | `--vis --ticker MSFT --timeframe d --ind-conf 1` `--vis --ticker MSFT --timeframe w,d,4h,h --ind-conf 1,2,3,4` `--vis --ticker MSFT,BTCUSD,AAPL,SOFI --timeframe w,d,4h,h --ind-conf 1` |
+The fetching system downloads historical price data from Tiingo API for both stocks and cryptocurrencies, supporting multiple timeframes from yearly down to minute-level data 
+It includes robust error handling with exponential backoff retry logic for network stability.# Advanced Indicator Configurations
 
-**`--fetch` Options:**
-- `--timeframe [TF]` - Timeframes(s) to fetch (comma-separated e.g., "daily,weekly")
-- Default: `weekly,daily,4hour,1hour`
+| Timeframe | Primary Alias | Other Aliases | Fetched History | Data Type |
+|--------|---------|---------|---------|---------|
+| Weekly | `daily` | `day`,`1day`,`d` | 20+ years | End-of-day |
+| Daily | `weekly` | `week`,`1week`,`w` | 20+ years | Weekly OHLC |
+| 4-Hour | `4hour` | `4h` | ~1.7 years | Intraday |
+| 1-Hour | `1hour` | `1hour`,`hour`,`1h`,`h` | ~7 months | Intraday |
+| 30-Minute | `30min` | `30minutes`,`30m` | ~4 months | Intraday |
+| 15-Minute | `15min` | `15minutes`,`15m` | ~4 months | Intraday |
+| 5-Minute | `5min` | `5minutes`,`5m` | ~4 months | Intraday |
+| 1-Minute | `1min` | `minute`,`1m`,`m` | ~4 months | Intraday |
 
-**`--ind` Options:**
-- `--ind-conf [VERSION]` - Indicator config (`1`, `2`, `3`, `4`)
-- `--timeframe [TF]` - Timeframe(s) to process (comma-separated, e.g., "daily,weekly,4hour")
-- Default: All timeframes in tickers buffer
+## 🔧 Core Functions
 
-**`--scan` Options:**
-- `--scan-list [VERSION]` - Specify scan list (`1`, `2`, `3`, `4`)
+`fetch_ticker()` - **Single Ticker Fetch**
 
-**`--vis` Options:**
-- `--ticker [SYMBOL]` - Ticker symbol(s) (`BTCUSD`, `BTCUSD,SOFI,AAPL,MSFT`)
-- `--timeframe [TF]` - Timeframe(s) (`5min`, `w,d,4h,h`)
-- `--ind-conf [VERSION]` - Indicator config(s) (`1`, `1,2,3,4`)
-- `--scan-file [FILE]` - Scan results file (`scan_results_*.csv`)
+Fetches historical data for one ticker across specified timeframe:
 
-## EXAMPLES
+```bash
+from src.fetcher.tickers import fetch_ticker
 
-### Fetch Data:
-```
-# Fetch default timeframes (weekly, daily, 4hour, 1hour)
-python app.py --fetch
-
-# Fetch specific timeframes
-python app.py --fetch --timeframe daily,weekly
-
-# Fetch single timeframe
-python app.py --fetch --timeframe daily
+# Fetch daily data for Bitcoin
+df = fetch_ticker(
+    timeframe='daily',
+    ticker='BTCUSD',
+    start_date='2023-01-01',  # Optional, defaults to max available
+    end_date='2023-12-31',    # Optional, defaults to today
+    api_key='your_tiingo_key' # From globals.py
+)
 ```
 
-### Calculate Indicators:
-```
-# Process all timeframes with config 2
-python app.py --ind --ind-conf 2
+`fetch_tickers()` - **Batch Fetch**
 
-# Process specific timeframes with config 3
-python app.py --ind --ind-conf 3 --timeframe daily,weekly
+Processes multiple tickers across multiple timeframes:
 
-# Process single timeframe with config 1
-python app.py --ind --ind-conf 1 --timeframe daily
-```
-
-### Visualization:
-```
-# Single chart with default timeframe
-python app.py --vis --ticker MSFT --ind-conf 2
-
-# Multiple tickers with same timeframe
-python app.py --vis --ticker MSFT,AAPL,GOOGL --timeframe d --ind-conf 2,2,2
-
-# Multiple timeframes with multiple configs
-python app.py --vis --ticker MSFT --timeframe d,w,4h --ind-conf 2,3,4
-
-# Scan file visualization
-python app.py --vis --scan-file scan_results_20240101.csv
+```bash
+# Fetch default timeframes for all tickers in TICKERS_LIST
+fetch_tickers(
+    timeframes=['weekly', 'daily', '4hour', '1hour'],  # Default
+    api_key='your_tiingo_key'
+)
 ```
 
-![--vis --ticker BTCUSD --ind-conf 0](docs/images/single_1.png)
-*--vis --ticker BTCUSD --ind-conf 0*
-![--vis --ticker BTCUSD --ind-conf 2](docs/images/single_2.png)
-*--vis --ticker BTCUSD --ind-conf 2*
-![--vis --ticker AAPL,BTCUSD,SOFI --timeframe w,d,4h --ind-conf 2,1,3](docs/images/3charts.png)
-*--vis --ticker AAPL,BTCUSD,SOFI --timeframe w,d,4h --ind-conf 2,1,3*
-![--vis --ticker AAPL --timeframe w,d,4h,h --ind-conf 1](docs/images/4charts.png)
-*--vis --ticker AAPL --timeframe w,d,4h,h --ind-conf 1*
+### 📁 File Output Structure
+```bash
+./data/tickers/
+├── AAPL_daily_010124.csv
+├── AAPL_4hour_010124.csv
+├── BTCUSD_daily_010124.csv
+├── BTCUSD_1hour_010124.csv
+└── ...
+```
 
-### LIST BUFFER & STORAGE DATA
-| Command | Description |
-|---------|-------------|
-| `--list-tickers` | List ticker files in buffer |
-| `--list-ind` | List indicator files in buffer |
-| `--list-scans` | List scan files in buffer |
-| `--list-tickers-ver` | List saved ticker versions |
-| `--list-ind-ver` | List saved indicator versions |
-| `--list-scans-ver` | List saved scan versions |
+### File Naming Convention:
+```bash
+{TICKER}_{TIMEFRAME}_{DATE_STAMP}.csv
+```
+- `DATE_STAMP`: Format `DDMMYY` (e.g., `010124` for Jan 1, 2024)
 
-### STORAGE DATA MANAGEMENT
-| Category | Save | Load | Delete Single | Delete All |
-|----------|------|------|---------------|------------|
-| **Tickers** | `--save-tickers [NAME]` | `--load-tickers [NAME]` | `--delete-tickers [NAME]` | `--delete-tickers-all` |
-| **Indicators** | `--save-ind [NAME]` | `--load-ind [NAME]` | `--delete-ind [NAME]` | `--delete-ind-all` |
-| **Scans** | `--save-scan [NAME]` | `--load-scan [NAME]` | `--delete-scan [NAME]` | `--delete-scan-all` |
+### CSV File Contents:
+```bash
+date,Open,High,Low,Close,Volume
+2024-01-01 00:00:00,150.00,152.50,149.75,151.25,1000000
+2024-01-02 00:00:00,151.25,153.00,150.50,152.75,1200000
+```
 
-### BUFFER MANAGEMENT
-| Command | Description |
-|---------|-------------|
-| `--clear-all` | Reset all buffers (preserves versions) |
-| `--clear-tickers` | Clear tickers buffer |
-| `--clear-ind` | Clear indicators buffer |
-| `--clear-scans` | Clear scans buffer |
-| `--clear-screenshots` | Clear screenshots buffer |
+## 🔧 Indicators
 
-## Advanced Indicator Configurations
-
-### 🔧 Indicator Configuration Files
+## 🔧 Indicator Configuration Files
 
 Located in `./src/indicators/ind_configs/`:
 - ind_conf_0.py - Testing
@@ -198,7 +161,7 @@ Customizing Configurations
 - Adjust parameters for your analysis
 - Run with: `python app.py --ind --ind-conf X`
 
-## Advanced Scanner Configurations
+## 🎯 Scanner & Advanced Configurations
 
 ### 🔧 Scan Configuration Files
 Located in `./src/scanner/scan_configs/`:
@@ -208,7 +171,7 @@ Located in `./src/scanner/scan_configs/`:
 - scan_conf_daily.py
 - scan_conf_weekly.py
 
-### 🎯 Scan Naming Convention
+### Scan Naming Convention
 **Scans follow a consistent naming pattern:**
 - d_ = Daily timeframe only
 - d_ + _h_ = Daily + 1-hour combination
@@ -342,6 +305,111 @@ scan_lists = {
     ],
 }
 ```
+
+## 🖥️ CLI Usage Guide
+
+- Values in `[brackets]` represent application CLI inputs.
+- Shared `--timeframe` parameter [TF]: Use the same parameter for fetch, indicators, and visualization
+- Dynamic timeframes: Specify exactly which timeframes to process for each command
+
+### MAIN FUNCTIONS
+| Command | Description | Example |
+|---------|-------------|---------|
+| `--full-run` | Complete process: fetch > indicators > scan | `--full-run` |
+| `--fetch` | Download tickers from API to buffer | `--fetch daily` |
+| `--ind` | Calculate indicators from tickers buffer | `--ind --ind-conf 1` |
+| `--scan` | Run scanner on indicators buffer | `--scan --scan-list 1` |
+| `--vis` | Launch visualization | `--vis --ticker MSFT --timeframe d --ind-conf 1` `--vis --ticker MSFT --timeframe w,d,4h,h --ind-conf 1,2,3,4` `--vis --ticker MSFT,BTCUSD,AAPL,SOFI --timeframe w,d,4h,h --ind-conf 1` |
+
+**`--fetch` Options:**
+- `--timeframe [TF]` - Timeframes(s) to fetch (comma-separated e.g., "daily,weekly")
+- Default: `weekly,daily,4hour,1hour`
+
+**`--ind` Options:**
+- `--ind-conf [VERSION]` - Indicator config (`1`, `2`, `3`, `4`)
+- `--timeframe [TF]` - Timeframe(s) to process (comma-separated, e.g., "daily,weekly,4hour")
+- Default: All timeframes in tickers buffer
+
+**`--scan` Options:**
+- `--scan-list [VERSION]` - Specify scan list (`1`, `2`, `3`, `4`)
+
+**`--vis` Options:**
+- `--ticker [SYMBOL]` - Ticker symbol(s) (`BTCUSD`, `BTCUSD,SOFI,AAPL,MSFT`)
+- `--timeframe [TF]` - Timeframe(s) (`5min`, `w,d,4h,h`)
+- `--ind-conf [VERSION]` - Indicator config(s) (`1`, `1,2,3,4`)
+- `--scan-file [FILE]` - Scan results file (`scan_results_*.csv`)
+
+## CLI EXAMPLES
+
+### Fetch Data:
+Default `--timeframe`: `weekly,daily,4hour,1hour`
+```
+python app.py --fetch
+
+python app.py --fetch --timeframe daily,weekly
+
+python app.py --fetch --timeframe 1hour
+```
+
+### Calculate Indicators:
+Calculate indicators by `--ind-conf` for multiple timeframes using `--timeframes`
+```
+python app.py --ind --ind-conf 2
+
+python app.py --ind --ind-conf 3 --timeframe daily,weekly
+
+python app.py --ind --ind-conf 1 --timeframe daily
+```
+
+### Visualization:
+Visualize multi-charts with any valid matrix of `--ticker` x `timeframe` x `--ind-conf` values
+Can also visualize charts for a scan file from `./data/scans/` using `--scan-file`
+```
+python app.py --vis --ticker MSFT --ind-conf 1
+
+python app.py --vis --ticker MSFT,AAPL,GOOGL --timeframe d --ind-conf 2,2,2
+
+python app.py --vis --ticker MSFT --timeframe d,w,4h --ind-conf 1,2,3
+
+python app.py --vis --ticker MSFT,SOFI,META,TSLA --timeframe d,w,4h,1h --ind-conf 1,2,3,4
+
+python app.py --vis --scan-file scan_results_20240101.csv
+```
+
+![--vis --ticker BTCUSD --ind-conf 0](docs/images/single_1.png)
+*--vis --ticker BTCUSD --ind-conf 0*
+![--vis --ticker BTCUSD --ind-conf 2](docs/images/single_2.png)
+*--vis --ticker BTCUSD --ind-conf 2*
+![--vis --ticker AAPL,BTCUSD,SOFI --timeframe w,d,4h --ind-conf 2,1,3](docs/images/3charts.png)
+*--vis --ticker AAPL,BTCUSD,SOFI --timeframe w,d,4h --ind-conf 2,1,3*
+![--vis --ticker AAPL --timeframe w,d,4h,h --ind-conf 1](docs/images/4charts.png)
+*--vis --ticker AAPL --timeframe w,d,4h,h --ind-conf 1*
+
+### LIST BUFFER & STORAGE DATA
+| Command | Description |
+|---------|-------------|
+| `--list-tickers` | List ticker files in buffer |
+| `--list-ind` | List indicator files in buffer |
+| `--list-scans` | List scan files in buffer |
+| `--list-tickers-ver` | List saved ticker versions |
+| `--list-ind-ver` | List saved indicator versions |
+| `--list-scans-ver` | List saved scan versions |
+
+### STORAGE DATA MANAGEMENT
+| Category | Save | Load | Delete Single | Delete All |
+|----------|------|------|---------------|------------|
+| **Tickers** | `--save-tickers [NAME]` | `--load-tickers [NAME]` | `--delete-tickers [NAME]` | `--delete-tickers-all` |
+| **Indicators** | `--save-ind [NAME]` | `--load-ind [NAME]` | `--delete-ind [NAME]` | `--delete-ind-all` |
+| **Scans** | `--save-scan [NAME]` | `--load-scan [NAME]` | `--delete-scan [NAME]` | `--delete-scan-all` |
+
+### BUFFER MANAGEMENT
+| Command | Description |
+|---------|-------------|
+| `--clear-all` | Reset all buffers (preserves versions) |
+| `--clear-tickers` | Clear tickers buffer |
+| `--clear-ind` | Clear indicators buffer |
+| `--clear-scans` | Clear scans buffer |
+| `--clear-screenshots` | Clear screenshots buffer |
 
 ## 🚀 Installation
 

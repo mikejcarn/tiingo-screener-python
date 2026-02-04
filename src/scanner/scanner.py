@@ -12,9 +12,9 @@ def run_scanner(criteria='banker_RSI', criteria_params=None, logic='AND', api_ke
 
     Args:
         criteria: String, List, or Dict of criteria
+        criteria_params: Dict of parameter dicts for criteria functions
         logic: 'AND'/'OR' for dict mode only
         api_key: Optional Tiingo API key
-        criteria_params: Dict of parameter dicts for criteria functions
         scan_name: Optional custom name suffix for output file
     """
     print('\n=== SCANNER ===\n')
