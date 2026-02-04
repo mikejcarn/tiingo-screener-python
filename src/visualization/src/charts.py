@@ -7,7 +7,7 @@ from datetime import datetime
 from lightweight_charts import Chart
 from src.visualization.src.color_palette import get_color_palette
 from src.visualization.src.indicator_visualizations import add_visualizations
-from src.core.globals import INDICATORS_DIR
+from src.core.globals import INDICATORS_DIR, SCREENSHOTS_DIR
 
 def prepare_dataframe(df, show_volume, padding_ratio=0.25):
     df = df.copy()
@@ -350,7 +350,7 @@ def _take_screenshot(charts, key, screenshot_dir=None):
         return
     
     if screenshot_dir is None:
-        screenshot_dir = Path.cwd() / 'data' / 'screenshots'
+        screenshot_dir = SCREENSHOTS_DIR
     screenshot_dir.mkdir(parents=True, exist_ok=True)
     
     ticker = chart.topbar['ticker'].value

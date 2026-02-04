@@ -32,7 +32,6 @@ def init_cli(vis, fetch, ind, scan, full_run):
     parser.add_argument('--clear-tickers', action='store_true', help='Clear tickers data')
     parser.add_argument('--clear-ind', action='store_true', help='Clear only indicator buffer files')
     parser.add_argument('--clear-scans', action='store_true', help='Clear only scan buffer files')
-    parser.add_argument('--clear-screenshots', action='store_true', help='Clear screenshots')
 
     # Version control - Indicators
     parser.add_argument('--save-ind', type=str, metavar='NAME', help='Save current indicators as version')
@@ -50,7 +49,7 @@ def init_cli(vis, fetch, ind, scan, full_run):
     parser.add_argument('--delete-scan', type=str, metavar='NAME', help='Delete specific scan version')
     parser.add_argument('--delete-scan-all', action='store_true', help='Delete ALL scan versions')
 
-    # Version control - Tickers (new)
+    # Version control - Tickers
     parser.add_argument('--save-tickers', type=str, metavar='NAME', help='Save current tickers as version')
     parser.add_argument('--load-tickers', type=str, metavar='NAME', help='Load specific ticker version')
     parser.add_argument('--list-tickers', action='store_true', help='List available ticker files in buffer')
@@ -59,6 +58,10 @@ def init_cli(vis, fetch, ind, scan, full_run):
     parser.add_argument('--delete-tickers-all', action='store_true', help='Delete ALL ticker versions')
     parser.add_argument('--ticker-timeframe', type=str, default=None, 
                        help='Filter tickers by timeframe (e.g., daily, weekly)')
+
+    # Version control - Screenshots
+    parser.add_argument('--list-screenshots', action='store_true', help='List screenshots')
+    parser.add_argument('--clear-screenshots', action='store_true', help='Clear screenshots')
 
     args = parser.parse_args()
 
@@ -90,15 +93,13 @@ def init_cli(vis, fetch, ind, scan, full_run):
     elif args.full_run: 
         full_run(fetch, ind, scan)
    
-    # Clear commands
+    # Clear buffer commands
     elif args.clear_tickers: 
         dm.clear_buffer(dm.tickers_dir)
     elif args.clear_ind: 
         dm.clear_buffer(dm.indicators_dir)
     elif args.clear_scans: 
         dm.clear_buffer(dm.scanner_dir, "scan_results_*.csv")
-    elif args.clear_screenshots: 
-        dm.clear_buffer(dm.screenshots_dir)
     elif args.clear_all: 
         dm.clear_all_buffers()
    
@@ -130,7 +131,7 @@ def init_cli(vis, fetch, ind, scan, full_run):
     elif args.delete_scan_all: 
         dm.delete_all_versions(dm.scanner_dir)
    
-    # Ticker commands (new)
+    # Ticker commands
     elif args.list_tickers: 
         dm.list_tickers(timeframe=args.ticker_timeframe)
     elif args.list_tickers_ver: 
@@ -143,6 +144,12 @@ def init_cli(vis, fetch, ind, scan, full_run):
         dm.delete_version(dm.tickers_dir, args.delete_tickers)
     elif args.delete_tickers_all: 
         dm.delete_all_versions(dm.tickers_dir)
+
+    # Screenshot commands
+    elif args.clear_screenshots: 
+        dm.clear_buffer(dm.screenshots_dir)
+    elif args.list_screenshots: 
+        dm.list_screenshots()
    
     else: 
         show_help()

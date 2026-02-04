@@ -20,9 +20,8 @@ Stock screener application that fetches ticker data from the Tiingo API, calcula
 │   └── tickers_*_*/
 ├── indicators/           # Calculated indicators buffer
 │   └── ind_conf_*/
-├── scans/                # Scan results buffer
-│   └── scan_list_*/
-└── screenshots/          # Visualization screenshots
+└── scans/                # Scan results buffer
+    └── scan_list_*/
 ```
 
 ### Workflow 
@@ -69,7 +68,12 @@ Stock screener application that fetches ticker data from the Tiingo API, calcula
 | Cycle Tickers | `-` | `=` | `[` | `]` |
 | Screenshot | `_` | `+` | `{` | `}` |
 - If a scan_results file is loaded, `-` will cycle results in scan file
-- Otherwise, cycle buttons will cycle indicator buffer files
+    - Otherwise, cycle buttons will cycle indicator buffer files
+- Screenshots: 
+    - screenshots saved to `./docs/screenshots/`
+    - screenshots taken of entire application window
+    - screenshots saved as PNG format
+    - naming convention: `{TICKER}_{TIMEFRAME}-{DATE_STAMP}-{%H%M%S}`
 
 ## 📥 Ticker Data Fetching System
 
@@ -475,6 +479,7 @@ python app.py --vis --scan-file scan_results_20240101.csv
 | `--list-tickers-ver` | List saved ticker versions |
 | `--list-ind-ver` | List saved indicator versions |
 | `--list-scans-ver` | List saved scan versions |
+| `--list-screenshots` | List saved screenshots |
 
 ### STORAGE DATA MANAGEMENT
 | Category | Save | Load | Delete Single | Delete All |
