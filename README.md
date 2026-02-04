@@ -1,6 +1,6 @@
 # Tiingo-Screener-Python
 
-Stock screener application that fetches ticker data from the Tiingo API, calculates technical indicators, runs scans, and provides advanced visualization capabilities.
+Stock screener application that fetches ticker data from the Tiingo API, calculates technical indicators, runs scans, and provides advanced visualization capabilities
 
 ## ✨ Application Features
 - **Automated Data Pipeline**: Tickers → Indicators → Scans → Visualization
@@ -25,7 +25,8 @@ Stock screener application that fetches ticker data from the Tiingo API, calcula
 └── screenshots/          # Visualization screenshots
 ```
 
-### Workflow
+### Workflow 
+`API --> Tickers --> Indicators --> Scans`
 1. **API Fetch**: Tiingo API → `./data/tickers/`
 2. **Indicator Calculations**: Tickers buffer → `./data/indicators/`
 3. **Scan Execution**: Indicators buffer → `./data/scans/`
@@ -35,7 +36,9 @@ Stock screener application that fetches ticker data from the Tiingo API, calcula
 - Stock data fetched as JSON from Tiingo API (www.tiingo.com)
 - JSON data converted to pandas Dataframes for manipulation
 - Data is stored locally as CSV files in buffer and storage folders
-- Data Formats: Tickers/Indicators: `[TICKER]_[TF]_[DATE]`, Scans: `scan_results_[DATE]_[TYPE]`
+- Data Formats: 
+    - Tickers/Indicators: `[TICKER]_[TF]_[DATE]` 
+    - Scans: `scan_results_[DATE]_[TYPE]`
 
 ## 📊 Visualization Application
 
