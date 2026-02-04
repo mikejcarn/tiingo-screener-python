@@ -450,7 +450,7 @@ python app.py --vis --scan-file scan_results_20240101.csv
 
 ### Visualization Examples:
 
-`--vis --ticker BTCUSD --ind-conf 0`:
+`--vis --ticker BTCUSD --ind-conf 0`
 
 ![--vis --ticker BTCUSD --ind-conf 0](docs/images/single_1.png)
 
