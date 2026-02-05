@@ -73,7 +73,7 @@ Stock screener application that fetches ticker data from the Tiingo API, calcula
     - screenshots saved to `./docs/screenshots/`
     - screenshots taken of entire application window
     - screenshots saved as PNG format
-    - naming convention: `{TICKER}_{TIMEFRAME}-{DATE_STAMP}-{%H%M%S}`
+    - naming convention: `{TICKER}_{TIMEFRAME}-{DATE_STAMP}-{HHMMSS}`
 
 ## 📥 Ticker Data Fetching System
 
@@ -147,8 +147,10 @@ date,Open,High,Low,Close,Volume
 ```
 
 ## 📈 Indicators
-- Calculates technical indicators from raw price data, supporting multiple configuration profiles for different analysis styles 
-- Process ticker data through customizable pipelines to generate signals for scanning and visualization
+- Calculate technical indicators from raw price data 
+- Supports multiple configuration profiles for different analysis styles 
+- Process ticker data through customizable pipelines 
+- Generate signals for scanning and visualization
 
 ### Indicator Configuration Files
 `./src/indicators/ind_configs/`:
@@ -217,10 +219,10 @@ params = {
 - Adjust parameters for analysis
 - Run with: `python app.py --ind --ind-conf X`
 
-### File Naming Convention:
+### Indicator File Naming Convention:
 
 ```bash
-./data/indicators/ind_conf_{CONFIG}_{DATE_STAMP}/{TICKER}_{TIMEFRAME}_{DATE_STAMP}.csv
+{TICKER}_{TIMEFRAME}_{DATE_STAMP}.csv
 ```
 
 ### Output Structure
