@@ -3,7 +3,7 @@
 indicators = {  # List of available indicator configurations
 
         'weekly': [
-            'aVWAP', 
+            # 'aVWAP', 
             # 'candle_colors', 
             # 'StDev', 
             # 'SMA', 
@@ -22,10 +22,10 @@ indicators = {  # List of available indicator configurations
         ],
 
         'daily': [
-            'aVWAP', 
+            # 'aVWAP', 
             # 'candle_colors', 
             # 'StDev', 
-            # 'SMA', 
+            'SMA', 
             # 'gaps', 
             # 'FVG', 
             # 'BoS_CHoCH', 
@@ -41,7 +41,7 @@ indicators = {  # List of available indicator configurations
         ],
 
         '4hour': [
-            'aVWAP', 
+            # 'aVWAP', 
             # 'candle_colors', 
             # 'StDev', 
             # 'SMA', 
@@ -60,7 +60,7 @@ indicators = {  # List of available indicator configurations
         ],
 
         '1hour': [
-            'aVWAP', 
+            # 'aVWAP', 
             # 'candle_colors', 
             # 'StDev', 
             # 'SMA', 
@@ -79,7 +79,7 @@ indicators = {  # List of available indicator configurations
         ],
 
         '5min': [
-            'aVWAP', 
+            # 'aVWAP', 
             # 'candle_colors', 
             # 'StDev', 
             # 'SMA', 
@@ -175,7 +175,7 @@ params = {
 
         'daily': {
             'candle_colors': {
-                'indicator_color': 'StDev',
+                'indicator_color': 'QQEMOD',
                 'custom_params': {
                     'StDev': {
                         'std_lookback': 20, 'avg_lookback': 20,
@@ -229,7 +229,7 @@ params = {
                 'qqe_factor': 3.0, 'qqe_factor2': 1.61, 'threshold': 3,
                 'bb_length': 50, 'bb_multi': 0.35
             },
-            'SMA': {'periods': [200, 100, 50, 20]},
+            'SMA': {'periods': [50, 20, 10]},
             'WAE': {
                 'fast_period': 20, 'slow_period': 40, 
                 'atr_period': 20, 'explosion_multiplier': 2.0

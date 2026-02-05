@@ -2,6 +2,20 @@ scan_conf = {
 
     # Daily ===============================================
 
+    'd_SMA502010': {
+        'criteria': {
+            'daily': ['SMA'],
+        },
+        'params': {
+            'SMA': {
+                'daily': {'sma_periods': [50, 10], 
+                          'mode': 'within', 
+                          'distance_pct': 10.0,
+                          'outside_range': True},
+            }
+        }
+    },
+
     'd_OBaVWAPPinch': {
         'criteria': {
             'daily': ['OB_aVWAP', 'OB_aVWAP'],

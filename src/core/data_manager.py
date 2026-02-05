@@ -58,7 +58,7 @@ class DataManager:
             # For other directories, use the provided pattern
             [f.unlink() for f in buffer_dir.glob(pattern) if f.is_file()]
         
-        print("\n  🧹 Cleared buffer files\n")
+        print(f"\n  🧹 Cleared buffer files\n")
 
     # Specialized Operations -----------------------------
 
@@ -170,7 +170,7 @@ class DataManager:
         total_scans = len(all_scans)
         scans_to_show = all_scans[:limit]
         
-        print(f"\n  Scans in buffer (Total: {total_scans}, Showing first {limit}):\n")
+        print(f"\n  SCANS in buffer (Total: {total_scans}, Showing first {limit}):\n")
         for i, scan in enumerate(scans_to_show, 1):
             print(f"  {i}. {scan.name}")
         if total_scans > limit:
@@ -183,7 +183,7 @@ class DataManager:
         total_indicators = len(all_indicators)
         indicators_to_show = all_indicators[:limit]
         
-        print(f"\n  Indicators in buffer (Total: {total_indicators}, Showing first {limit}):")
+        print(f"\n  INDICATORS in buffer (Total: {total_indicators}, Showing first {limit}):")
         for i, indicator in enumerate(indicators_to_show, 1):
             print(f"  {i}. {indicator.name}")
         if total_indicators > limit:
@@ -203,7 +203,7 @@ class DataManager:
         tickers_to_show = all_tickers[:limit]
         
         timeframe_label = f" ({timeframe})" if timeframe else ""
-        print(f"\n  Tickers in buffer{timeframe_label} (Total: {total_tickers}, Showing first {limit}):\n")
+        print(f"\n  TICKERS in buffer{timeframe_label} (Total: {total_tickers}, Showing first {limit}):\n")
         for i, ticker in enumerate(tickers_to_show, 1):
             print(f"  {i}. {ticker.name}")
         if total_tickers > limit:
