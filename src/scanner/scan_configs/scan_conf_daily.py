@@ -8,10 +8,10 @@ scan_conf = {
         },
         'params': {
             'SMA': {
-                'daily': {'sma_periods': [50, 10], 
+                'daily': {'sma_periods': [50, 20, 10], 
                           'mode': 'within', 
-                          'distance_pct': 15.0,
-                          'outside_range': True},
+                          'distance_pct': 1.0,
+                          'outside_range': False},
             }
         }
     },
