@@ -99,7 +99,7 @@ def init_cli(vis, fetch, ind, scan, full_run):
     elif args.clear_ind: 
         dm.clear_buffer(dm.indicators_dir)
     elif args.clear_scans: 
-        dm.clear_buffer(dm.scanner_dir, "scan_results_*.csv")
+        dm.clear_buffer(dm.scanner_dir, "scan_*.csv")
     elif args.clear_all: 
         dm.clear_all_buffers()
    
@@ -125,7 +125,7 @@ def init_cli(vis, fetch, ind, scan, full_run):
     elif args.save_scan: 
         dm.save_scans(args.save_scan)
     elif args.load_scan: 
-        dm.load_version(dm.scanner_dir, args.load_scan, "scan_results_*.csv")
+        dm.load_version(dm.scanner_dir, args.load_scan, "scan_*.csv")
     elif args.delete_scan: 
         dm.delete_version(dm.scanner_dir, args.delete_scan)
     elif args.delete_scan_all: 
@@ -174,7 +174,7 @@ def show_help() -> None:
       --ticker                Specify ticker(s) ("MSFT" or "MSFT,AAPL,GOOGL")
       --timeframe             Specify timeframe(s) ("d" or "d,w,4h" or "daily,weekly,4hour")
       --ind-conf              Specify indicator config(s) ("2" or "1,2,3,4")
-      --scan-file             Specify scan file ("scan_results_*.csv") 
+      --scan-file             Specify scan file ("scan_*.csv") 
 
   EXAMPLES:
     Fetch:

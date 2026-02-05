@@ -37,7 +37,7 @@ Stock screener application that fetches ticker data from the Tiingo API, calcula
 - Data is stored locally as CSV files in buffer and storage folders
 - Data Formats: 
     - Tickers/Indicators: `[TICKER]_[TF]_[DATE].csv` 
-    - Scans: `scan_results_[DATE]_[TYPE].csv`
+    - Scans: `scan_[DATE]_[TYPE].csv`
 
 ## 📊 Visualization Application
 
@@ -67,7 +67,7 @@ Stock screener application that fetches ticker data from the Tiingo API, calcula
 | Cycle Timeframes | `6` | `7` | `8` | `9` |
 | Cycle Tickers | `-` | `=` | `[` | `]` |
 | Screenshot | `_` | `+` | `{` | `}` |
-- If a scan_results file is loaded, `-` will cycle results in scan file
+- If a scan file is loaded, `-` will cycle results in scan file
     - Otherwise, cycle buttons will cycle indicator buffer files
 - Screenshots: 
     - screenshots saved to `./docs/screenshots/`
@@ -415,7 +415,7 @@ scan_lists = {
 - `--ticker [SYMBOL]` - Ticker symbol(s) (`BTCUSD`, `BTCUSD,SOFI,AAPL,MSFT`)
 - `--timeframe [TF]` - Timeframe(s) (`5min`, `w,d,4h,h`)
 - `--ind-conf [VERSION]` - Indicator config(s) (`1`, `1,2,3,4`)
-- `--scan-file [FILE]` - Scan results file (`scan_results_*.csv`)
+- `--scan-file [FILE]` - Scan results file (`scan_*.csv`)
 
 ## CLI EXAMPLES
 
@@ -451,7 +451,7 @@ python app.py --vis --ticker MSFT --timeframe d,w,4h --ind-conf 1,2,3
 
 python app.py --vis --ticker MSFT,SOFI,META,TSLA --timeframe d,w,4h,1h --ind-conf 1,2,3,4
 
-python app.py --vis --scan-file scan_results_20240101.csv
+python app.py --vis --scan-file scan_20240101.csv
 ```
 
 ### Visualization Examples:

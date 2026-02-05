@@ -132,7 +132,7 @@ def subcharts(
 
 def _get_latest_scan():
     """Get newest scan file in scanner directory"""
-    files = sorted(SCANNER_DIR.glob("scan_results_*.csv"), 
+    files = sorted(SCANNER_DIR.glob("scan_*.csv"), 
                  key=lambda f: f.stat().st_mtime, reverse=True)
     if not files:
         raise FileNotFoundError("\nNo scan files found in data/scans/\n")

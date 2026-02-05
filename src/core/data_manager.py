@@ -68,7 +68,7 @@ class DataManager:
 
     def save_scans(self, version_name: str) -> None:
         """Save current scans"""
-        self.save_version(self.scanner_dir, version_name, "scan_results_*.csv")
+        self.save_version(self.scanner_dir, version_name, "scan_*.csv")
 
     def save_tickers(self, version_name: str) -> None:
         """Save current tickers"""
@@ -84,7 +84,7 @@ class DataManager:
         print()
         self.clear_buffer(self.tickers_dir)
         self.clear_buffer(self.indicators_dir)
-        self.clear_buffer(self.scanner_dir, "scan_results_*.csv")
+        self.clear_buffer(self.scanner_dir, "scan_*.csv")
         self.clear_buffer(self.screenshots_dir, "*.png")  # Added screenshots
         print("\n  ✨ All buffers cleared (versions preserved)")
 
@@ -166,7 +166,7 @@ class DataManager:
 
     def list_scans(self, limit: int = 10) -> None:
         """List scan files in buffer with nice formatting"""
-        all_scans = sorted(self.scanner_dir.glob("scan_results_*.csv"))
+        all_scans = sorted(self.scanner_dir.glob("scan_*.csv"))
         total_scans = len(all_scans)
         scans_to_show = all_scans[:limit]
         

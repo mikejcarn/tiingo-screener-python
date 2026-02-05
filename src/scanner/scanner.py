@@ -312,7 +312,7 @@ def _process_results(results, scan_type, api_key=None, scan_name=None):
 
 def _save_scan_results(df, output_dir, scan_date, scan_name=None):
     """Save scan results to CSV with custom naming"""
-    filename = f"scan_results_{scan_date}"
+    filename = f"scan_{scan_date}"
     if scan_name:
         filename += f"_{scan_name}"
     filename += ".csv"

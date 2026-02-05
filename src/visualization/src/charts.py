@@ -332,7 +332,7 @@ def get_most_recent_scanner_file():
     scanner_path = INDICATORS_DIR.parent / "scanner"
     if not scanner_path.exists():
         return None
-    scan_files = sorted(scanner_path.glob("scan_results_*.csv"), key=lambda x: x.stem.split('_')[-1], reverse=True)
+    scan_files = sorted(scanner_path.glob("scan_*.csv"), key=lambda x: x.stem.split('_')[-1], reverse=True)
     return scan_files[0] if scan_files else None
 
 def find_indicator_file(ticker, timeframe):
