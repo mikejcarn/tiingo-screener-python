@@ -336,7 +336,7 @@ Examples of customizable scan configs include:
 # Single-Timeframe - Single Criteria with Multiple Params
 'd_aVWAPChannelPinch': {
     'criteria': {
-        'daily': ['aVWAP_channel', 'aVWAP_channel'],  # Two channel checks
+        'daily': ['aVWAP_channel'],  # Single criteria + multiple params
     },
     'params': {
         'aVWAP_channel': {
