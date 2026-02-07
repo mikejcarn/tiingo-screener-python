@@ -32,6 +32,7 @@ def init_cli(vis, fetch, ind, scan, full_run):
     parser.add_argument('--clear-tickers', action='store_true', help='Clear tickers data')
     parser.add_argument('--clear-ind', action='store_true', help='Clear only indicator buffer files')
     parser.add_argument('--clear-scans', action='store_true', help='Clear only scan buffer files')
+    parser.add_argument('--clear-ind-scans', action='store_true', help='Clear scan and indicator buffer files')
 
     # Version control - Indicators
     parser.add_argument('--save-ind', type=str, metavar='NAME', help='Save current indicators as version')
@@ -77,46 +78,49 @@ def init_cli(vis, fetch, ind, scan, full_run):
         vis_ind_confs = args.ind_conf.split(',') if args.ind_conf else None
         vis(tickers=tickers, timeframes=timeframes, ind_confs=vis_ind_confs, 
             scan_file=args.scan_file)
-   
+
     elif args.fetch: 
         # Pass timeframes to fetch function (None = use defaults)
         fetch(timeframes=timeframes)
-   
+
     elif args.ind: 
         # For indicators, ind-conf is a single version number (not comma-separated)
         # timeframe is already parsed above
         ind(args.ind_conf, timeframes=timeframes)
-   
+
     elif args.scan: 
         scan(args.scan_list)
-   
+
     elif args.full_run: 
         full_run(fetch, ind, scan)
-   
+
     # Clear buffer commands
-    elif args.clear_tickers: 
+    elif args.clear_tickers:
         dm.clear_buffer(dm.tickers_dir)
-    elif args.clear_ind: 
+    elif args.clear_ind:
         dm.clear_buffer(dm.indicators_dir)
-    elif args.clear_scans: 
+    elif args.clear_scans:
         dm.clear_buffer(dm.scanner_dir, "scan_*.csv")
-    elif args.clear_all: 
+    elif args.clear_ind_scans:
+        dm.clear_buffer(dm.indicators_dir)
+        dm.clear_buffer(dm.scanner_dir, "scan_*.csv")
+    elif args.clear_all:
         dm.clear_all_buffers()
-   
+
     # Indicator commands
-    elif args.list_ind: 
+    elif args.list_ind:
         dm.list_ind()
-    elif args.list_ind_ver: 
+    elif args.list_ind_ver:
         dm.list_versions(dm.indicators_dir, "Indicators")
-    elif args.save_ind: 
+    elif args.save_ind:
         dm.save_indicators(args.save_ind)
-    elif args.load_ind: 
+    elif args.load_ind:
         dm.load_version(dm.indicators_dir, args.load_ind)
-    elif args.delete_ind: 
+    elif args.delete_ind:
         dm.delete_version(dm.indicators_dir, args.delete_ind)
-    elif args.delete_ind_all: 
+    elif args.delete_ind_all:
         dm.delete_all_versions(dm.indicators_dir)
-   
+
     # Scan commands
     elif args.list_scans: 
         dm.list_scans()
@@ -210,14 +214,15 @@ def show_help() -> None:
   --delete-ind                Delete indicators version ("ind_conf_1")
   --delete-ind-all            Delete ALL indicator versions
   --save-scan                 Save current scans to version ("scan_list_1")
-  --load-scan                 Load scans version 
-  --delete-scan               Delete scans version  
+  --load-scan                 Load scans version
+  --delete-scan               Delete scans version
   --delete-scan-all           Delete ALL scans versions
 
-  BUFFER MANAGEMENT:           
+  BUFFER MANAGEMENT:
   --clear-all                 Reset all buffers (keep versions)
   --clear-tickers             Clear tickers buffer
   --clear-ind                 Clear indicator buffer
   --clear-scans               Clear scan buffer
+  --clear-ind-scans           Clear indicator + scans buffers
   --clear-screenshots         Clear screenshots buffer
 """)

@@ -21,7 +21,7 @@ def SMA(
             For other modes: ALL periods must pass the criteria for a successful scan
         mode (str): One of ['within', 'above', 'below', 'order'] - determines scan type
         distance_pct (float): Percentage distance threshold
-        outside_range (bool): 
+        outside_range (bool):
             - For 'within' mode:
                 False = price is within distance_pct of SMA (close to SMA)
                 True = price is NOT within distance_pct of SMA (far from SMA)
