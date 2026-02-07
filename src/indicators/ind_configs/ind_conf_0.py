@@ -22,21 +22,21 @@ indicators = {  # List of available indicator configurations
         ],
 
         'daily': [
-            # 'aVWAP', 
-            # 'candle_colors', 
-            # 'StDev', 
-            'SMA', 
-            # 'gaps', 
-            # 'FVG', 
-            # 'BoS_CHoCH', 
-            # 'QQEMOD', 
+            'aVWAP',
+            # 'candle_colors',
+            # 'StDev',
+            'SMA',
+            # 'gaps',
+            # 'FVG',
+            # 'BoS_CHoCH',
+            # 'QQEMOD',
             # 'banker_RSI',
             # 'liquidity',
-            # 'OB', 
+            # 'OB',
             # 'RSI',
             # 'WAE',
             # 'supertrend',
-            # 'TTM_squeeze', 
+            # 'TTM_squeeze',
             # 'divergence_Vortex', 'divergence_Fisher', 'divergence_OBV', 'divergence_Volume'
         ],
 
@@ -194,12 +194,12 @@ params = {
                 'peaks_valleys_avg': False,
                 'peaks_avg': False,
                 'valleys_avg': False,
-                'peaks_valleys_params': {'periods': 20, 'max_aVWAPs': 1},
+                'peaks_valleys_params': {'periods': 50, 'max_aVWAPs': 1},
                 'OB': False,
                 'OB_avg': False,
                 'OB_params': {
-                              'periods': 20, 
-                              'max_aVWAPs': None,
+                              'periods': 20,
+                              'max_aVWAPs': 1,
                               'include_bullish': True,
                               'include_bearish': True
                              },
@@ -213,8 +213,8 @@ params = {
             },
             'OB': {'periods': 20},
             'FVG': {
-                'max_mitigated': 10, 
-                'max_unmitigated': 10, 
+                'max_mitigated': 10,
+                'max_unmitigated': 10,
                 'join_consecutive': False
             },
             'RSI': {'periods': 14},
@@ -229,7 +229,7 @@ params = {
                 'qqe_factor': 3.0, 'qqe_factor2': 1.61, 'threshold': 3,
                 'bb_length': 50, 'bb_multi': 0.35
             },
-            'SMA': {'periods': [50, 20, 10]},
+            'SMA': {'periods': [50]},
             'WAE': {
                 'fast_period': 20, 'slow_period': 40, 
                 'atr_period': 20, 'explosion_multiplier': 2.0

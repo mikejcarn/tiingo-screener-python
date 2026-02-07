@@ -9,9 +9,11 @@ scan_lists = {
         # 'd_aVWAPChannelPinch',
         # 'h_aVWAPChannelPinch',
         # '4h_aVWAPChannelPinch',
+        # 'd_SMA50>20>10_aVWAPChannelPinch',
 
-        # 'd_SMA',
-        'd_SMA502010',
+        'd_SMA',
+        # 'd_SMA502010',
+        # 'd_SMA50>20>10',
 
         # 'd_CHoCHBullish',
         # 'd_CHoCHBearish',

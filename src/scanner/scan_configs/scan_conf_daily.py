@@ -2,16 +2,68 @@ scan_conf = {
 
     # Daily ===============================================
 
+    'd_SMA': {
+        'criteria': {
+            # 'daily': ['SMA', 'aVWAP_channel', 'aVWAP_channel'],
+            'daily': ['aVWAP_channel', 'aVWAP_channel'],
+        },
+        'params': {
+            # 'SMA': {
+            #     'daily': {'mode': 'within', 'sma_periods': [50], 'distance_pct': 1.0},
+            # },
+            'aVWAP_channel': {
+                'daily': [
+                    {'mode': 'resistance', 'distance_pct': 1.0, 'direction': 'below'},
+                    {'mode': 'support', 'distance_pct': 1.0, 'direction': 'above'},
+                ]
+            },
+        }
+    },
+
     'd_SMA502010': {
+        'criteria': {
+            'daily': ['SMA', 'SMA', 'SMA'],
+        },
+        'params': {
+            'SMA': {
+                'daily': [
+                    {'sma_periods': [50], 'mode': 'within', 'distance_pct': 3.0, 'outside_range': False},
+                    {'sma_periods': [20], 'mode': 'within', 'distance_pct': 3.0, 'outside_range': False},
+                    {'sma_periods': [10], 'mode': 'within', 'distance_pct': 3.0, 'outside_range': False},
+                ],
+            }
+        }
+    },
+
+    'd_SMA50>20>10': {
         'criteria': {
             'daily': ['SMA'],
         },
         'params': {
             'SMA': {
-                'daily': {'sma_periods': [50, 20, 10], 
-                          'mode': 'within', 
-                          'distance_pct': 1.0,
-                          'outside_range': False},
+                'daily': [
+                    {'sma_periods': [50, 20, 10], 'mode': 'order'},
+                ],
+            }
+        }
+    },
+
+    'd_SMA50>20>10_aVWAPChannelPinch': {
+        'criteria': {
+            'daily': ['aVWAP_channel', 'aVWAP_channel'],
+            # 'daily': ['SMA', 'aVWAP_channel', 'aVWAP_channel'],
+        },
+        'params': {
+            # 'SMA': {
+            #     'daily': [
+            #         {'sma_periods': [50, 20, 10], 'mode': 'order'},
+            #     ],
+            # },
+            'aVWAP_channel': {
+                'daily': [
+                    {'mode': 'resistance', 'distance_pct': 2.0, 'direction': 'below'},
+                    {'mode': 'support', 'distance_pct': 2.0, 'direction': 'above'},
+                ],
             }
         }
     },
@@ -477,17 +529,6 @@ scan_conf = {
         'params': {
             'QQEMOD': {
                 'daily': {'mode': 'oversold'},
-            }
-        }
-    },
-
-    'd_SMA': {
-        'criteria': {
-            'daily': ['SMA'],
-        },
-        'params': {
-            'SMA': {
-                'daily': {'sma_periods': [50], 'distance_pct': 1.0},
             }
         }
     },
