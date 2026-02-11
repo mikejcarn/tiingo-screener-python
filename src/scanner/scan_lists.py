@@ -17,8 +17,10 @@ scan_lists = {
         # '30min_aVWAPChannelResistance',
         # 'd_SMA_30min_aVWAPChannelResistance',
 
-        'd_aVWAPChannelOverbought',
-        'd_aVWAPChannelOversold',
+        'd_aVWAPChannel',
+
+        # 'd_aVWAPChannelOverbought',
+        # 'd_aVWAPChannelOversold',
 
         # 'd_CHoCHBullish',
         # 'd_CHoCHBearish',

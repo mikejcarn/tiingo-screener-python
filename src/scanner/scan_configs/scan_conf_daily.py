@@ -2,6 +2,20 @@ scan_conf = {
 
     # Daily ===============================================
 
+    'd_aVWAPChannel': {
+        'criteria': {
+            'daily': ['aVWAP_channel'],
+        },
+        'params': {
+            'aVWAP_channel': {
+                'daily': {'mode': 'resistance', 
+                          'direction': 'above',
+                          'distance_pct': 3.0,
+                          'outside_range': False}
+            },
+        }
+    },
+
     'd_SMA_30min_aVWAPChannelResistance': {
         'criteria': {
             'daily': ['SMA'],
@@ -116,7 +130,10 @@ scan_conf = {
         },
         'params': {
             'aVWAP_channel': {
-                'daily': {'mode': 'resistance', 'direction': 'above'}
+                'daily': {'mode': 'resistance',
+                          'direction': 'above',
+                          'distance_pct': 5.0,
+                          'outside_range': False}
             },
         }
     },
@@ -127,7 +144,10 @@ scan_conf = {
         },
         'params': {
             'aVWAP_channel': {
-                'daily': {'mode': 'support', 'direction': 'below'}
+                'daily': {'mode': 'support', 
+                          'direction': 'below',
+                          'distance_pct': 5.0,
+                          'outside_range': False}
             },
         }
     },
