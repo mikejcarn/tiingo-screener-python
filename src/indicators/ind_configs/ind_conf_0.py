@@ -22,10 +22,10 @@ indicators = {  # List of available indicator configurations
         ],
 
         'daily': [
-            # 'aVWAP',
+            'aVWAP',
             # 'candle_colors',
             # 'StDev',
-            'SMA',
+            # 'SMA',
             # 'gaps',
             # 'FVG',
             # 'BoS_CHoCH',
@@ -228,12 +228,12 @@ params = {
                 }
             },
             'aVWAP': {
-                'peaks_valleys': False,
+                'peaks_valleys': True,
                 'peaks_valleys_avg': False,
                 'peaks_avg': False,
                 'valleys_avg': False,
-                'peaks_valleys_params': {'periods': 50, 'max_aVWAPs': 1},
-                'OB': True,
+                'peaks_valleys_params': {'periods': 50, 'max_aVWAPs': None},
+                'OB': False,
                 'OB_avg': False,
                 'OB_params': {
                               'periods': 20,
