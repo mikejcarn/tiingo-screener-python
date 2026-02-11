@@ -158,7 +158,7 @@ def create_df(data, timeframe='daily'):
             columns_to_drop = ['close', 'high', 'low', 'open', 'volume', 'splitFactor', 'divCash']
             df = df.drop(columns=columns_to_drop)
 
-        case 'hourly'|'1hour'|'h'|'4hour'|'4h'|'15minutes'|'15min'|'15m'|'5minutes'|'5min'|'5m'|'min'|'m'|'minute'|'1min'|'1m':
+        case 'hourly'|'1hour'|'h'|'4hour'|'4h'|'30minutes'|'30min'|'30m'|'15minutes'|'15min'|'15m'|'5minutes'|'5min'|'5m'|'min'|'m'|'minute'|'1min'|'1m':
 
             df.rename(columns={
                 'low': 'Low',

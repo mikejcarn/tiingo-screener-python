@@ -2,19 +2,34 @@ scan_conf = {
 
     # Daily ===============================================
 
-    'd_SMA': {
+    'd_SMA_30min_aVWAPChannelResistance': {
         'criteria': {
-            'daily': ['SMA', 'aVWAP_channel'],
+            'daily': ['SMA'],
+            '30min': ['aVWAP_channel'],
         },
         'params': {
             'SMA': {
-                'daily': {'mode': 'above', 'sma_periods': [50], 'distance_pct': 1.0, 'outside_range': True},
+                'daily': {'mode': 'order', 'sma_periods': [50,20,10]},
             },
             'aVWAP_channel': {
-                'daily': [
-                    {'mode': 'resistance', 'distance_pct': 1.0, 'direction': 'below'},
-                    {'mode': 'support', 'distance_pct': 1.0, 'direction': 'above'},
-                ]
+                '30min': {'mode': 'resistance', 'distance_pct': 3.0, 'direction': 'within'},
+            },
+        }
+    },
+
+    'd_SMA': {
+        'criteria': {
+            'daily': ['SMA'],
+            '15min': ['OB_aVWAP'],
+        },
+        'params': {
+            'SMA': {
+                # 'daily': {'mode': 'order', 'sma_periods': [50,20,10], 'distance_pct': 1.0, 'outside_range': True},
+                'daily': {'mode': 'order', 'sma_periods': [50,20,10]},
+            },
+            'OB_aVWAP': {
+                # 'daily': {'mode': 'bullish', 'distance_pct': 1.0, 'direction': 'above'},
+                '15min': {'mode': 'bullish', 'distance_pct': 1.0, 'direction': 'above'},
             },
         }
     },
