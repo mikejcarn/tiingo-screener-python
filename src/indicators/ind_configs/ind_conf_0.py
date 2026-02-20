@@ -23,9 +23,9 @@ indicators = {  # List of available indicator configurations
 
         'daily': [
             'aVWAP',
+            # 'SMA',
             # 'candle_colors',
             # 'StDev',
-            # 'SMA',
             # 'gaps',
             # 'FVG',
             # 'BoS_CHoCH',
@@ -78,25 +78,6 @@ indicators = {  # List of available indicator configurations
             # 'divergence_Vortex', 'divergence_Fisher', 'divergence_OBV', 'divergence_Volume'
         ],
 
-        '15min': [
-            'aVWAP',
-            # 'candle_colors',
-            # 'StDev',
-            # 'SMA',
-            # 'gaps',
-            # 'FVG',
-            # 'BoS_CHoCH',
-            # 'QQEMOD',
-            # 'banker_RSI',
-            # 'liquidity',
-            'OB',
-            # 'RSI',
-            # 'WAE',
-            # 'supertrend',
-            # 'TTM_squeeze',
-            # 'divergence_Vortex', 'divergence_Fisher', 'divergence_OBV', 'divergence_Volume'
-        ],
-
         '30min': [
             'aVWAP',
             # 'candle_colors',
@@ -109,6 +90,25 @@ indicators = {  # List of available indicator configurations
             # 'banker_RSI',
             # 'liquidity',
             # 'OB',
+            # 'RSI',
+            # 'WAE',
+            # 'supertrend',
+            # 'TTM_squeeze',
+            # 'divergence_Vortex', 'divergence_Fisher', 'divergence_OBV', 'divergence_Volume'
+        ],
+
+        '15min': [
+            'aVWAP',
+            # 'candle_colors',
+            # 'StDev',
+            # 'SMA',
+            # 'gaps',
+            # 'FVG',
+            # 'BoS_CHoCH',
+            # 'QQEMOD',
+            # 'banker_RSI',
+            # 'liquidity',
+            'OB',
             # 'RSI',
             # 'WAE',
             # 'supertrend',
@@ -228,8 +228,8 @@ params = {
                 }
             },
             'aVWAP': {
-                'peaks_valleys': True,
-                'peaks_valleys_avg': False,
+                'peaks_valleys': False,
+                'peaks_valleys_avg': True,
                 'peaks_avg': False,
                 'valleys_avg': False,
                 'peaks_valleys_params': {'periods': 50, 'max_aVWAPs': None},
@@ -246,6 +246,8 @@ params = {
                 'gaps_params': {'max_aVWAPs': 10},
                 'All_avg': False,
                 'avg_lookback': 20,
+                'peaks_avg_lookback': 10,
+                'valleys_avg_lookback': 10,
                 'keep_OB_column': False,
                 'aVWAP_channel': False,
             },
@@ -267,7 +269,7 @@ params = {
                 'qqe_factor': 3.0, 'qqe_factor2': 1.61, 'threshold': 3,
                 'bb_length': 50, 'bb_multi': 0.35
             },
-            'SMA': {'periods': [50, 20, 10]},
+            'SMA': {'periods': [50, 100, 200]},
             'WAE': {
                 'fast_period': 20, 'slow_period': 40, 
                 'atr_period': 20, 'explosion_multiplier': 2.0
@@ -283,7 +285,6 @@ params = {
             'divergence_Fisher': {'period': 50, 'lookback': 50},
             'divergence_Vortex': {'period': 50, 'lookback': 50}
         },
-
 
         '4hour': {
             'candle_colors': {
