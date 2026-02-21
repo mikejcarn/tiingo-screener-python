@@ -27,14 +27,14 @@
 #     if all(col in df.columns for col in ['FVG', 'FVG_High', 'FVG_Low', 'FVG_Mitigated_Index']):
 #         # Find the last row with actual data (before NaN padding)
 #         last_data_idx = df[['close', 'high', 'low', 'open']].last_valid_index()
-#        
+#      
 #         # Get all FVG occurrences (bullish=1, bearish=-1)
 #         fvg_indices = df[df['FVG'] != 0].index
-#        
+#      
 #         for idx in fvg_indices:
 #             # Get mitigation index (may be NaN, 0, or positive number)
 #             mit_idx = df.loc[idx, 'FVG_Mitigated_Index']
-#            
+#          
 #             # Determine if FVG is mitigated
 #             if pd.isna(mit_idx) or mit_idx == 0:
 #                 # Unmitigated - draw only to last actual data point, not through padding
@@ -44,7 +44,7 @@
 #                 end_idx = int(mit_idx)
 #                 # Ensure it's within bounds of actual data
 #                 end_idx = min(end_idx, last_data_idx)
-#            
+#          
 #             # Set visualization parameters
 #             fvg_type = df.loc[idx, 'FVG']
 #             level = 'FVG_High' if fvg_type == 1 else 'FVG_Low'
@@ -90,20 +90,20 @@
 #
 # def _BoS_CHoCH_visualization(subchart, df):
 #     required_cols = ['BoS', 'CHoCH', 'BoS_CHoCH_Price', 'BoS_CHoCH_Break_Index']
-#    
+#  
 #     # First verify all required columns exist
 #     missing_cols = [col for col in required_cols if col not in df.columns]
 #     if missing_cols:
 #         return
-#    
+#  
 #     # Now safely process the data
 #     df = df.dropna(subset=required_cols)
 #     events = df[(df['BoS'] != 0) | (df['CHoCH'] != 0)].index[-25:]
-#        
+#      
 #     for idx in events:
 #         start_date = df.loc[idx, 'date']
 #         price = df.loc[idx, 'BoS_CHoCH_Price']
-#        
+#      
 #         # Safely handle break index (NaN, None, or invalid values)
 #         try:
 #             break_idx = int(df.loc[idx, 'BoS_CHoCH_Break_Index'])
@@ -114,7 +114,7 @@
 #                 end_date = df.iloc[-1]['date']
 #         except (ValueError, TypeError):
 #             end_date = df.iloc[-1]['date']  # Use last date if conversion fails
-#        
+#      
 #         # Determine color and style
 #         if df.loc[idx, 'BoS'] != 0:  # Break of Structure
 #             color = colors['teal_trans_3'] if df.loc[idx, 'BoS'] > 0 else colors['red_trans_3']
@@ -124,7 +124,7 @@
 #             color = colors['aqua'] if df.loc[idx, 'CHoCH'] > 0 else colors['red_dark']
 #             style = 'solid'
 #             width = 1
-#        
+#      
 #         # Create the line
 #         subchart.create_line(
 #             price_line=False,
@@ -142,11 +142,11 @@
 #     if all(col in df.columns for col in ['Liquidity', 'Liquidity_Level']):
 #         # Get all liquidity events (both bullish and bearish)
 #         liquidity_events = df[df['Liquidity'] != 0]
-#        
+#      
 #         for idx in liquidity_events.index:
 #             level = df.loc[idx, 'Liquidity_Level']
 #             direction = df.loc[idx, 'Liquidity']
-#            
+#          
 #             # Create horizontal line spanning full chart
 #             subchart.create_line(
 #                 price_line=False,
@@ -193,13 +193,13 @@
 #         for low, high, color in color_rules:
 #             mask = (hist_data['value'] >= low) & (hist_data['value'] <= high)
 #             hist_data.loc[mask, 'color'] = color
-#        
+#      
 #         # Set the histogram data
 #         rsi_hist.set(hist_data)
 #
 #
 # def _aVWAP_visualization(subchart, df):
-#     # Plot peak aVWAPs (red)
+#     # Plot peak aVWAPs (red) - supports multiple configs with _c0, _c1 suffixes
 #     peak_cols = [col for col in df.columns if col.startswith('aVWAP_peak_')]
 #     for col in peak_cols:
 #         subchart.create_line(
@@ -209,7 +209,7 @@
 #             width=1
 #         ).set(df[['date', col]].rename(columns={col: 'value'}))
 #
-#     # Plot valley aVWAPs (green)
+#     # Plot valley aVWAPs (green) - supports multiple configs
 #     valley_cols = [col for col in df.columns if col.startswith('aVWAP_valley_')]
 #     for col in valley_cols:
 #         subchart.create_line(
@@ -219,9 +219,9 @@
 #             width=1
 #         ).set(df[['date', col]].rename(columns={col: 'value'}))
 #
-#     # Plot gaps UP aVWAPs
-#     gap_cols = [col for col in df.columns if col.startswith('Gap_Up_aVWAP_')]
-#     for col in gap_cols:
+#     # Plot gaps UP aVWAPs - supports multiple configs
+#     gap_up_cols = [col for col in df.columns if col.startswith('Gap_Up_aVWAP_')]
+#     for col in gap_up_cols:
 #         subchart.create_line(
 #             price_line=False,
 #             price_label=False,
@@ -230,9 +230,9 @@
 #             style='dotted'
 #         ).set(df[['date', col]].rename(columns={col: 'value'}))
 #
-#     # Plot gaps DOWN aVWAPs
-#     gap_cols = [col for col in df.columns if col.startswith('Gap_Down_aVWAP_')]
-#     for col in gap_cols:
+#     # Plot gaps DOWN aVWAPs - supports multiple configs
+#     gap_down_cols = [col for col in df.columns if col.startswith('Gap_Down_aVWAP_')]
+#     for col in gap_down_cols:
 #         subchart.create_line(
 #             price_line=False,
 #             price_label=False,
@@ -241,8 +241,7 @@
 #             style='dotted'
 #         ).set(df[['date', col]].rename(columns={col: 'value'}))
 #
-#     # Order Blocks (OB) Bullish + Bearish
-#
+#     # Order Blocks (OB) Bullish - supports multiple configs
 #     OB_bull_cols = [col for col in df.columns if col.startswith('aVWAP_OB_bull_')]
 #     for col in OB_bull_cols:
 #         subchart.create_line(
@@ -252,6 +251,7 @@
 #             width=1
 #         ).set(df[['date', col]].rename(columns={col: 'value'}))
 #
+#     # Order Blocks (OB) Bearish - supports multiple configs
 #     OB_bear_cols = [col for col in df.columns if col.startswith('aVWAP_OB_bear_')]
 #     for col in OB_bear_cols:
 #         subchart.create_line(
@@ -261,6 +261,7 @@
 #             width=1
 #         ).set(df[['date', col]].rename(columns={col: 'value'}))
 #
+#     # BoS/CHoCH Bearish - supports multiple configs
 #     BoS_CHoCH_bear_cols = [col for col in df.columns if col.startswith('aVWAP_BoS_CHoCH_bear_')]
 #     for col in BoS_CHoCH_bear_cols:
 #         subchart.create_line(
@@ -270,6 +271,7 @@
 #             width=1
 #         ).set(df[['date', col]].rename(columns={col: 'value'}))
 #
+#     # BoS/CHoCH Bullish - supports multiple configs
 #     BoS_CHoCH_bull_cols = [col for col in df.columns if col.startswith('aVWAP_BoS_CHoCH_bull_')]
 #     for col in BoS_CHoCH_bull_cols:
 #         subchart.create_line(
@@ -278,67 +280,32 @@
 #             color=colors['teal'],
 #             width=1
 #         ).set(df[['date', col]].rename(columns={col: 'value'}))
-#    
-#     # Average aVWAPs (Gaps, Peaks/Valleys, OBs)
-#
-#     if 'Peaks_Valleys_avg' in df.columns:
-#         subchart.create_line(
-#             price_line=False,
-#             price_label=False,
-#             color=colors['orange_aVWAP'],
-#             width=4
-#         ).set(df[['date', 'Peaks_Valleys_avg']].rename(columns={'Peaks_Valleys_avg': 'value'}))
-#
-#     if 'Peaks_avg' in df.columns:
-#         subchart.create_line(
-#             price_line=False,
-#             price_label=False,
-#             color=colors['red'],
-#             width=4
-#         ).set(df[['date', 'Peaks_avg']].rename(columns={'Peaks_avg': 'value'}))
-#
-#     if 'Valleys_avg' in df.columns:
-#         subchart.create_line(
-#             price_line=False,
-#             price_label=False,
-#             color=colors['teal'],
-#             width=4
-#         ).set(df[['date', 'Valleys_avg']].rename(columns={'Valleys_avg': 'value'}))
-#
-#     if 'OB_avg' in df.columns:
-#         subchart.create_line(
-#             price_line=False,
-#             price_label=False,
-#             color=colors['orange_aVWAP'],
-#             width=3,
-#             style='dashed',
-#         ).set(df[['date', 'OB_avg']].rename(columns={'OB_avg': 'value'}))
-#
-#     if 'Gaps_avg' in df.columns:
-#         subchart.create_line(
-#             price_line=False,
-#             price_label=False,
-#             color=colors['orange_aVWAP'],
-#             width=4,
-#             style='dotted',
-#         ).set(df[['date', 'Gaps_avg']].rename(columns={'Gaps_avg': 'value'}))
-#
-#     if 'BoS_CHoCH_avg' in df.columns:
-#         subchart.create_line(
-#             price_line=False,
-#             price_label=False,
-#             color=colors['orange_aVWAP'],
-#             width=3,
-#             style='large_dashed',
-#         ).set(df[['date', 'BoS_CHoCH_avg']].rename(columns={'BoS_CHoCH_avg': 'value'}))
-#
-#     if 'All_avg' in df.columns:
-#         subchart.create_line(
-#             price_line=False,
-#             price_label=False,
-#             color=colors['gray_trans'],
-#             width=5
-#         ).set(df[['date', 'All_avg']].rename(columns={'All_avg': 'value'}))
+#  
+#     # ENHANCED: Average aVWAPs - now supports multiple instances
+#     # Define average types with their styling
+#     avg_configs = [
+#         {'name': 'Peaks_Valleys_avg', 'color': colors['orange_aVWAP'], 'width': 4, 'style': 'solid'},
+#         {'name': 'Peaks_avg', 'color': colors['red'], 'width': 4, 'style': 'solid'},
+#         {'name': 'Valleys_avg', 'color': colors['teal'], 'width': 4, 'style': 'solid'},
+#         {'name': 'OB_avg', 'color': colors['orange_aVWAP'], 'width': 3, 'style': 'dashed'},
+#         {'name': 'Gaps_avg', 'color': colors['orange_aVWAP'], 'width': 4, 'style': 'dotted'},
+#         {'name': 'BoS_CHoCH_avg', 'color': colors['orange_aVWAP'], 'width': 3, 'style': 'large_dashed'},
+#         {'name': 'All_avg', 'color': colors['gray_trans'], 'width': 5, 'style': 'solid'}
+#     ]
+#  
+#     for avg_cfg in avg_configs:
+#         avg_name = avg_cfg['name']
+#         # Find all columns that start with this average name
+#         matching_cols = [col for col in df.columns if col.startswith(avg_name)]
+#      
+#         for col in matching_cols:
+#             subchart.create_line(
+#                 price_line=False,
+#                 price_label=False,
+#                 color=avg_cfg['color'],
+#                 width=avg_cfg['width'],
+#                 style=avg_cfg['style']
+#             ).set(df[['date', col]].rename(columns={col: 'value'}))
 #
 #
 # def _supertrend_visualization(subchart, df):
@@ -351,7 +318,7 @@
 #             width=1.0,
 #         )
 #         upper_line.set(df[['date', 'Supertrend_Upper']].rename(columns={'Supertrend_Upper': 'value'}))
-#        
+#      
 #         # Lower band (support in uptrend)
 #         lower_line = subchart.create_line(
 #             price_line=False,
@@ -360,7 +327,7 @@
 #             width=1.0,
 #         )
 #         lower_line.set(df[['date', 'Supertrend_Lower']].rename(columns={'Supertrend_Lower': 'value'}))
-#        
+#      
 #         # Active band (solid line showing current trend)
 #         active_supertrend = np.where(
 #             df['Supertrend_Direction'] == -1,
@@ -519,7 +486,7 @@
 #     ]
 #
 #     markers = []
-#    
+#  
 #     for div in divergence_types:
 #         # Process regular bullish signals
 #         if 'regular_bull_col' in div and div['regular_bull_col'] in df.columns:
@@ -532,7 +499,7 @@
 #                     'color': div['bull_color'],
 #                     'text': ''
 #                 })
-#        
+#      
 #         # Process hidden bullish signals
 #         if 'hidden_bull_col' in div and div['hidden_bull_col'] in df.columns:
 #             hid_bull_mask = df[div['hidden_bull_col']].fillna(False).astype(bool)
@@ -544,7 +511,7 @@
 #                     'color': div['bull_color'],
 #                     'text': ''
 #                 })
-#        
+#      
 #         # Process regular bearish signals
 #         if 'regular_bear_col' in div and div['regular_bear_col'] in df.columns:
 #             reg_bear_mask = df[div['regular_bear_col']].fillna(False).astype(bool)
@@ -556,7 +523,7 @@
 #                     'color': div['bear_color'],
 #                     'text': ''
 #                 })
-#        
+#      
 #         # Process hidden bearish signals
 #         if 'hidden_bear_col' in div and div['hidden_bear_col'] in df.columns:
 #             hid_bear_mask = df[div['hidden_bear_col']].fillna(False).astype(bool)
@@ -568,7 +535,7 @@
 #                     'color': div['bear_color'],
 #                     'text': ''
 #                 })
-#    
+#  
 #     # Add all markers in one pass (sorted chronologically)
 #     if markers:
 #         subchart.marker_list(sorted(markers, key=lambda x: x['time']))
@@ -863,16 +830,58 @@ def _aVWAP_visualization(subchart, df):
             width=1
         ).set(df[['date', col]].rename(columns={col: 'value'}))
     
-    # ENHANCED: Average aVWAPs - now supports multiple instances
-    # Define average types with their styling
+    # ===== ENHANCED: Average aVWAPs with primary/secondary styling =====
+    # Define average types with primary (bold) and secondary (thin) styling
     avg_configs = [
-        {'name': 'Peaks_Valleys_avg', 'color': colors['orange_aVWAP'], 'width': 4, 'style': 'solid'},
-        {'name': 'Peaks_avg', 'color': colors['red'], 'width': 4, 'style': 'solid'},
-        {'name': 'Valleys_avg', 'color': colors['teal'], 'width': 4, 'style': 'solid'},
-        {'name': 'OB_avg', 'color': colors['orange_aVWAP'], 'width': 3, 'style': 'dashed'},
-        {'name': 'Gaps_avg', 'color': colors['orange_aVWAP'], 'width': 4, 'style': 'dotted'},
-        {'name': 'BoS_CHoCH_avg', 'color': colors['orange_aVWAP'], 'width': 3, 'style': 'large_dashed'},
-        {'name': 'All_avg', 'color': colors['gray_trans'], 'width': 5, 'style': 'solid'}
+        {
+            'name': 'Peaks_Valleys_avg',
+            'primary_width': 4,
+            'secondary_width': 2,
+            'color': colors['orange_aVWAP'],
+            'style': 'solid'
+        },
+        {
+            'name': 'Peaks_avg',
+            'primary_width': 4,
+            'secondary_width': 2,
+            'color': colors['red'],
+            'style': 'solid'
+        },
+        {
+            'name': 'Valleys_avg',
+            'primary_width': 4,
+            'secondary_width': 2,
+            'color': colors['teal'],
+            'style': 'solid'
+        },
+        {
+            'name': 'OB_avg',
+            'primary_width': 3,
+            'secondary_width': 1.5,
+            'color': colors['orange_aVWAP'],
+            'style': 'dashed'
+        },
+        {
+            'name': 'Gaps_avg',
+            'primary_width': 4,
+            'secondary_width': 2,
+            'color': colors['orange_aVWAP'],
+            'style': 'dotted'
+        },
+        {
+            'name': 'BoS_CHoCH_avg',
+            'primary_width': 3,
+            'secondary_width': 1.5,
+            'color': colors['orange_aVWAP'],
+            'style': 'large_dashed'
+        },
+        {
+            'name': 'All_avg',
+            'primary_width': 5,
+            'secondary_width': 3,
+            'color': colors['gray_trans'],
+            'style': 'solid'
+        }
     ]
     
     for avg_cfg in avg_configs:
@@ -881,11 +890,17 @@ def _aVWAP_visualization(subchart, df):
         matching_cols = [col for col in df.columns if col.startswith(avg_name)]
         
         for col in matching_cols:
+            # Determine if this is primary (no suffix) or secondary (has suffix)
+            if col == avg_name:
+                width = avg_cfg['primary_width']
+            else:
+                width = avg_cfg['secondary_width']
+            
             subchart.create_line(
                 price_line=False,
                 price_label=False,
                 color=avg_cfg['color'],
-                width=avg_cfg['width'],
+                width=width,
                 style=avg_cfg['style']
             ).set(df[['date', col]].rename(columns={col: 'value'}))
 
@@ -939,8 +954,6 @@ def _SMA_visualization(subchart, df):
                     5 if period <= 100 else
                     7 if period <= 200 else 9 )
         ).set(df[['date', sma_col]].rename(columns={sma_col: 'value'}))
-
-# Divergences -----------------------------------------------------------------
 
 
 def _combined_divergence_visualization(subchart, df):
