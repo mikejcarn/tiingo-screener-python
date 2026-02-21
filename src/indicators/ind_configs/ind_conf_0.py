@@ -22,8 +22,8 @@ indicators = {  # List of available indicator configurations
         ],
 
         'daily': [
-            'aVWAP',
-            'SMA',
+            # 'aVWAP',
+            # 'SMA',
             # 'candle_colors',
             # 'StDev',
             # 'gaps',
@@ -31,7 +31,7 @@ indicators = {  # List of available indicator configurations
             # 'BoS_CHoCH',
             # 'QQEMOD',
             # 'banker_RSI',
-            # 'liquidity',
+            'liquidity',
             # 'OB',
             # 'RSI',
             # 'WAE',
@@ -232,18 +232,13 @@ params = {
                 'peaks_valleys_avg': True,
                 'peaks_avg': False,
                 'valleys_avg': False,
-
-                'gaps': False,
-                'gaps_avg': False,
-
                 'OB': False,
                 'OB_avg': False,
-
+                'gaps': False,
+                'gaps_avg': False,
                 'BoS_CHoCH': False,
                 'BoS_CHoCH_avg': False,
-
                 'All_avg': False,
-
                 'keep_OB_column': False,
                 'aVWAP_channel': False,
                 
