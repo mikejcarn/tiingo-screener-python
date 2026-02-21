@@ -227,30 +227,94 @@ params = {
                     },
                 }
             },
+
+            # 'aVWAP': {
+            #     'peaks_valleys': True,
+            #     'peaks_valleys_avg': False,
+            #     'peaks_avg': False,
+            #     'valleys_avg': False,
+            #     'peaks_valleys_params': {
+            #         'periods': 50,
+            #         'max_aVWAPs': None,
+            #         'avg_lookback': 20,
+            #         'peaks_avg_lookback': 5,
+            #         'valleys_avg_lookback': 5,
+            #     },
+            #     'OB': False,
+            #     'OB_avg': False,
+            #     'OB_params': {
+            #         'periods': 20,
+            #         'max_aVWAPs': 2,
+            #         'include_bullish': True,
+            #         'include_bearish': True,
+            #         'avg_lookback': 4
+            #     },
+            #     'gaps': False,
+            #     'gaps_avg': False,
+            #     'gaps_params': {
+            #         'max_aVWAPs': 3,
+            #         'avg_lookback': 5
+            #     },
+            #     'BoS_CHoCH': False,
+            #     'BoS_CHoCH_avg': False,
+            #     'BoS_CHoCH_params': {
+            #         'swing_length': 40,
+            #         'max_aVWAPs': 2,
+            #         'avg_lookback': 4
+            #     },
+            #     'All_avg': False,
+            #     'keep_OB_column': False,
+            #     'aVWAP_channel': False
+            # },
+
+
+
             'aVWAP': {
-                'peaks_valleys': False,
-                'peaks_valleys_avg': True,
-                'peaks_avg': False,
-                'valleys_avg': False,
-                'peaks_valleys_params': {'periods': 50, 'max_aVWAPs': None},
-                'OB': False,
-                'OB_avg': False,
-                'OB_params': {
-                              'periods': 20,
-                              'max_aVWAPs': 1,
-                              'include_bullish': True,
-                              'include_bearish': True
-                             },
-                'gaps': False,
-                'gaps_avg': False,
-                'gaps_params': {'max_aVWAPs': 10},
-                'All_avg': False,
-                'avg_lookback': 20,
-                'peaks_avg_lookback': 10,
-                'valleys_avg_lookback': 10,
+                'peaks_valleys': False,                    # Show individual lines
+                'peaks_valleys_avg': True,                  # Auto-calculates for all configs
+                'peaks_avg': False,                           # Auto-calculates for configs with peaks_avg_lookback
+                'valleys_avg': False,                          # Auto-calculates for configs with valleys_avg_lookback
+                'gaps_avg': False,                              # Auto-calculates for all gap configs
+                'OB_avg': False,                                 # Auto-calculates for all OB configs
+                'BoS_CHoCH_avg': False,                          # Auto-calculates for all BoS configs
+                'All_avg': False,                                 # Auto-calculates for each peaks config
+
                 'keep_OB_column': False,
                 'aVWAP_channel': False,
+                
+                'peaks_valleys_params': [
+                    {  
+                        'periods': 50,
+                        'max_aVWAPs': None,
+                        'avg_lookback': 20,
+                        'peaks_avg_lookback': 6,
+                        'valleys_avg_lookback': 6
+                    },
+                    {  
+                        'periods': 30,
+                        'max_aVWAPs': None,
+                        'avg_lookback': 10,
+                    },
+                    {  
+                        'periods': 20,
+                        'max_aVWAPs': None,
+                        'avg_lookback': 5,
+                    },
+                    {  
+                        'periods': 5,
+                        'max_aVWAPs': None,
+                        'avg_lookback': 1,
+                    }
+                ],
+                'gaps_params': [ {'max_aVWAPs': 5, 'avg_lookback': 8}, ],
+                'OB_params': [ {'periods': 20, 'max_aVWAPs': 3, 'avg_lookback': 6}, ],
+                'BoS_CHoCH_params': [ {'swing_length': 15, 'max_aVWAPs': 4, 'avg_lookback': 7}, ],
+                
             },
+
+
+
+
             'OB': {'periods': 20},
             'FVG': {
                 'max_mitigated': 10,
