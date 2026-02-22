@@ -241,7 +241,6 @@ params = {
                 'All_avg': False,
                 'keep_OB_column': False,
                 'aVWAP_channel': False,
-                
                 'peaks_valleys_params': [
                     {  
                         'periods': 50,
@@ -250,11 +249,6 @@ params = {
                         'peaks_avg_lookback': 6,
                         'valleys_avg_lookback': 6
                     },
-                    # {  
-                    #     'periods': 5,
-                    #     'max_aVWAPs': None,
-                    #     'avg_lookback': 10,
-                    # },
                     {  
                         'periods': 10,
                         'max_aVWAPs': None,
