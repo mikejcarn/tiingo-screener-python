@@ -383,7 +383,7 @@ def calculate_avwap_channel(df,
                             aVWAP_channel=False):
     """
     Calculate anchored VWAP channels from market structure points.
-    
+   
     Now supports multiple averages automatically based on the number of param sets.
     If peaks_valleys_params is a list of N dicts, then peaks_valleys_avg=True
     will calculate N averages (one for each config). Individual flags like
@@ -440,7 +440,7 @@ def calculate_avwap_channel(df,
         if isinstance(param, list):
             return param
         return [param]
-    
+   
     # Helper to safely get value from dict with fallback
     def get_lookback(param_dict, key, default):
         if param_dict and key in param_dict:
@@ -471,7 +471,7 @@ def calculate_avwap_channel(df,
     peaks_valleys_avg_configs = list(range(len(peaks_valleys_configs))) if peaks_valleys_avg else []
     peaks_avg_configs = []
     valleys_avg_configs = []
-    
+   
     # For peaks_avg and valleys_avg, only use configs that have the required lookback
     if peaks_avg:
         peaks_avg_configs = [i for i, cfg in enumerate(peaks_valleys_configs) 
@@ -479,11 +479,11 @@ def calculate_avwap_channel(df,
     if valleys_avg:
         valleys_avg_configs = [i for i, cfg in enumerate(peaks_valleys_configs) 
                               if 'valleys_avg_lookback' in cfg]
-    
+   
     gaps_avg_configs = list(range(len(gaps_configs))) if gaps_avg else []
     OB_avg_configs = list(range(len(OB_configs))) if OB_avg else []
     BoS_CHoCH_avg_configs = list(range(len(BoS_CHoCH_configs))) if BoS_CHoCH_avg else []
-    
+   
     # For All_avg, use the number of peaks_valleys configs
     all_avg_configs = list(range(len(peaks_valleys_configs))) if All_avg else []
 
@@ -548,31 +548,31 @@ def calculate_avwap_channel(df,
     if 'peaks_valleys' in aVWAP_anchors:
         base_peaks_indices = df[df['Peaks'] == 1].index.tolist() if 'Peaks' in df.columns else []
         base_valleys_indices = df[df['Valleys'] == 1].index.tolist() if 'Valleys' in df.columns else []
-        
+       
         # We'll process each config separately since max_aVWAPs can differ
         for config_idx, config in enumerate(peaks_valleys_configs):
             max_aVWAPs = config.get('max_aVWAPs', None)
-            
+           
             # Apply channel filtering if needed
             peaks_indices = base_peaks_indices.copy()
             valleys_indices = base_valleys_indices.copy()
-            
+           
             if aVWAP_channel:
                 if highest_peak_idx is not None:
                     peaks_indices = [i for i in peaks_indices if i >= highest_peak_idx]
                 if lowest_valley_idx is not None:
                     valleys_indices = [i for i in valleys_indices if i >= lowest_valley_idx]
-            
+           
             # Calculate aVWAPs for this config
             config_peaks = process_anchors(peaks_indices, f'aVWAP_peak_c{config_idx}', max_aVWAPs)
             config_valleys = process_anchors(valleys_indices, f'aVWAP_valley_c{config_idx}', max_aVWAPs)
-            
+           
             # Store for averages based on config indices
             if config_idx in peaks_avg_configs:
                 peaks_only_aVWAPs.update(config_peaks)
             if config_idx in valleys_avg_configs:
                 valleys_only_aVWAPs.update(config_valleys)
-            
+           
             # Store all for All_avg and individual display
             all_individual_aVWAPs.update(config_peaks)
             all_individual_aVWAPs.update(config_valleys)
@@ -581,17 +581,17 @@ def calculate_avwap_channel(df,
     if 'gaps' in aVWAP_anchors:
         base_gap_up_indices = df[df['Gap_Up'] == 1].index.tolist() if 'Gap_Up' in df.columns else []
         base_gap_down_indices = df[df['Gap_Down'] == 1].index.tolist() if 'Gap_Down' in df.columns else []
-        
+       
         for config_idx, config in enumerate(gaps_configs):
             max_aVWAPs = config.get('max_aVWAPs', None)
-            
+           
             config_gap_up = process_anchors(base_gap_up_indices, f'Gap_Up_aVWAP_c{config_idx}', max_aVWAPs)
             config_gap_down = process_anchors(base_gap_down_indices, f'Gap_Down_aVWAP_c{config_idx}', max_aVWAPs)
-            
+           
             if config_idx in gaps_avg_configs:
                 gaps_aVWAPs.update(config_gap_up)
                 gaps_aVWAPs.update(config_gap_down)
-            
+           
             all_individual_aVWAPs.update(config_gap_up)
             all_individual_aVWAPs.update(config_gap_down)
 
@@ -601,10 +601,10 @@ def calculate_avwap_channel(df,
             max_aVWAPs = config.get('max_aVWAPs', None)
             include_bullish = config.get('include_bullish', True)
             include_bearish = config.get('include_bearish', True)
-            
+           
             OB_bull_indices = []
             OB_bear_indices = []
-            
+           
             if 'OB' in df.columns:
                 if aVWAP_channel:
                     if lowest_valley_idx is not None and include_bullish:
@@ -616,14 +616,14 @@ def calculate_avwap_channel(df,
                         OB_bull_indices = df[df['OB'] == 1].index.tolist()
                     if include_bearish:
                         OB_bear_indices = df[df['OB'] == -1].index.tolist()
-            
+           
             config_OB_bull = process_anchors(OB_bull_indices, f'aVWAP_OB_bull_c{config_idx}', max_aVWAPs)
             config_OB_bear = process_anchors(OB_bear_indices, f'aVWAP_OB_bear_c{config_idx}', max_aVWAPs)
-            
+           
             if config_idx in OB_avg_configs:
                 OB_aVWAPs.update(config_OB_bull)
                 OB_aVWAPs.update(config_OB_bear)
-            
+           
             all_individual_aVWAPs.update(config_OB_bull)
             all_individual_aVWAPs.update(config_OB_bear)
 
@@ -631,7 +631,7 @@ def calculate_avwap_channel(df,
     if 'BoS_CHoCH' in aVWAP_anchors:
         for config_idx, config in enumerate(BoS_CHoCH_configs):
             max_aVWAPs = config.get('max_aVWAPs', None)
-            
+           
             def process_BoS_CHoCH_range(signal_idx, break_idx, signal_type):
                 if pd.isna(break_idx) or break_idx <= signal_idx:
                     return None
@@ -641,9 +641,9 @@ def calculate_avwap_channel(df,
                 else:
                     extreme_idx = range_df['High'].idxmax()
                 return calculate_avwap(df, extreme_idx)
-            
+           
             config_BoS = {}
-            
+           
             # Process bullish signals
             bullish_signals = df[(df['BoS'] == 1) | (df['CHoCH'] == 1)].index
             for idx in bullish_signals:
@@ -652,7 +652,7 @@ def calculate_avwap_channel(df,
                     vwap = process_BoS_CHoCH_range(idx, break_idx, 'bullish')
                     if vwap is not None:
                         config_BoS[f'aVWAP_BoS_CHoCH_bull_c{config_idx}_{idx}'] = vwap
-            
+           
             # Process bearish signals
             bearish_signals = df[(df['BoS'] == -1) | (df['CHoCH'] == -1)].index
             for idx in bearish_signals:
@@ -661,17 +661,17 @@ def calculate_avwap_channel(df,
                     vwap = process_BoS_CHoCH_range(idx, break_idx, 'bearish')
                     if vwap is not None:
                         config_BoS[f'aVWAP_BoS_CHoCH_bear_c{config_idx}_{idx}'] = vwap
-            
+           
             # Apply max_aVWAPs limit
             if max_aVWAPs is not None and len(config_BoS) > max_aVWAPs:
                 sorted_keys = sorted(config_BoS.keys(), 
                                    key=lambda x: int(x.split('_')[-1]), 
                                    reverse=True)[:max_aVWAPs]
                 config_BoS = {k: config_BoS[k] for k in sorted_keys}
-            
+           
             if config_idx in BoS_CHoCH_avg_configs:
                 BoS_CHoCH_aVWAPs.update(config_BoS)
-            
+           
             all_individual_aVWAPs.update(config_BoS)
 
     # Combine all aVWAPs for display if requested
@@ -680,17 +680,17 @@ def calculate_avwap_channel(df,
         for key, value in all_individual_aVWAPs.items():
             if 'aVWAP_peak_c' in key or 'aVWAP_valley_c' in key:
                 df[key] = value
-    
+   
     if gaps:
         for key, value in all_individual_aVWAPs.items():
             if 'Gap_Up_aVWAP_c' in key or 'Gap_Down_aVWAP_c' in key:
                 df[key] = value
-    
+   
     if OB:
         for key, value in all_individual_aVWAPs.items():
             if 'aVWAP_OB_bull_c' in key or 'aVWAP_OB_bear_c' in key:
                 df[key] = value
-    
+   
     if BoS_CHoCH:
         for key, value in all_individual_aVWAPs.items():
             if 'aVWAP_BoS_CHoCH' in key:
@@ -702,17 +702,17 @@ def calculate_avwap_channel(df,
         if config_idx < len(peaks_valleys_configs):
             config = peaks_valleys_configs[config_idx]
             lookback = get_lookback(config, 'avg_lookback', avg_lookback)
-            
+           
             # Collect all aVWAPs from this config
             config_aVWAPs = {}
             prefix_patterns = [f'aVWAP_peak_c{config_idx}_', f'aVWAP_valley_c{config_idx}_']
             for key, value in all_individual_aVWAPs.items():
                 if any(key.startswith(p) for p in prefix_patterns):
                     config_aVWAPs[key] = value
-            
+           
             if config_aVWAPs:
                 avg_name = 'Peaks_Valleys_avg' if config_idx == 0 else f'Peaks_Valleys_avg_{config_idx}'
-                
+               
                 if aVWAP_channel and highest_peak_idx is not None and lowest_valley_idx is not None:
                     first_valid_idx = max(highest_peak_idx, lowest_valley_idx)
                     temp_avg = calculate_rolling_aVWAP_avg(df, config_aVWAPs, lookback)
@@ -725,13 +725,13 @@ def calculate_avwap_channel(df,
         if config_idx < len(peaks_valleys_configs):
             config = peaks_valleys_configs[config_idx]
             lookback = get_lookback(config, 'peaks_avg_lookback', avg_lookback)
-            
+           
             config_peaks = {}
             prefix = f'aVWAP_peak_c{config_idx}_'
             for key, value in all_individual_aVWAPs.items():
                 if key.startswith(prefix):
                     config_peaks[key] = value
-            
+           
             if config_peaks:
                 avg_name = 'Peaks_avg' if config_idx == 0 else f'Peaks_avg_{config_idx}'
                 df[avg_name] = calculate_rolling_aVWAP_avg(df, config_peaks, lookback)
@@ -741,13 +741,13 @@ def calculate_avwap_channel(df,
         if config_idx < len(peaks_valleys_configs):
             config = peaks_valleys_configs[config_idx]
             lookback = get_lookback(config, 'valleys_avg_lookback', avg_lookback)
-            
+           
             config_valleys = {}
             prefix = f'aVWAP_valley_c{config_idx}_'
             for key, value in all_individual_aVWAPs.items():
                 if key.startswith(prefix):
                     config_valleys[key] = value
-            
+           
             if config_valleys:
                 avg_name = 'Valleys_avg' if config_idx == 0 else f'Valleys_avg_{config_idx}'
                 df[avg_name] = calculate_rolling_aVWAP_avg(df, config_valleys, lookback)
@@ -757,13 +757,13 @@ def calculate_avwap_channel(df,
         if config_idx < len(gaps_configs):
             config = gaps_configs[config_idx]
             lookback = get_lookback(config, 'avg_lookback', avg_lookback)
-            
+           
             config_gaps = {}
             patterns = [f'Gap_Up_aVWAP_c{config_idx}_', f'Gap_Down_aVWAP_c{config_idx}_']
             for key, value in all_individual_aVWAPs.items():
                 if any(key.startswith(p) for p in patterns):
                     config_gaps[key] = value
-            
+           
             if config_gaps:
                 avg_name = 'Gaps_avg' if config_idx == 0 else f'Gaps_avg_{config_idx}'
                 df[avg_name] = calculate_rolling_aVWAP_avg(df, config_gaps, lookback)
@@ -773,13 +773,13 @@ def calculate_avwap_channel(df,
         if config_idx < len(OB_configs):
             config = OB_configs[config_idx]
             lookback = get_lookback(config, 'avg_lookback', avg_lookback)
-            
+           
             config_OB = {}
             patterns = [f'aVWAP_OB_bull_c{config_idx}_', f'aVWAP_OB_bear_c{config_idx}_']
             for key, value in all_individual_aVWAPs.items():
                 if any(key.startswith(p) for p in patterns):
                     config_OB[key] = value
-            
+           
             if config_OB:
                 avg_name = 'OB_avg' if config_idx == 0 else f'OB_avg_{config_idx}'
                 df[avg_name] = calculate_rolling_aVWAP_avg(df, config_OB, lookback)
@@ -789,13 +789,13 @@ def calculate_avwap_channel(df,
         if config_idx < len(BoS_CHoCH_configs):
             config = BoS_CHoCH_configs[config_idx]
             lookback = get_lookback(config, 'avg_lookback', avg_lookback)
-            
+           
             config_BoS = {}
             patterns = [f'aVWAP_BoS_CHoCH_bull_c{config_idx}_', f'aVWAP_BoS_CHoCH_bear_c{config_idx}_']
             for key, value in all_individual_aVWAPs.items():
                 if any(key.startswith(p) for p in patterns):
                     config_BoS[key] = value
-            
+           
             if config_BoS:
                 avg_name = 'BoS_CHoCH_avg' if config_idx == 0 else f'BoS_CHoCH_avg_{config_idx}'
                 df[avg_name] = calculate_rolling_aVWAP_avg(df, config_BoS, lookback)
@@ -806,7 +806,7 @@ def calculate_avwap_channel(df,
         lookback = avg_lookback
         if config_idx < len(peaks_valleys_configs):
             lookback = get_lookback(peaks_valleys_configs[config_idx], 'avg_lookback', avg_lookback)
-        
+       
         if all_individual_aVWAPs:
             avg_name = 'All_avg' if config_idx == 0 else f'All_avg_{config_idx}'
             df[avg_name] = calculate_rolling_aVWAP_avg(df, all_individual_aVWAPs, lookback)
@@ -842,19 +842,19 @@ def calculate_rolling_aVWAP_avg(df, aVWAP_dict, lookback=None):
     """Calculate average of aVWAP values"""
     if not aVWAP_dict:
         return pd.Series(np.nan, index=df.index)
-    
+   
     aVWAP_df = pd.DataFrame(aVWAP_dict)
-    
+   
     def extract_idx(col_name):
         try:
             parts = col_name.split('_')
             return int(parts[-1])
         except:
             return 0
-    
+   
     sorted_cols = sorted(aVWAP_df.columns, key=extract_idx, reverse=True)
     aVWAP_df = aVWAP_df[sorted_cols]
-    
+   
     avg_values = pd.Series(np.nan, index=df.index)
     for idx in aVWAP_df.index.intersection(df.index):
         valid_vals = aVWAP_df.loc[idx].dropna()

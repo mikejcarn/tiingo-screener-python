@@ -22,7 +22,7 @@ indicators = {  # List of available indicator configurations
         ],
 
         'daily': [
-            # 'aVWAP',
+            'aVWAP',
             # 'SMA',
             # 'candle_colors',
             # 'StDev',
@@ -31,7 +31,7 @@ indicators = {  # List of available indicator configurations
             # 'BoS_CHoCH',
             # 'QQEMOD',
             # 'banker_RSI',
-            'liquidity',
+            # 'liquidity',
             # 'OB',
             # 'RSI',
             # 'WAE',
@@ -229,10 +229,10 @@ params = {
             },
             'aVWAP': {
                 'peaks_valleys': False,
-                'peaks_valleys_avg': True,
+                'peaks_valleys_avg': False,
                 'peaks_avg': False,
                 'valleys_avg': False,
-                'OB': False,
+                'OB': True,
                 'OB_avg': False,
                 'gaps': False,
                 'gaps_avg': False,
@@ -242,26 +242,43 @@ params = {
                 'keep_OB_column': False,
                 'aVWAP_channel': False,
                 'peaks_valleys_params': [
-                    {  
+                    {
                         'periods': 50,
                         'max_aVWAPs': None,
                         'avg_lookback': 20,
                         'peaks_avg_lookback': 6,
                         'valleys_avg_lookback': 6
                     },
-                    {  
+                    {
                         'periods': 10,
                         'max_aVWAPs': None,
                         'avg_lookback': 5,
+                        'peaks_avg_lookback': 6,
+                        'valleys_avg_lookback': 6
                     },
-                    {  
+                    {
                         'periods': 5,
                         'max_aVWAPs': None,
                         'avg_lookback': 1,
+                        'peaks_avg_lookback': 6,
+                        'valleys_avg_lookback': 6
                     }
                 ],
+                'OB_params': [
+                    {
+                        'periods': 50,
+                        'max_aVWAPs': None,
+                    },
+                    {
+                        'periods': 20,
+                        'max_aVWAPs': None,
+                    },
+                    {
+                        'periods': 10,
+                        'max_aVWAPs': None,
+                    },
+                ],
                 'gaps_params': [ {'max_aVWAPs': 5, 'avg_lookback': 8}, ],
-                'OB_params': [ {'periods': 20, 'max_aVWAPs': 3, 'avg_lookback': 6}, ],
                 'BoS_CHoCH_params': [ {'swing_length': 15, 'max_aVWAPs': 4, 'avg_lookback': 7}, ],
             },
             'OB': {'periods': 20},
@@ -293,7 +310,7 @@ params = {
                 'bb_length': 18, 'bb_std_dev': 1.9,
                 'kc_length': 18, 'kc_mult': 1.7, 'use_true_range': True
             },
-            'divergence_OBV':    {'period': 50, 'lookback': 50},
+            'divergence_OBV': {'period': 50, 'lookback': 50},
             'divergence_Volume': {'period': 50, 'lookback': 50},
             'divergence_Fisher': {'period': 50, 'lookback': 50},
             'divergence_Vortex': {'period': 50, 'lookback': 50}

@@ -23,7 +23,7 @@ scan_conf = {
         },
         'params': {
             'SMA': {
-                'daily': {'mode': 'order', 'sma_periods': [50,20,10]},
+                'daily': {'mode': 'order', 'sma_periods': [50, 20, 10]},
             },
             'aVWAP_channel': {
                 '30min': {'mode': 'resistance', 'distance_pct': 3.0, 'direction': 'within'},
@@ -39,7 +39,7 @@ scan_conf = {
         'params': {
             'SMA': {
                 # 'daily': {'mode': 'order', 'sma_periods': [50,20,10], 'distance_pct': 1.0, 'outside_range': True},
-                'daily': {'mode': 'order', 'sma_periods': [50,20,10]},
+                'daily': {'mode': 'order', 'sma_periods': [50, 20, 10]},
             },
             'OB_aVWAP': {
                 # 'daily': {'mode': 'bullish', 'distance_pct': 1.0, 'direction': 'above'},
@@ -124,6 +124,24 @@ scan_conf = {
         }
     },
 
+
+
+    'd_OBaVWAPSupport_liquidity': {
+        'criteria': {
+            'daily': ['OB_aVWAP'],
+        },
+        'params': {
+            # 'liquidity': {
+            #     'daily': [
+            #         {'swing_length': 20, 'range_percent': 0.1},
+            #     ],
+            # },
+            'OB_aVWAP': {
+                'daily': {'mode': 'bullish', 'distance_pct': 90.0, 'direction': 'within'},
+            }
+        }
+    },
+
     'd_aVWAPChannelOverbought': {
         'criteria': {
             'daily': ['aVWAP_channel'],
@@ -144,7 +162,7 @@ scan_conf = {
         },
         'params': {
             'aVWAP_channel': {
-                'daily': {'mode': 'support', 
+                'daily': {'mode': 'support',
                           'direction': 'below',
                           'distance_pct': 5.0,
                           'outside_range': False}
@@ -212,10 +230,10 @@ scan_conf = {
             },
             'aVWAP_avg': {
                 'daily': {
-                          'mode': 'peaks', 
-                          'direction': 'within', 
-                          'distance_pct': 0.5, 
-                         }
+                    'mode': 'peaks',
+                    'direction': 'within',
+                    'distance_pct': 0.5,
+                }
             },
         }
     },
@@ -230,10 +248,10 @@ scan_conf = {
             },
             'aVWAP_avg': {
                 'daily': {
-                          'mode': 'valleys', 
-                          'direction': 'within', 
-                          'distance_pct': 0.5, 
-                         }
+                    'mode': 'valleys',
+                    'direction': 'within',
+                    'distance_pct': 0.5,
+                }
             },
         }
     },
@@ -282,8 +300,8 @@ scan_conf = {
             'aVWAP_avg': {
                 'daily': {
                           'mode': 'peaks', 
-                          'direction': 'above', 
-                          'distance_pct': 1.0, 
+                          'direction': 'above',
+                          'distance_pct': 10.0,
                          }
             },
         }
@@ -602,8 +620,8 @@ scan_conf = {
         'params': {
             'aVWAP_avg': {
                 'daily': {
-                          'distance_pct': 5.0, 
-                         },
+                    'distance_pct': 1.0,
+                },
             }
         }
     },
@@ -940,7 +958,7 @@ scan_conf = {
         },
         'params': {
             'OB_aVWAP': {
-                'daily': {'mode': 'bullish', 'distance_pct': 1.0, 'direction': 'within'},
+                'daily': {'mode': 'bullish', 'distance_pct': 90.0, 'direction': 'within'},
             }
         }
     },
@@ -951,7 +969,7 @@ scan_conf = {
         },
         'params': {
             'OB_aVWAP': {
-                'daily': {'mode': 'bearish', 'distance_pct': 1.0, 'direction': 'within'},
+                'daily': {'mode': 'bearish', 'distance_pct': 90.0, 'direction': 'within'},
             }
         }
     },
@@ -963,8 +981,8 @@ scan_conf = {
         'params': {
             'aVWAP_avg': {
                 'daily': {
-                          'mode': 'peaks', 
-                          'direction': 'within', 
+                          'mode': 'peaks',
+                          'direction': 'within',
                           'distance_pct': 0.5
                 },
             },
