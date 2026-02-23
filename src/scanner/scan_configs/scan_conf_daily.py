@@ -958,7 +958,7 @@ scan_conf = {
         },
         'params': {
             'OB_aVWAP': {
-                'daily': {'mode': 'bullish', 'distance_pct': 90.0, 'direction': 'within'},
+                'daily': {'mode': 'bullish', 'distance_pct': 3.0, 'direction': 'within'},
             }
         }
     },
@@ -969,7 +969,7 @@ scan_conf = {
         },
         'params': {
             'OB_aVWAP': {
-                'daily': {'mode': 'bearish', 'distance_pct': 90.0, 'direction': 'within'},
+                'daily': {'mode': 'bearish', 'distance_pct': 3.0, 'direction': 'within'},
             }
         }
     },

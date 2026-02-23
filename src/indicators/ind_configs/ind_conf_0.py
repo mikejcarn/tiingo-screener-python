@@ -269,14 +269,14 @@ params = {
                         'periods': 50,
                         'max_aVWAPs': None,
                     },
-                    {
-                        'periods': 20,
-                        'max_aVWAPs': None,
-                    },
-                    {
-                        'periods': 10,
-                        'max_aVWAPs': None,
-                    },
+                    # {
+                    #     'periods': 20,
+                    #     'max_aVWAPs': None,
+                    # },
+                    # {
+                    #     'periods': 10,
+                    #     'max_aVWAPs': None,
+                    # },
                 ],
                 'gaps_params': [ {'max_aVWAPs': 5, 'avg_lookback': 8}, ],
                 'BoS_CHoCH_params': [ {'swing_length': 15, 'max_aVWAPs': 4, 'avg_lookback': 7}, ],

@@ -19,11 +19,8 @@ scan_lists = {
 
         # 'd_aVWAPChannel',
         # 'd_OBaVWAPSupport_liquidity',
-        # 'd_OBBullishaVWAP',
-        # 'd_OBBearishaVWAP',
-
-        'd_OBBullish',
-        'd_OBBearish',
+        'd_OBBullishaVWAP',
+        'd_OBBearishaVWAP',
 
         # 'd_aVWAPavg',
 
