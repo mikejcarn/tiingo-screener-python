@@ -124,8 +124,42 @@ scan_conf = {
         }
     },
 
+    'd_OBaVWAPBullish_liquidity': {
+        'criteria': {
+            'daily': ['OB_aVWAP', 'liquidity'],
+        },
+        'params': {
+            'OB_aVWAP': {
+                'daily': [
+                    {'mode': 'bullish', 'distance_pct': 3.0, 'direction': 'within'},
+                ]
+            },
+            'liquidity': {
+                'daily': [
+                    {'swing_length': 20, 'distance_pct': 5.0},
+                ],
+            },
+        }
+    },
 
-
+    'd_OBaVWAPBearish_liquidity': {
+        'criteria': {
+            'daily': ['OB_aVWAP', 'liquidity'],
+        },
+        'params': {
+            'OB_aVWAP': {
+                'daily': [
+                    {'mode': 'bearish', 'distance_pct': 3.0, 'direction': 'within'},
+                ]
+            },
+            'liquidity': {
+                'daily': [
+                    {'swing_length': 20, 'distance_pct': 5.0},
+                ],
+            },
+        }
+    },
+ 
     'd_OBaVWAPSupport_liquidity': {
         'criteria': {
             'daily': ['OB_aVWAP'],

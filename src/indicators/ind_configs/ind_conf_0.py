@@ -229,7 +229,7 @@ params = {
             },
             'aVWAP': {
                 'peaks_valleys': False,
-                'peaks_valleys_avg': False,
+                'peaks_valleys_avg': True,
                 'peaks_avg': False,
                 'valleys_avg': False,
                 'OB': True,
@@ -249,34 +249,27 @@ params = {
                         'peaks_avg_lookback': 6,
                         'valleys_avg_lookback': 6
                     },
-                    {
-                        'periods': 10,
-                        'max_aVWAPs': None,
-                        'avg_lookback': 5,
-                        'peaks_avg_lookback': 6,
-                        'valleys_avg_lookback': 6
-                    },
-                    {
-                        'periods': 5,
-                        'max_aVWAPs': None,
-                        'avg_lookback': 1,
-                        'peaks_avg_lookback': 6,
-                        'valleys_avg_lookback': 6
-                    }
+                    # {
+                    #     'periods': 20,
+                    #     'max_aVWAPs': None,
+                    #     'avg_lookback': 5,
+                    #     'peaks_avg_lookback': 6,
+                    #     'valleys_avg_lookback': 6
+                    # },
                 ],
                 'OB_params': [
                     {
                         'periods': 50,
                         'max_aVWAPs': None,
                     },
-                    # {
-                    #     'periods': 20,
-                    #     'max_aVWAPs': None,
-                    # },
-                    # {
-                    #     'periods': 10,
-                    #     'max_aVWAPs': None,
-                    # },
+                    {
+                        'periods': 20,
+                        'max_aVWAPs': None,
+                    },
+                    {
+                        'periods': 10,
+                        'max_aVWAPs': None,
+                    },
                 ],
                 'gaps_params': [ {'max_aVWAPs': 5, 'avg_lookback': 8}, ],
                 'BoS_CHoCH_params': [ {'swing_length': 15, 'max_aVWAPs': 4, 'avg_lookback': 7}, ],
