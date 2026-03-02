@@ -22,9 +22,10 @@ indicators = {  # List of available indicator configurations
         ],
 
         'daily': [
-            'aVWAP',
+            'engulfing_candle',
+            # 'aVWAP',
             # 'SMA',
-            # 'candle_colors',
+            'candle_colors',
             # 'StDev',
             # 'gaps',
             # 'FVG',
@@ -213,7 +214,7 @@ params = {
 
         'daily': {
             'candle_colors': {
-                'indicator_color': 'QQEMOD',
+                'indicator_color': 'engulfing_candle',
                 'custom_params': {
                     'StDev': {
                         'std_lookback': 20, 'avg_lookback': 20,
@@ -229,7 +230,7 @@ params = {
             },
             'aVWAP': {
                 'peaks_valleys': False,
-                'peaks_valleys_avg': True,
+                'peaks_valleys_avg': False,
                 'peaks_avg': False,
                 'valleys_avg': False,
                 'OB': True,
@@ -263,11 +264,23 @@ params = {
                         'max_aVWAPs': None,
                     },
                     {
+                        'periods': 40,
+                        'max_aVWAPs': None,
+                    },
+                    {
+                        'periods': 30,
+                        'max_aVWAPs': None,
+                    },
+                    {
                         'periods': 20,
                         'max_aVWAPs': None,
                     },
                     {
                         'periods': 10,
+                        'max_aVWAPs': None,
+                    },
+                    {
+                        'periods': 5,
                         'max_aVWAPs': None,
                     },
                 ],
@@ -292,7 +305,7 @@ params = {
                 'qqe_factor': 3.0, 'qqe_factor2': 1.61, 'threshold': 3,
                 'bb_length': 50, 'bb_multi': 0.35
             },
-            'SMA': {'periods': [50, 100, 200]},
+            'SMA': {'periods': [50]},
             'WAE': {
                 'fast_period': 20, 'slow_period': 40, 
                 'atr_period': 20, 'explosion_multiplier': 2.0
@@ -306,7 +319,10 @@ params = {
             'divergence_OBV': {'period': 50, 'lookback': 50},
             'divergence_Volume': {'period': 50, 'lookback': 50},
             'divergence_Fisher': {'period': 50, 'lookback': 50},
-            'divergence_Vortex': {'period': 50, 'lookback': 50}
+            'divergence_Vortex': {'period': 50, 'lookback': 50},
+            'engulfing_candle': {'mode': 'both', 
+                                 'engulfing_periods': 3, 
+                                 'close_threshold': 0.25}
         },
 
         '4hour': {
