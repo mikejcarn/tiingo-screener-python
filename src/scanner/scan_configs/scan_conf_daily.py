@@ -1315,4 +1315,19 @@ scan_conf = {
         }
     },
 
+    'd_EngulfingCandle': {
+        'criteria': {
+            'daily': ['engulfing_candle'],
+        },
+        'params': {
+            'engulfing_candle': {
+                'daily': {
+                          'mode': 'both', 
+                          'min_patterns': 3, 
+                          'lookback_candles': None
+                },
+            },
+        }
+    },
+
 }

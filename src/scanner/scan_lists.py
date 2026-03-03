@@ -2,6 +2,8 @@ scan_lists = {
 
     'scan_list_0': [
 
+        'd_EngulfingCandle'
+
         # 'd_SMAAbove',
         # 'd_OBaVWAPPinch',
         # 'h_OBaVWAPPinch',
@@ -22,8 +24,8 @@ scan_lists = {
         # 'd_OBBullishaVWAP',
         # 'd_OBBearishaVWAP',
 
-        'd_OBaVWAPBearish_liquidity',
-        'd_OBaVWAPBullish_liquidity',
+        # 'd_OBaVWAPBearish_liquidity',
+        # 'd_OBaVWAPBullish_liquidity',
 
         # 'd_aVWAPavg',
 

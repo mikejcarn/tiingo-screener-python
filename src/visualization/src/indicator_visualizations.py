@@ -339,7 +339,7 @@ def _aVWAP_visualization(subchart, df):
         ).set(_line_set_df(df, col))
 
     # -------------------------
-    # OB aVWAPs (IMPROVED)
+    # OB aVWAPs
     # -------------------------
     # Toggle: limit plotted OB anchors per config to keep charts readable
     LIMIT_OB_ANCHORS_PER_CFG = True
