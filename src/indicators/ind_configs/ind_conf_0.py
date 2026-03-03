@@ -22,10 +22,10 @@ indicators = {  # List of available indicator configurations
         ],
 
         'daily': [
-            'engulfing_candle',
-            # 'aVWAP',
+            # 'engulfing_candle',
+            'aVWAP',
             # 'SMA',
-            'candle_colors',
+            # 'candle_colors',
             # 'StDev',
             # 'gaps',
             # 'FVG',
@@ -277,10 +277,6 @@ params = {
                     },
                     {
                         'periods': 10,
-                        'max_aVWAPs': None,
-                    },
-                    {
-                        'periods': 5,
                         'max_aVWAPs': None,
                     },
                 ],
