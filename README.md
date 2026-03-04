@@ -8,7 +8,7 @@ Stock screener application that fetches ticker data from the Tiingo API, calcula
 - **Advanced Visualization**: TradingView-style charts using lightweight-charts library
 - **Flexible Data Management**: Version-controlled buffer system with save/load/delete capabilities
 - **Comprehensive Scanning**: Multiple indicator-based scan criteria
-- **Dynamic CLI**: Flexible timeframe specification across all commands
+- **Dynamic CLI**: Flexible specifications across commands
 
 ## 📁 Data System Framework
 
@@ -24,7 +24,7 @@ Stock screener application that fetches ticker data from the Tiingo API, calcula
     └── scan_list_*/
 ```
 
-### Workflow 
+### Data Workflow 
 `Tiingo API` → `./data/tickers` → `./data/indicators` → `./data/scans`
 1. **API Fetch**: Tiingo API → `./data/tickers/`
 2. **Indicator Calculations**: Tickers buffer → `./data/indicators/`
@@ -397,7 +397,7 @@ scan_lists = {
 | `--fetch` | Download tickers from API to buffer | `--fetch daily` |
 | `--ind` | Calculate indicators from tickers buffer | `--ind --ind-conf 1` |
 | `--scan` | Run scanner on indicators buffer | `--scan --scan-list 1` |
-| `--vis` | Launch visualization | `--vis --ticker MSFT --timeframe d --ind-conf 1` `--vis --ticker MSFT --timeframe w,d,4h,h --ind-conf 1,2,3,4` `--vis --ticker MSFT,BTCUSD,AAPL,SOFI --timeframe w,d,4h,h --ind-conf 1` |
+| `--vis` | Launch visualization | `--vis --ticker MSFT --timeframe d --ind-conf 1`<br> `--vis --ticker MSFT --timeframe w,d,4h,h --ind-conf 1,2,3,4`<br> `--vis --ticker MSFT,BTCUSD,AAPL,SOFI --timeframe w,d,4h,h --ind-conf 1` |
 
 **`--fetch` Options:**
 - `--timeframe [TF]` - Timeframes(s) to fetch (comma-separated e.g., "daily,weekly")
