@@ -73,7 +73,7 @@ Stock screener application that fetches ticker data from the Tiingo API, calcula
     - screenshots saved to `./docs/screenshots/`
     - screenshots taken of entire application window
     - screenshots saved as PNG format
-    - naming convention: `{TICKER}_{TIMEFRAME}-{DATE_STAMP}-{HHMMSS}`
+    - naming convention: `{TICKER}_{TIMEFRAME}-{DATE}-{HHMMSS}`
 
 ## 📥 Ticker Data Fetching System
 
@@ -125,9 +125,9 @@ df = fetch_ticker(
 
 ### Ticker File Naming Convention:
 ```bash
-{TICKER}_{TIMEFRAME}_{DATE_STAMP}.csv
+{TICKER}_{TIMEFRAME}_{DATE}.csv
 ```
-- `DATE_STAMP`: Format `DDMMYY` (e.g., `010124` for Jan 1, 2024)
+- `DATE`: Format `DDMMYY` (e.g., `010124` for Jan 1, 2024)
 
 ### Ticker File Output Structure
 ```bash
@@ -153,13 +153,15 @@ date,Open,High,Low,Close,Volume
 - Generate signals for scanning and visualization
 
 ### Indicator Configuration Files
-`./src/indicators/ind_configs/`:
-├── ind_conf_0.py
-├── ind_conf_1.py
-├── ind_conf_2.py
-├── ind_conf_3.py
-├── ind_conf_4.py
+```
+./src/indicators/ind_configs/:
+├── ind_conf_0.py<br>
+├── ind_conf_1.py<br>
+├── ind_conf_2.py<br>
+├── ind_conf_3.py<br>
+├── ind_conf_4.py<br>
 └── ...
+```
 
 ### Indicator Configuration System
 
@@ -222,7 +224,7 @@ params = {
 ### Indicator File Naming Convention:
 
 ```bash
-{TICKER}_{TIMEFRAME}_{DATE_STAMP}.csv
+[TICKER]_[TIMEFRAME]_[DATE].csv
 ```
 
 ### Output Structure
