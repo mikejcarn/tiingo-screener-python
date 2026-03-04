@@ -36,7 +36,7 @@ Stock screener application that fetches ticker data from the Tiingo API, calcula
 - JSON data converted to pandas Dataframes for manipulation
 - Data is stored locally as CSV files in buffer and storage folders
 - Data Formats: 
-    - Tickers/Indicators: `[TICKER]_[TF]_[DATE].csv` 
+    - Tickers/Indicators: `[TICKER]_[TIMEFRAME]_[DATE].csv` 
     - Scans: `scan_[DATE]_[TYPE].csv`
 
 ## 📊 Visualization Application
@@ -387,7 +387,7 @@ scan_lists = {
 ## 🖥️ CLI Usage Guide
 
 - Values in `[brackets]` represent application CLI inputs.
-- Shared `--timeframe` parameter [TF]: Use the same parameter for fetch, indicators, and visualization
+- Shared `--timeframe` parameter [TIMEFRAME]: Use the same parameter for fetch, indicators, and visualization
 - Dynamic timeframes: Specify exactly which timeframes to process for each command
 
 ### MAIN FUNCTIONS
@@ -400,12 +400,12 @@ scan_lists = {
 | `--vis` | Launch visualization | `--vis --ticker MSFT --timeframe d --ind-conf 1`<br> `--vis --ticker MSFT --timeframe w,d,4h,h --ind-conf 1,2,3,4`<br> `--vis --ticker MSFT,BTCUSD,AAPL,SOFI --timeframe w,d,4h,h --ind-conf 1` |
 
 **`--fetch` Options:**
-- `--timeframe [TF]` - Timeframes(s) to fetch (comma-separated e.g., "daily,weekly")
+- `--timeframe [TIMEFRAME]` - Timeframes(s) to fetch (comma-separated e.g., "daily,weekly")
 - Default: `weekly,daily,4hour,1hour`
 
 **`--ind` Options:**
 - `--ind-conf [VERSION]` - Indicator config (`1`, `2`, `3`, `4`)
-- `--timeframe [TF]` - Timeframe(s) to process (comma-separated, e.g., "daily,weekly,4hour")
+- `--timeframe [TIMEFRAME]` - Timeframe(s) to process (comma-separated, e.g., "daily,weekly,4hour")
 - Default: All timeframes in tickers buffer
 
 **`--scan` Options:**
@@ -413,7 +413,7 @@ scan_lists = {
 
 **`--vis` Options:**
 - `--ticker [SYMBOL]` - Ticker symbol(s) (`BTCUSD`, `BTCUSD,SOFI,AAPL,MSFT`)
-- `--timeframe [TF]` - Timeframe(s) (`5min`, `w,d,4h,h`)
+- `--timeframe [TIMEFRAME]` - Timeframe(s) (`5min`, `w,d,4h,h`)
 - `--ind-conf [VERSION]` - Indicator config(s) (`1`, `1,2,3,4`)
 - `--scan-file [FILE]` - Scan results file (`scan_*.csv`)
 
