@@ -229,11 +229,13 @@ params = {
                 }
             },
             'aVWAP': {
-                'peaks_valleys': False,
-                'peaks_valleys_avg': False,
+                'peaks': False,
+                'valleys': True,
                 'peaks_avg': False,
                 'valleys_avg': False,
-                'OB': True,
+                'peaks_valleys': False,
+                'peaks_valleys_avg': False,
+                'OB': False,
                 'OB_avg': False,
                 'gaps': False,
                 'gaps_avg': False,
@@ -242,6 +244,16 @@ params = {
                 'All_avg': False,
                 'keep_OB_column': False,
                 'aVWAP_channel': False,
+                'peaks_params': {
+                    'periods': 50, 
+                    'max_aVWAPs': None, 
+                    'avg_lookback': 20, 
+                },
+                'valleys_params': {
+                    'periods': 50, 
+                    'max_aVWAPs': None, 
+                    'avg_lookback': 20, 
+                },
                 'peaks_valleys_params': [
                     {
                         'periods': 50,
@@ -250,13 +262,6 @@ params = {
                         'peaks_avg_lookback': 6,
                         'valleys_avg_lookback': 6
                     },
-                    # {
-                    #     'periods': 20,
-                    #     'max_aVWAPs': None,
-                    #     'avg_lookback': 5,
-                    #     'peaks_avg_lookback': 6,
-                    #     'valleys_avg_lookback': 6
-                    # },
                 ],
                 'OB_params': [
                     {
