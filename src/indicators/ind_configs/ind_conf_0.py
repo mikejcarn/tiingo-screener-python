@@ -25,14 +25,14 @@ indicators = {  # List of available indicator configurations
             # 'engulfing_candle',
             'aVWAP',
             # 'SMA',
-            # 'candle_colors',
+            'candle_colors',
             # 'StDev',
             # 'gaps',
             # 'FVG',
             # 'BoS_CHoCH',
             # 'QQEMOD',
             # 'banker_RSI',
-            # 'liquidity',
+            'liquidity',
             # 'OB',
             # 'RSI',
             # 'WAE',
@@ -214,7 +214,7 @@ params = {
 
         'daily': {
             'candle_colors': {
-                'indicator_color': 'engulfing_candle',
+                'indicator_color': 'QQEMOD',
                 'custom_params': {
                     'StDev': {
                         'std_lookback': 20, 'avg_lookback': 20,
@@ -233,8 +233,8 @@ params = {
                 'valleys': False,
                 'peaks_avg': False,
                 'valleys_avg': False,
-                'peaks_valleys': True,
-                'peaks_valleys_avg': False,
+                'peaks_valleys': False,
+                'peaks_valleys_avg': True,
                 'OB': True,
                 'OB_avg': False,
                 'gaps': False,
@@ -250,11 +250,6 @@ params = {
                         'max_aVWAPs': None,
                         'avg_lookback': 50,
                     },
-                    # {
-                    #     'periods': 20,
-                    #     'max_aVWAPs': None,
-                    #     'avg_lookback': 20,
-                    # },
                 ],
                 'valleys_params': [
                     {
@@ -262,27 +257,22 @@ params = {
                         'max_aVWAPs': None,
                         'avg_lookback': 50,
                     },
-                    # {
-                    #     'periods': 20,
-                    #     'max_aVWAPs': None,
-                    #     'avg_lookback': 20,
-                    # },
                 ],
                 'peaks_valleys_params': [
                     {
-                        'periods': 50,
-                        'max_aVWAPs': None,
-                        'avg_lookback': 50,
-                    },
-                    {
                         'periods': 20,
                         'max_aVWAPs': None,
-                        'avg_lookback': 30,
+                        'avg_lookback': 20,
                     },
                     # {
-                    #     'periods': 10,
+                    #     'periods': 50,
                     #     'max_aVWAPs': None,
-                    #     'avg_lookback': 10,
+                    #     'avg_lookback': 50,
+                    # },
+                    # {
+                    #     'periods': 50,
+                    #     'max_aVWAPs': None,
+                    #     'avg_lookback': 50,
                     # },
                 ],
                 'OB_params': [
