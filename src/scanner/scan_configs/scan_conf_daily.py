@@ -96,6 +96,24 @@ scan_conf = {
         }
     },
 
+    'd_SMA50_aVWAPavg': {
+        'criteria': {
+            'daily': ['aVWAP_avg', 'SMA'],
+        },
+        'params': {
+            'aVWAP_avg': {
+                'daily': [
+                    {'mode': 'combined', 'distance_pct': 5.0, 'direction': 'within'},
+                ],
+            },
+            'SMA': {
+                'daily': [
+                    {'sma_periods': [50], 'distance_pct': 5.0, 'mode': 'within'},
+                ],
+            }
+        }
+    },
+
     'd_OBaVWAPPinch': {
         'criteria': {
             'daily': ['OB_aVWAP', 'OB_aVWAP'],
@@ -124,9 +142,9 @@ scan_conf = {
         }
     },
 
-    'd_OBaVWAPBullish_liquidity': {
+    'd_OBaVWAPBullish_aVWAPavg': {
         'criteria': {
-            'daily': ['OB_aVWAP', 'liquidity'],
+            'daily': ['OB_aVWAP', 'aVWAP_avg'],
         },
         'params': {
             'OB_aVWAP': {
@@ -134,9 +152,9 @@ scan_conf = {
                     {'mode': 'bullish', 'distance_pct': 3.0, 'direction': 'within'},
                 ]
             },
-            'liquidity': {
+            'aVWAP_avg': {
                 'daily': [
-                    {'swing_length': 20, 'distance_pct': 5.0},
+                    {'mode': 'combined', 'distance_pct': 5.0, 'direction': 'within'},
                 ],
             },
         }
@@ -742,6 +760,24 @@ scan_conf = {
     },
 
     'd_aVWAPavgAbove_OBBearish': {
+        'criteria': {
+            'daily': ['aVWAP_avg', 'OB'],
+        },
+        'params': {
+            'aVWAP_avg': {
+                'daily': {
+                          'direction': 'above',
+                          'distance_pct': 1.0, 
+                          'outside_range': True
+                },
+            },
+            'OB': {
+                'daily': {'mode': 'bearish'},
+            },
+        }
+    },
+
+    'd_aVWAPavg_OBBbullish': {
         'criteria': {
             'daily': ['aVWAP_avg', 'OB'],
         },
