@@ -103,12 +103,12 @@ scan_conf = {
         'params': {
             'aVWAP_avg': {
                 'daily': [
-                    {'mode': 'combined', 'distance_pct': 5.0, 'direction': 'within'},
+                    {'mode': 'combined', 'distance_pct': 3.0, 'direction': 'within'},
                 ],
             },
             'SMA': {
                 'daily': [
-                    {'sma_periods': [50], 'distance_pct': 5.0, 'mode': 'within'},
+                    {'sma_periods': [50], 'distance_pct': 3.0, 'mode': 'within'},
                 ],
             }
         }

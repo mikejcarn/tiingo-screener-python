@@ -23,8 +23,8 @@ indicators = {  # List of available indicator configurations
 
         'daily': [
             'aVWAP',
-            'candle_colors',
-            'SMA',
+            # 'candle_colors',
+            # 'SMA',
             # 'liquidity',
             # 'engulfing_candle',
             # 'StDev',
@@ -269,31 +269,29 @@ params = {
                     #     'max_aVWAPs': None,
                     #     'avg_lookback': 50,
                     # },
-                    # {
-                    #     'periods': 50,
-                    #     'max_aVWAPs': None,
-                    #     'avg_lookback': 50,
-                    # },
                 ],
                 'OB_params': [
                     {
+                        'mode': 'none',
+                    },
+                    {
+                        'mode': 'valleys',
                         'periods': 50,
                         'max_aVWAPs': None,
                     },
                     {
-                        'periods': 40,
+                        'mode': 'peaks',
+                        'periods': 50,
                         'max_aVWAPs': None,
                     },
                     {
-                        'periods': 30,
-                        'max_aVWAPs': None,
-                    },
-                    {
+                        'mode': 'valleys',
                         'periods': 20,
                         'max_aVWAPs': None,
                     },
                     {
-                        'periods': 10,
+                        'mode': 'peaks',
+                        'periods': 20,
                         'max_aVWAPs': None,
                     },
                 ],
