@@ -286,12 +286,42 @@ params = {
                     },
                     {
                         'mode': 'valleys',
+                        'periods': 40,
+                        'max_aVWAPs': None,
+                    },
+                    {
+                        'mode': 'peaks',
+                        'periods': 40,
+                        'max_aVWAPs': None,
+                    },
+                    {
+                        'mode': 'valleys',
+                        'periods': 30,
+                        'max_aVWAPs': None,
+                    },
+                    {
+                        'mode': 'peaks',
+                        'periods': 30,
+                        'max_aVWAPs': None,
+                    },
+                    {
+                        'mode': 'valleys',
                         'periods': 20,
                         'max_aVWAPs': None,
                     },
                     {
                         'mode': 'peaks',
                         'periods': 20,
+                        'max_aVWAPs': None,
+                    },
+                    {
+                        'mode': 'valleys',
+                        'periods': 10,
+                        'max_aVWAPs': None,
+                    },
+                    {
+                        'mode': 'peaks',
+                        'periods': 10,
                         'max_aVWAPs': None,
                     },
                 ],
