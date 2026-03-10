@@ -61,7 +61,7 @@ indicators = {  # List of available indicator configurations
         ],
 
         '1hour': [
-            # 'aVWAP',
+            'aVWAP',
             # 'candle_colors',
             # 'StDev',
             # 'SMA',
@@ -229,12 +229,12 @@ params = {
                 }
             },
             'aVWAP': {
-                'peaks': True,
-                'valleys': True,
+                'peaks': False,
+                'valleys': False,
                 'peaks_avg': False,
                 'valleys_avg': False,
                 'peaks_valleys': False,
-                'peaks_valleys_avg': False,
+                'peaks_valleys_avg': True,
                 'OB': False,
                 'OB_avg': False,
                 'gaps': False,
@@ -457,75 +457,171 @@ params = {
 
         '1hour': {
             'candle_colors': {
-                'indicator_color': 'StDev',
+                'indicator_color': 'QQEMOD',
                 'custom_params': {
                     'StDev': {
+                        'std_lookback': 20, 'avg_lookback': 20,
                         'centreline': 'peaks_valleys_avg',
-                        'peaks_valleys_params': {'periods': 20, 'max_aVWAPs': None},
-                        'std_lookback': 20, 'avg_lookback': 20
+                        'peaks_valleys_params': {'periods': 20, 'max_aVWAPs': None}
                     },
                     'QQEMOD': {
-                        'rsi_period': 5, 'rsi_period2': 5, 'sf': 5, 'sf2': 4,
-                        'qqe_factor': 2.5, 'qqe_factor2': 1.3, 'threshold': 2,
-                        'bb_length': 40, 'bb_multi': 0.3
+                        'rsi_period': 6, 'rsi_period2': 5, 'sf': 5, 'sf2': 5,
+                        'qqe_factor': 3.0, 'qqe_factor2': 1.61, 'threshold': 3,
+                        'bb_length': 50, 'bb_multi': 0.35
                     },
                 }
             },
             'aVWAP': {
-                'peaks_valleys': True,
-                'peaks_valleys_avg': False,
+                'peaks': False,
+                'valleys': False,
                 'peaks_avg': False,
                 'valleys_avg': False,
-                'peaks_valleys_params': {'periods': 25, 'max_aVWAPs': 1},
+                'peaks_valleys': False,
+                'peaks_valleys_avg': True,
                 'OB': False,
                 'OB_avg': False,
-                'OB_params': {
-                              'periods': 25, 
-                              'max_aVWAPs': None,
-                              'include_bullish': True,
-                              'include_bearish': True
-                             },
                 'gaps': False,
                 'gaps_avg': False,
-                'gaps_params': {'max_aVWAPs': 10},
+                'BoS_CHoCH': False,
+                'BoS_CHoCH_avg': False,
                 'All_avg': False,
-                'avg_lookback': 25,
                 'keep_OB_column': False,
                 'aVWAP_channel': False,
+                'peaks_params': [
+                    {
+                        'periods': 100,
+                        'max_aVWAPs': None,
+                        'avg_lookback': 20,
+                    },
+                    {
+                        'periods': 50,
+                        'max_aVWAPs': None,
+                        'avg_lookback': 20,
+                    },
+                ],
+                'valleys_params': [
+                    {
+                        'periods': 100,
+                        'max_aVWAPs': None,
+                        'avg_lookback': 20,
+                    },
+                    {
+                        'periods': 50,
+                        'max_aVWAPs': None,
+                        'avg_lookback': 20,
+                    },
+                ],
+                'peaks_valleys_params': [
+                    {
+                        'periods': 50,
+                        'max_aVWAPs': None,
+                        'avg_lookback': 20,
+                    },
+                    {
+                        'periods': 30,
+                        'max_aVWAPs': None,
+                        'avg_lookback': 20,
+                    },
+                    {
+                        'periods': 10,
+                        'max_aVWAPs': None,
+                        'avg_lookback': 20,
+                    },
+                ],
+                'OB_params': [
+                    {
+                        'mode': 'none',
+                    },
+                    {
+                        'mode': 'valleys',
+                        'periods': 50,
+                        'max_aVWAPs': None,
+                    },
+                    {
+                        'mode': 'peaks',
+                        'periods': 50,
+                        'max_aVWAPs': None,
+                    },
+                    {
+                        'mode': 'valleys',
+                        'periods': 40,
+                        'max_aVWAPs': None,
+                    },
+                    {
+                        'mode': 'peaks',
+                        'periods': 40,
+                        'max_aVWAPs': None,
+                    },
+                    {
+                        'mode': 'valleys',
+                        'periods': 30,
+                        'max_aVWAPs': None,
+                    },
+                    {
+                        'mode': 'peaks',
+                        'periods': 30,
+                        'max_aVWAPs': None,
+                    },
+                    {
+                        'mode': 'valleys',
+                        'periods': 20,
+                        'max_aVWAPs': None,
+                    },
+                    {
+                        'mode': 'peaks',
+                        'periods': 20,
+                        'max_aVWAPs': None,
+                    },
+                    {
+                        'mode': 'valleys',
+                        'periods': 10,
+                        'max_aVWAPs': None,
+                    },
+                    {
+                        'mode': 'peaks',
+                        'periods': 10,
+                        'max_aVWAPs': None,
+                    },
+                ],
+                'gaps_params': [ {'max_aVWAPs': 5, 'avg_lookback': 8}, ],
+                'BoS_CHoCH_params': [ {'swing_length': 15, 'max_aVWAPs': 4, 'avg_lookback': 7}, ],
             },
-            'OB': {'periods': 25},
+            'OB': {'periods': 20},
             'FVG': {
-                'max_mitigated': 10, 
-                'max_unmitigated': 10, 
+                'max_mitigated': 10,
+                'max_unmitigated': 10,
                 'join_consecutive': False
             },
             'RSI': {'periods': 14},
-            'BoS_CHoCH': {'swing_length': 25},
+            'BoS_CHoCH': {'swing_length': 10},
             'StDev': {
                 'centreline': 'peaks_valleys_avg',
                 'peaks_valleys_params': {'periods': 20, 'max_aVWAPs': None},
                 'std_lookback': 20, 'avg_lookback': 20
             },
             'QQEMOD': {
-                'rsi_period': 5, 'rsi_period2': 5, 'sf': 5, 'sf2': 4,
-                'qqe_factor': 2.5, 'qqe_factor2': 1.3, 'threshold': 2,
-                'bb_length': 40, 'bb_multi': 0.3
+                'rsi_period': 6, 'rsi_period2': 5, 'sf': 5, 'sf2': 5,
+                'qqe_factor': 3.0, 'qqe_factor2': 1.61, 'threshold': 3,
+                'bb_length': 50, 'bb_multi': 0.35
             },
-            'SMA': {'periods': [200, 100, 50, 20]},
+            'SMA': {'periods': [50]},
             'WAE': {
                 'fast_period': 20, 'slow_period': 40, 
                 'atr_period': 20, 'explosion_multiplier': 2.0
             },
-            'liquidity': {'swing_length': 64, 'range_percent': 0.1},
-            'supertrend': {'periods': 12, 'multiplier': 2.5},
+            'liquidity': {'swing_length': 20, 'range_percent': 0.1},
+            'supertrend': {'periods': 14, 'multiplier': 3},
             'TTM_squeeze': {
-                'bb_length': 14, 'bb_std_dev': 1.8,
-                'kc_length': 14, 'kc_mult': 1.3, 'use_true_range': True
+                'bb_length': 18, 'bb_std_dev': 1.9,
+                'kc_length': 18, 'kc_mult': 1.7, 'use_true_range': True
             },
-            'divergence_OBV':    {'period': 128, 'lookback': 64},
-            'divergence_Volume': {'period': 128, 'lookback': 64},
-            'divergence_Fisher': {'period': 128, 'lookback': 64},
-            'divergence_Vortex': {'period': 128, 'lookback': 64}
+            'divergence_OBV': {'period': 50, 'lookback': 50},
+            'divergence_Volume': {'period': 50, 'lookback': 50},
+            'divergence_Fisher': {'period': 50, 'lookback': 50},
+            'divergence_Vortex': {'period': 50, 'lookback': 50},
+            'engulfing_candle': {'mode': 'both', 
+                                 'engulfing_periods': 3, 
+                                 'close_threshold': 0.25}
         },
 
 
