@@ -229,13 +229,13 @@ params = {
                 }
             },
             'aVWAP': {
-                'peaks': False,
-                'valleys': False,
+                'peaks': True,
+                'valleys': True,
                 'peaks_avg': False,
                 'valleys_avg': False,
                 'peaks_valleys': False,
-                'peaks_valleys_avg': True,
-                'OB': True,
+                'peaks_valleys_avg': False,
+                'OB': False,
                 'OB_avg': False,
                 'gaps': False,
                 'gaps_avg': False,
@@ -246,29 +246,44 @@ params = {
                 'aVWAP_channel': False,
                 'peaks_params': [
                     {
+                        'periods': 100,
+                        'max_aVWAPs': None,
+                        'avg_lookback': 20,
+                    },
+                    {
                         'periods': 50,
                         'max_aVWAPs': None,
-                        'avg_lookback': 50,
+                        'avg_lookback': 20,
                     },
                 ],
                 'valleys_params': [
                     {
+                        'periods': 100,
+                        'max_aVWAPs': None,
+                        'avg_lookback': 20,
+                    },
+                    {
                         'periods': 50,
                         'max_aVWAPs': None,
-                        'avg_lookback': 50,
+                        'avg_lookback': 20,
                     },
                 ],
                 'peaks_valleys_params': [
                     {
-                        'periods': 20,
+                        'periods': 50,
                         'max_aVWAPs': None,
                         'avg_lookback': 20,
                     },
-                    # {
-                    #     'periods': 50,
-                    #     'max_aVWAPs': None,
-                    #     'avg_lookback': 50,
-                    # },
+                    {
+                        'periods': 30,
+                        'max_aVWAPs': None,
+                        'avg_lookback': 20,
+                    },
+                    {
+                        'periods': 10,
+                        'max_aVWAPs': None,
+                        'avg_lookback': 20,
+                    },
                 ],
                 'OB_params': [
                     {
