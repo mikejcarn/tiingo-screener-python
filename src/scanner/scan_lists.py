@@ -8,7 +8,8 @@ scan_lists = {
         # 'd_SMA50_aVWAPavg',
 
         # 'd_aVWAPavgMulti',
-        'd_aVWAPavgMulti_h_aVWAPavgMulti',
+        # 'd_aVWAPavgMulti_h_aVWAPavgMulti',
+        'd_aVWAPavgMulti_h_aVWAPChannelSupport',
 
         # 'd_SMAAbove',
         # 'd_OBaVWAPPinch',

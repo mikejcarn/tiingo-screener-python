@@ -55,6 +55,30 @@ scan_conf = {
         }
     },
 
+    'd_aVWAPavgMulti_h_aVWAPChannelSupport': {
+        'criteria': {
+            'daily': ['aVWAP_avg_multi'],
+            '1hour': ['aVWAP_channel'],
+        },
+        'params': {
+            'aVWAP_avg_multi': {
+                'daily': {
+                    'condition': 'stacked_bullish',
+                    # 'threshold_pct': 3.0,
+                    # 'lookback_bars': 50,
+                    'confirmation_bars': 50,
+                },
+            },
+            'aVWAP_channel': {
+                '1hour': {
+                    'mode': 'support',
+                    'distance_pct': 3.0,
+                    'direction': 'within',
+                },
+            },
+        }
+    },
+
     'd_SMA_30min_aVWAPChannelResistance': {
         'criteria': {
             'daily': ['SMA'],

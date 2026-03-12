@@ -163,14 +163,10 @@ params = {
                 }
             },
             'aVWAP': {
-                'peaks': False,
-                'valleys': False,
-                'peaks_avg': False,
-                'valleys_avg': False,
-                'peaks_valleys': False,
-                'peaks_valleys_avg': True,
-                'OB': False,
-                'OB_avg': False,
+                'peaks': False,         'peaks_avg': False,
+                'valleys': False,        'valleys_avg': False,
+                'peaks_valleys': False, 'peaks_valleys_avg': True,
+                'OB': False,            'OB_avg': False,
                 'gaps': False,
                 'gaps_avg': False,
                 'BoS_CHoCH': False,
@@ -188,87 +184,62 @@ params = {
                 'valleys_params': [
                     {
                         'periods': 100,
-                        'max_aVWAPs': None,
+                        'max_aVWAPs': 1,
                         'avg_lookback': 20,
                     },
                 ],
-                # 'peaks_valleys_params': [
-                #     {
-                #         'periods': 20,
-                #         'max_aVWAPs': None,
-                #         'avg_lookback': 50,
-                #     },
-                #     {
-                #         'periods': 20,
-                #         'max_aVWAPs': None,
-                #         'avg_lookback': 40,
-                #     },
-                #     {
-                #         'periods': 20,
-                #         'max_aVWAPs': None,
-                #         'avg_lookback': 30,
-                #     },
-                #     {
-                #         'periods': 20,
-                #         'max_aVWAPs': None,
-                #         'avg_lookback': 20,
-                #     },
-                #     {
-                #         'periods': 20,
-                #         'max_aVWAPs': None,
-                #         'avg_lookback': 10,
-                #     },
-                # ],
                 'peaks_valleys_params': [
                     {
-                        'periods': 1,
+                        'periods': 20,
                         'max_aVWAPs': None,
-                        'avg_lookback': 1000,
+                        'avg_lookback': 50,
+                    },
+                    # {
+                    #     'periods': 20,
+                    #     'max_aVWAPs': None,
+                    #     'avg_lookback': 40,
+                    # },
+                    {
+                        'periods': 20,
+                        'max_aVWAPs': None,
+                        'avg_lookback': 30,
+                    },
+                    # {
+                    #     'periods': 20,
+                    #     'max_aVWAPs': None,
+                    #     'avg_lookback': 20,
+                    # },
+                    {
+                        'periods': 20,
+                        'max_aVWAPs': None,
+                        'avg_lookback': 10,
+                    },
+                ],
+                'peaks_valleys_params': [
+                    {
+                        'periods': 20,
+                        'max_aVWAPs': None,
+                        'avg_lookback': 50,
                     },
                     {
-                        'periods': 1,
+                        'periods': 20,
                         'max_aVWAPs': None,
-                        'avg_lookback': 900,
+                        'avg_lookback': 40,
                     },
                     {
-                        'periods': 1,
+                        'periods': 20,
                         'max_aVWAPs': None,
-                        'avg_lookback': 800,
+                        'avg_lookback': 30,
                     },
                     {
-                        'periods': 1,
+                        'periods': 20,
                         'max_aVWAPs': None,
-                        'avg_lookback': 700,
+                        'avg_lookback': 20,
                     },
                     {
-                        'periods': 1,
+                        'periods': 20,
                         'max_aVWAPs': None,
-                        'avg_lookback': 600,
-                    },
-                    {
-                        'periods': 1,
-                        'max_aVWAPs': None,
-                        'avg_lookback': 500,
-                    },
-                    {
-                        'periods': 1,
-                        'max_aVWAPs': None,
-                        'avg_lookback': 400,
-                    },
-                    {
-                        'periods': 1,
-                        'max_aVWAPs': None,
-                        'avg_lookback': 300,
-                    },
-                    {
-                        'periods': 1,
-                        'max_aVWAPs': None,
-                        'avg_lookback': 200,
-                    },
-                    {
-                        'periods': 1,
-                        'max_aVWAPs': None,
-                        'avg_lookback': 100,
+                        'avg_lookback': 10,
                     },
                 ],
                 'OB_params': [
@@ -439,11 +410,11 @@ params = {
             },
             'aVWAP': {
                 'peaks': False,
-                'valleys': False,
+                'valleys': True,
                 'peaks_avg': False,
                 'valleys_avg': False,
                 'peaks_valleys': False,
-                'peaks_valleys_avg': True,
+                'peaks_valleys_avg': False,
                 'OB': False,
                 'OB_avg': False,
                 'gaps': False,
@@ -462,9 +433,9 @@ params = {
                 ],
                 'valleys_params': [
                     {
-                        'periods': 20,
-                        'max_aVWAPs': None,
-                        'avg_lookback': 20,
+                        'periods': 100,
+                        'max_aVWAPs': 1,
+                        'avg_lookback': 50,
                     },
                 ],
                 # 'peaks_valleys_params': [
