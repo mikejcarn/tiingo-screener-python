@@ -24,8 +24,31 @@ scan_conf = {
             'aVWAP_avg_multi': {
                 'daily': {
                     'condition': 'ribbon_compact',
-                    'threshold_pct': 1.0,
+                    'threshold_pct': 3.0,
                     'lookback_bars': 50,
+                    # 'confirmation_bars': 50,
+                }
+            },
+        }
+    },
+
+    'd_aVWAPavgMulti_h_aVWAPavgMulti': {
+        'criteria': {
+            # 'daily': ['aVWAP_avg_multi'],
+            '1hour': ['aVWAP_avg_multi'],
+        },
+        'params': {
+            'aVWAP_avg_multi': {
+                # 'daily': {
+                #     'condition': 'stacked_bullish',
+                #     # 'threshold_pct': 3.0,
+                #     # 'lookback_bars': 50,
+                #     'confirmation_bars': 50,
+                # },
+                '1hour': {
+                    'condition': 'compression',
+                    'threshold_pct': 50.0,
+                    'lookback_bars': 100,
                     # 'confirmation_bars': 50,
                 }
             },

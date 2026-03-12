@@ -7,7 +7,8 @@ scan_lists = {
         # 'd_OBaVWAPBullish_aVWAPavg',
         # 'd_SMA50_aVWAPavg',
 
-        'd_aVWAPavgMulti',
+        # 'd_aVWAPavgMulti',
+        'd_aVWAPavgMulti_h_aVWAPavgMulti',
 
         # 'd_SMAAbove',
         # 'd_OBaVWAPPinch',

@@ -223,6 +223,31 @@ params = {
                     {
                         'periods': 1,
                         'max_aVWAPs': None,
+                        'avg_lookback': 1000,
+                    },
+                    {
+                        'periods': 1,
+                        'max_aVWAPs': None,
+                        'avg_lookback': 900,
+                    },
+                    {
+                        'periods': 1,
+                        'max_aVWAPs': None,
+                        'avg_lookback': 800,
+                    },
+                    {
+                        'periods': 1,
+                        'max_aVWAPs': None,
+                        'avg_lookback': 700,
+                    },
+                    {
+                        'periods': 1,
+                        'max_aVWAPs': None,
+                        'avg_lookback': 600,
+                    },
+                    {
+                        'periods': 1,
+                        'max_aVWAPs': None,
                         'avg_lookback': 500,
                     },
                     {
@@ -471,29 +496,29 @@ params = {
                 # ],
                 'peaks_valleys_params': [
                     {
-                        'periods': 1,
+                        'periods': 10,
                         'max_aVWAPs': None,
-                        'avg_lookback': 500,
+                        'avg_lookback': 50,
                     },
                     {
-                        'periods': 1,
+                        'periods': 10,
                         'max_aVWAPs': None,
-                        'avg_lookback': 400,
+                        'avg_lookback': 40,
                     },
                     {
-                        'periods': 1,
+                        'periods': 10,
                         'max_aVWAPs': None,
-                        'avg_lookback': 300,
+                        'avg_lookback': 30,
                     },
                     {
-                        'periods': 1,
+                        'periods': 10,
                         'max_aVWAPs': None,
-                        'avg_lookback': 200,
+                        'avg_lookback': 20,
                     },
                     {
-                        'periods': 1,
+                        'periods': 10,
                         'max_aVWAPs': None,
-                        'avg_lookback': 100,
+                        'avg_lookback': 10,
                     },
                 ],
                 'OB_params': [
