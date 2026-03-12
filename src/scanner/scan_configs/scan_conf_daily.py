@@ -16,6 +16,22 @@ scan_conf = {
         }
     },
 
+    'd_aVWAPavgMulti': {
+        'criteria': {
+            'daily': ['aVWAP_avg_multi'],
+        },
+        'params': {
+            'aVWAP_avg_multi': {
+                'daily': {
+                    'condition': 'ribbon_compact',
+                    'threshold_pct': 1.0,
+                    'lookback_bars': 50,
+                    # 'confirmation_bars': 50,
+                }
+            },
+        }
+    },
+
     'd_SMA_30min_aVWAPChannelResistance': {
         'criteria': {
             'daily': ['SMA'],

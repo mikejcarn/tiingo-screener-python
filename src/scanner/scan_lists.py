@@ -5,7 +5,9 @@ scan_lists = {
         # 'd_EngulfingCandle'
         # 'd_OBaVWAPBullish_liquidity',
         # 'd_OBaVWAPBullish_aVWAPavg',
-        'd_SMA50_aVWAPavg',
+        # 'd_SMA50_aVWAPavg',
+
+        'd_aVWAPavgMulti',
 
         # 'd_SMAAbove',
         # 'd_OBaVWAPPinch',
