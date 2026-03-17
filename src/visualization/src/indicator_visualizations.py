@@ -1545,16 +1545,22 @@ def _FVG_visualization(subchart, df):
 def _OB_visualization(subchart, df):
     df = _ensure_time_col(df)
 
+    # Get last valid time
+    last_valid_idx = df[['open', 'high', 'low', 'close']].last_valid_index()
+    if last_valid_idx is None:
+        return
+    last_valid_time = df.loc[last_valid_idx, 'time']
+
     if all(col in df.columns for col in ['OB', 'OB_High', 'OB_Low']):
         for idx in df[df['OB'] != 0].index:
             start_time = df.loc[idx, 'time']
             midpoint = (df.loc[idx, 'OB_High'] + df.loc[idx, 'OB_Low']) / 2
 
-            end_time = df.iloc[-1]['time']
+            end_time = last_valid_time  # Use last valid time instead of df.iloc[-1]
             if 'OB_Mitigated_Index' in df.columns:
                 try:
                     mitigation_idx = int(df.loc[idx, 'OB_Mitigated_Index'])
-                    if 0 < mitigation_idx < len(df):
+                    if 0 < mitigation_idx < len(df) and mitigation_idx <= last_valid_idx:
                         end_time = df.loc[mitigation_idx, 'time']
                 except Exception:
                     pass
@@ -1571,8 +1577,53 @@ def _OB_visualization(subchart, df):
             }))
 
 
+# def _OB_visualization(subchart, df):
+#     df = _ensure_time_col(df)
+#
+#     if all(col in df.columns for col in ['OB', 'OB_High', 'OB_Low']):
+#         for idx in df[df['OB'] != 0].index:
+#             start_time = df.loc[idx, 'time']
+#             midpoint = (df.loc[idx, 'OB_High'] + df.loc[idx, 'OB_Low']) / 2
+#
+#             end_time = df.iloc[-1]['time']
+#             if 'OB_Mitigated_Index' in df.columns:
+#                 try:
+#                     mitigation_idx = int(df.loc[idx, 'OB_Mitigated_Index'])
+#                     if 0 < mitigation_idx < len(df):
+#                         end_time = df.loc[mitigation_idx, 'time']
+#                 except Exception:
+#                     pass
+#
+#             subchart.create_line(
+#                 price_line=False,
+#                 price_label=False,
+#                 color=colors['teal_OB'] if df.loc[idx, 'OB'] == 1 else colors['red_OB'],
+#                 width=10,
+#                 style='solid'
+#             ).set(pd.DataFrame({
+#                 'time': [start_time, end_time],
+#                 'value': [midpoint, midpoint]
+#             }))
+
+
 def _BoS_CHoCH_visualization(subchart, df):
     df = _ensure_time_col(df)
+    
+    # Get the last valid data point (not the padded future dates)
+    ohlc_cols_variants = [
+        ['close', 'high', 'low', 'open'],
+        ['Close', 'High', 'Low', 'Open'],
+    ]
+    ohlc_cols = next((v for v in ohlc_cols_variants if all(c in df.columns for c in v)), None)
+    
+    if ohlc_cols is None:
+        return
+        
+    last_valid_idx = df[ohlc_cols].last_valid_index()
+    if last_valid_idx is None:
+        return
+        
+    last_valid_time = df.loc[last_valid_idx, 'time']
 
     required_cols = ['BoS', 'CHoCH', 'BoS_CHoCH_Price', 'BoS_CHoCH_Break_Index']
     if any(col not in df.columns for col in required_cols):
@@ -1585,10 +1636,11 @@ def _BoS_CHoCH_visualization(subchart, df):
         start_time = df2.loc[idx, 'time']
         price = df2.loc[idx, 'BoS_CHoCH_Price']
 
-        end_time = df2.iloc[-1]['time']
+        end_time = last_valid_time  # Use last valid time instead of df2.iloc[-1]
         try:
             break_idx = int(df2.loc[idx, 'BoS_CHoCH_Break_Index'])
-            if 0 < break_idx < len(df2):
+            # Ensure break_idx is within bounds and not beyond last valid data
+            if 0 < break_idx < len(df2) and break_idx <= last_valid_idx:
                 end_time = df2.loc[break_idx, 'time']
         except Exception:
             pass
@@ -1614,24 +1666,98 @@ def _BoS_CHoCH_visualization(subchart, df):
         }))
 
 
+# def _BoS_CHoCH_visualization(subchart, df):
+#     df = _ensure_time_col(df)
+#
+#     required_cols = ['BoS', 'CHoCH', 'BoS_CHoCH_Price', 'BoS_CHoCH_Break_Index']
+#     if any(col not in df.columns for col in required_cols):
+#         return
+#
+#     df2 = df.dropna(subset=required_cols)
+#     events = df2[(df2['BoS'] != 0) | (df2['CHoCH'] != 0)].index[-25:]
+#
+#     for idx in events:
+#         start_time = df2.loc[idx, 'time']
+#         price = df2.loc[idx, 'BoS_CHoCH_Price']
+#
+#         end_time = df2.iloc[-1]['time']
+#         try:
+#             break_idx = int(df2.loc[idx, 'BoS_CHoCH_Break_Index'])
+#             if 0 < break_idx < len(df2):
+#                 end_time = df2.loc[break_idx, 'time']
+#         except Exception:
+#             pass
+#
+#         if df2.loc[idx, 'BoS'] != 0:
+#             color = colors['teal_trans_3'] if df2.loc[idx, 'BoS'] > 0 else colors['red_trans_3']
+#             style = 'solid'
+#             width = 1
+#         else:
+#             color = colors['aqua'] if df2.loc[idx, 'CHoCH'] > 0 else colors['red_dark']
+#             style = 'solid'
+#             width = 1
+#
+#         subchart.create_line(
+#             price_line=False,
+#             price_label=False,
+#             color=color,
+#             width=width,
+#             style=style
+#         ).set(pd.DataFrame({
+#             'time': [start_time, end_time],
+#             'value': [price, price]
+#         }))
+
+
 def _liquidity_visualization(subchart, df):
     df = _ensure_time_col(df)
 
     if all(col in df.columns for col in ['Liquidity', 'Liquidity_Level']):
         liquidity_events = df[df['Liquidity'] != 0]
+
+        # Get the last valid data point (not the padded future dates)
+        last_valid_idx = df[['open', 'high', 'low', 'close']].last_valid_index()
+        if last_valid_idx is None:
+            return
+
+        last_valid_time = df.loc[last_valid_idx, 'time']
+        first_time = df.iloc[0]['time']
+
         for idx in liquidity_events.index:
             level = df.loc[idx, 'Liquidity_Level']
 
-            subchart.create_line(
-                price_line=False,
-                price_label=False,
-                color=colors['orange_liquidity'],
-                width=1,
-                style='solid'
-            ).set(pd.DataFrame({
-                'time': [df.iloc[0]['time'], df.iloc[-1]['time']],
-                'value': [level, level]
-            }))
+            # Only draw if we have a valid level
+            if pd.notna(level):
+                subchart.create_line(
+                    price_line=False,
+                    price_label=False,
+                    color=colors['orange_liquidity'],
+                    width=1,
+                    style='solid'
+                ).set(pd.DataFrame({
+                    'time': [first_time, last_valid_time],
+                    'value': [level, level]
+                }))
+
+
+# def _liquidity_visualization(subchart, df):
+#     df = _ensure_time_col(df)
+#
+#     if all(col in df.columns for col in ['Liquidity', 'Liquidity_Level']):
+#         liquidity_events = df[df['Liquidity'] != 0]
+#         for idx in liquidity_events.index:
+#             level = df.loc[idx, 'Liquidity_Level']
+#
+#             subchart.create_line(
+#                 price_line=False,
+#                 price_label=False,
+#                 color=colors['orange_liquidity'],
+#                 width=1,
+#                 style='solid'
+#             ).set(pd.DataFrame({
+#                 'time': [df.iloc[0]['time'], df.iloc[-1]['time']],
+#                 'value': [level, level]
+#             }))
 
 
 def _banker_RSI_visualization(subchart, df):

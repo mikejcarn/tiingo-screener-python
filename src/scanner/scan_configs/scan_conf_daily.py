@@ -34,17 +34,17 @@ scan_conf = {
 
     'd_aVWAPavgMulti_h_aVWAPavgMulti': {
         'criteria': {
-            # 'daily': ['aVWAP_avg_multi'],
+            'daily': ['aVWAP_avg_multi'],
             '1hour': ['aVWAP_avg_multi'],
         },
         'params': {
             'aVWAP_avg_multi': {
-                # 'daily': {
-                #     'condition': 'stacked_bullish',
-                #     # 'threshold_pct': 3.0,
-                #     # 'lookback_bars': 50,
-                #     'confirmation_bars': 50,
-                # },
+                'daily': {
+                    'condition': 'stacked_bullish',
+                    # 'threshold_pct': 3.0,
+                    # 'lookback_bars': 50,
+                    'confirmation_bars': 50,
+                },
                 '1hour': {
                     'condition': 'compression',
                     'threshold_pct': 50.0,
@@ -70,11 +70,18 @@ scan_conf = {
                 },
             },
             'aVWAP_channel': {
-                '1hour': {
-                    'mode': 'support',
-                    'distance_pct': 3.0,
-                    'direction': 'within',
-                },
+                '1hour': [
+                    {
+                        'mode': 'support',
+                        'distance_pct': 3.0,
+                        'direction': 'within',
+                    },
+                    {
+                        'mode': 'resistance',
+                        'distance_pct': 3.0,
+                        'direction': 'within',
+                    }
+                ],
             },
         }
     },
