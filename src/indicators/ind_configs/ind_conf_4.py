@@ -15,13 +15,13 @@ indicators = {  # liquidity levels
         ],
 
         'daily': [
-            'aVWAP',
-            'candle_colors',
-            'StDev',
-            'oscillation_volatility',
-            'BoS_CHoCH',
-            'QQEMOD',
-            'banker_RSI',
+            # 'aVWAP',
+            # 'candle_colors',
+            # 'StDev',
+            # 'oscillation_volatility',
+            # 'BoS_CHoCH',
+            # 'QQEMOD',
+            # 'banker_RSI',
             # 'TTM_squeeze',
             # 'divergence_Vortex', 'divergence_Fisher', 'divergence_OBV', 'divergence_Volume'
         ],

@@ -30,10 +30,9 @@ indicators = {  # List of available indicator configurations
 
     'daily': [
         'aVWAP',
-        'BoS_CHoCH',
         # 'candle_colors',
         # 'SMA',
-        'liquidity',
+        # 'liquidity',
     ],
 
     '4hour': [
@@ -44,21 +43,21 @@ indicators = {  # List of available indicator configurations
     ],
 
     '1hour': [
-        'aVWAP',
+        # 'aVWAP',
         # 'candle_colors',
         # 'SMA',
         # 'liquidity',
     ],
 
     '30min': [
-        'aVWAP',
+        # 'aVWAP',
         # 'candle_colors',
         # 'SMA',
         # 'liquidity',
     ],
 
     '15min': [
-        'aVWAP',
+        # 'aVWAP',
         # 'candle_colors',
         # 'SMA',
         # 'liquidity',
@@ -164,12 +163,12 @@ params = {
                 }
             },
             'aVWAP': {
-                'peaks': True,
+                'peaks': False,
                 'valleys': True,
                 'peaks_avg': False,
                 'valleys_avg': False,
                 'peaks_valleys': False,
-                'peaks_valleys_avg': True,
+                'peaks_valleys_avg': False,
                 'OB': False,
                 'OB_avg': False,
                 'gaps': False,
@@ -181,14 +180,34 @@ params = {
                 'aVWAP_channel': False,
                 'peaks_params': [
                     {
+                        'periods': 150,
+                        'max_aVWAPs': 1,
+                        'avg_lookback': 100,
+                    },
+                    {
                         'periods': 100,
+                        'max_aVWAPs': 1,
+                        'avg_lookback': 100,
+                    },
+                    {
+                        'periods': 50,
                         'max_aVWAPs': 1,
                         'avg_lookback': 100,
                     },
                 ],
                 'valleys_params': [
                     {
+                        'periods': 150,
+                        'max_aVWAPs': 1,
+                        'avg_lookback': 100,
+                    },
+                    {
                         'periods': 100,
+                        'max_aVWAPs': 1,
+                        'avg_lookback': 100,
+                    },
+                    {
+                        'periods': 50,
                         'max_aVWAPs': 1,
                         'avg_lookback': 100,
                     },
