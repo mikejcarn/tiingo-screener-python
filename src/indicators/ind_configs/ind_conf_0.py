@@ -31,7 +31,8 @@ indicators = {  # List of available indicator configurations
     'daily': [
         'aVWAP',
         'candle_colors',
-        'SMA',
+        # 'banker_RSI',
+        # 'SMA',
         # 'liquidity',
     ],
 
@@ -45,7 +46,7 @@ indicators = {  # List of available indicator configurations
     '1hour': [
         'aVWAP',
         'candle_colors',
-        'SMA',
+        # 'SMA',
         # 'liquidity',
     ],
 
@@ -184,106 +185,29 @@ params = {
                         'max_aVWAPs': 1,
                         'avg_lookback': 100,
                     },
-                    # {
-                    #     'periods': 150,
-                    #     'max_aVWAPs': 1,
-                    #     'avg_lookback': 100,
-                    # },
-                    # {
-                    #     'periods': 100,
-                    #     'max_aVWAPs': 1,
-                    #     'avg_lookback': 100,
-                    # },
-                    # {
-                    #     'periods': 50,
-                    #     'max_aVWAPs': 1,
-                    #     'avg_lookback': 100,
-                    # },
                 ],
                 'valleys_params': [
-                    # {
-                    #     'periods': 300,
-                    #     'max_aVWAPs': 1,
-                    #     'avg_lookback': 100,
-                    # },
-                    # {
-                    #     'periods': 250,
-                    #     'max_aVWAPs': 1,
-                    #     'avg_lookback': 100,
-                    # },
-                    # {
-                    #     'periods': 200,
-                    #     'max_aVWAPs': 1,
-                    #     'avg_lookback': 100,
-                    # },
-                    # {
-                    #     'periods': 150,
-                    #     'max_aVWAPs': 1,
-                    #     'avg_lookback': 100,
-                    # },
-                    # {
-                    #     'periods': 100,
-                    #     'max_aVWAPs': 1,
-                    #     'avg_lookback': 100,
-                    # },
                     {
                         'periods': 50,
                         'max_aVWAPs': 1,
                         'avg_lookback': 100,
                     },
                 ],
-                # 'peaks_valleys_params': [
-                #     {
-                #         'periods': 20,
-                #         'max_aVWAPs': None,
-                #         'avg_lookback': 50,
-                #     },
-                #     {
-                #         'periods': 20,
-                #         'max_aVWAPs': None,
-                #         'avg_lookback': 40,
-                #     },
-                #     {
-                #         'periods': 20,
-                #         'max_aVWAPs': None,
-                #         'avg_lookback': 30,
-                #     },
-                #     {
-                #         'periods': 20,
-                #         'max_aVWAPs': None,
-                #         'avg_lookback': 20,
-                #     },
-                #     {
-                #         'periods': 20,
-                #         'max_aVWAPs': None,
-                #         'avg_lookback': 10,
-                #     },
-                # ],
                 'peaks_valleys_params': [
                     {
-                        'periods': 10,
+                        'periods': 20,
                         'max_aVWAPs': None,
                         'avg_lookback': 50,
                     },
                     {
-                        'periods': 10,
+                        'periods': 20,
                         'max_aVWAPs': None,
                         'avg_lookback': 40,
                     },
                     {
-                        'periods': 10,
+                        'periods': 20,
                         'max_aVWAPs': None,
                         'avg_lookback': 30,
-                    },
-                    {
-                        'periods': 10,
-                        'max_aVWAPs': None,
-                        'avg_lookback': 20,
-                    },
-                    {
-                        'periods': 10,
-                        'max_aVWAPs': None,
-                        'avg_lookback': 10,
                     },
                 ],
                 'OB_params': [
@@ -342,7 +266,7 @@ params = {
                 'qqe_factor': 3.0, 'qqe_factor2': 1.61, 'threshold': 3,
                 'bb_length': 50, 'bb_multi': 0.35
             },
-            'SMA': {'periods': [200, 50]},
+            'SMA': {'periods': [200]},
             'WAE': {
                 'fast_period': 20, 'slow_period': 40, 
                 'atr_period': 20, 'explosion_multiplier': 2.0

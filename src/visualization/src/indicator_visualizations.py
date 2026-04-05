@@ -2072,10 +2072,10 @@ def _SMA_visualization(subchart, df):
 
         width = (
             1 if period <= 10 else
-            3 if period <= 50 else
-            5 if period <= 100 else
-            7 if period <= 200 else
-            9
+            2 if period <= 50 else
+            3 if period <= 100 else
+            4 if period <= 200 else
+            5
         )
 
         subchart.create_line(

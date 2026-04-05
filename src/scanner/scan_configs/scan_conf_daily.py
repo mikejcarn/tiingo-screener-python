@@ -212,6 +212,20 @@ scan_conf = {
         }
     },
 
+    'd_aVWAPChannel_Support': {
+        'criteria': {
+            'daily': ['aVWAP_channel', 'aVWAP_channel'],
+        },
+        'params': {
+            'aVWAP_channel': {
+                'daily': [
+                    {'mode': 'resistance', 'distance_pct': 2.0, 'direction': 'within'},
+                    {'mode': 'support', 'distance_pct': 2.0, 'direction': 'within'}
+                ]
+            },
+        }
+    },
+
     'd_OBaVWAPBullish_aVWAPavg': {
         'criteria': {
             'daily': ['OB_aVWAP', 'aVWAP_avg'],
@@ -703,6 +717,17 @@ scan_conf = {
         'params': {
             'QQEMOD': {
                 'daily': {'mode': 'oversold'},
+            }
+        }
+    },
+
+    'd_bankerRSI': {
+        'criteria': {
+            'daily': ['banker_RSI'],
+        },
+        'params': {
+            'banker_RSI': {
+                'daily': {'threshold_lower': 19, 'threshold_upper': 20},
             }
         }
     },

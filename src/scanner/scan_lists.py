@@ -9,7 +9,9 @@ scan_lists = {
 
         # 'd_aVWAPavgMulti',
         # 'd_aVWAPavgMulti_h_aVWAPavgMulti',
-        'd_aVWAPavgMulti_h_aVWAPChannelSupport',
+        # 'd_aVWAPavgMulti_h_aVWAPChannelSupport',
+
+        'd_aVWAPChannel_Support',
 
         # 'd_SMAAbove',
         # 'd_OBaVWAPPinch',
