@@ -3,8 +3,8 @@ import importlib
 from pathlib import Path
 from src.indicators.indicators import get_indicators, run_indicators, load_indicator_config
 from src.tickers.tickers import fetch_tickers, fetch_ticker
-from src.scanner.scanner import run_scanner
-from src.scanner.scan_lists import scan_lists
+from src.scans.scans import run_scanner
+from src.scans.scan_lists import scan_lists
 from src.visualization.visualization import vis
 from src.core.CLI import init_cli
 from src.core.data_manager import dm
@@ -94,7 +94,7 @@ def scan(scan_list='2'):
     for config_file in Path(SCAN_CONF_DIR).glob('scan_conf_*.py'):
         try:
             module_name = config_file.stem
-            module = importlib.import_module(f"src.scanner.scan_configs.{module_name}")
+            module = importlib.import_module(f"src.scans.scan_configs.{module_name}")
             scan_configs.update(module.scan_conf)
         except Exception as e:
             print(f"Error loading {config_file.stem}: {e}")

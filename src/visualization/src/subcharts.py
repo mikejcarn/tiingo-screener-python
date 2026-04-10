@@ -142,7 +142,7 @@ def _get_latest_scan():
 def _load_scan_data(scan_file):
     """Load scan file with automatic path handling"""
     scan_path = Path(scan_file)
-    if not scan_path.is_absolute() and not scan_path.parent.name == "scanner":
+    if not scan_path.is_absolute() and not scan_path.parent.name == "scans":
         scan_path = SCANNER_DIR / scan_path.name
     
     if not scan_path.exists():

@@ -58,40 +58,30 @@ def calculate_oscillation_volatility(
     # Calculate price std with robust handling
     price_std = df['Close'].rolling(lookback, min_periods=1).std()
     price_std = price_std.replace(0, np.nan).ffill().bfill()
-    
-    if price_std.isna().all():
-        return results  # Can't proceed without valid std
 
-    # Calculate oscillations with safe indexing
-    valid_range = range(max(lookback, 1), len(df))
-    
-    for i in valid_range:
-        try:
-            window_close = df['Close'].iloc[i-lookback:i]
-            window_ma = ma.iloc[i-lookback:i]
-            current_std = price_std.iloc[i]
-            
-            if np.isnan(current_std):
-                continue
-                
-            # Vectorized cross detection
-            prev_close = window_close.shift(1)
-            prev_ma = window_ma.shift(1)
-            crosses = (
-                ((prev_close < prev_ma) & (window_close > prev_ma)) |
-                ((prev_close > prev_ma) & (window_close < prev_ma))
-            )
-            deviations = np.abs((window_close - window_ma) / current_std)
-            valid_crosses = crosses & (deviations >= min_cross_std)
-            
-            if valid_crosses.any():
-                avg_dev = deviations[valid_crosses].mean()
-                results['MA_Avg_Deviation_Z'].iloc[i] = avg_dev
-                results['MA_Cross_Count'].iloc[i] = valid_crosses.sum()
-                results['MA_Oscillation_Score'].iloc[i] = valid_crosses.sum() * avg_dev
-                
-        except Exception:
-            continue  # Skip any problematic windows
+    if price_std.isna().all():
+        return results
+
+    # Per-bar cross detection
+    prev_close = df['Close'].shift(1)
+    prev_ma = ma.shift(1)
+    crosses = (
+        ((prev_close < prev_ma) & (df['Close'] > ma)) |
+        ((prev_close > ma) & (df['Close'] < ma))
+    )
+
+    # Per-bar deviation (normalized by rolling std at each bar)
+    deviation = (df['Close'] - ma).abs() / price_std
+    valid_crosses = crosses & (deviation >= min_cross_std)
+
+    # Rolling aggregation over lookback window
+    cross_count = valid_crosses.rolling(lookback, min_periods=1).sum()
+    deviation_sum = deviation.where(valid_crosses, 0).rolling(lookback, min_periods=1).sum()
+    avg_deviation = deviation_sum / cross_count.replace(0, np.nan)
+
+    results['MA_Cross_Count'] = cross_count
+    results['MA_Avg_Deviation_Z'] = avg_deviation
+    results['MA_Oscillation_Score'] = cross_count * avg_deviation
 
     return results
 

@@ -127,7 +127,7 @@ def get_indicators(df, indicator_list, indicator_params=None):
         
         if isinstance(indicator_values, pd.DataFrame):
             # Merge DataFrames in one operation
-            result_df = pd.concat([result_df, indicator_values], axis=1).copy()
+            result_df = pd.concat([result_df, indicator_values], axis=1)
         elif isinstance(indicator_values, dict):
             # Collect dictionary items for bulk addition
             all_indicators.update(indicator_values)

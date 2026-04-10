@@ -53,10 +53,14 @@ class DataManager:
             # For screenshots, clear multiple image formats
             image_patterns = ['*.png', '*.jpg', '*.jpeg', '*.gif', '*.bmp', '*.webp']
             for img_pattern in image_patterns:
-                [f.unlink() for f in buffer_dir.glob(img_pattern) if f.is_file()]
+                for f in buffer_dir.glob(img_pattern):
+                    if f.is_file():
+                        f.unlink()
         else:
             # For other directories, use the provided pattern
-            [f.unlink() for f in buffer_dir.glob(pattern) if f.is_file()]
+            for f in buffer_dir.glob(pattern):
+                if f.is_file():
+                    f.unlink()
         
         print(f"\n  🧹 Cleared buffer files\n")
 

@@ -329,7 +329,7 @@ def _load_timeframe_csv(charts, key, show_volume=False, show_banker_RSI=False):
     chart.fit()
 
 def get_most_recent_scanner_file():
-    scanner_path = INDICATORS_DIR.parent / "scanner"
+    scanner_path = SCANNER_DIR
     if not scanner_path.exists():
         return None
     scan_files = sorted(scanner_path.glob("scan_*.csv"), key=lambda x: x.stem.split('_')[-1], reverse=True)

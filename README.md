@@ -152,6 +152,41 @@ date,Open,High,Low,Close,Volume
 - Process ticker data through customizable pipelines 
 - Generate signals for scanning and visualization
 
+### Available Indicators
+| Indicator | Description |
+|-----------|-------------|
+| `aVWAP` | Anchored VWAP from peaks, valleys, order blocks, gaps, and BoS/CHoCH points |
+| `aVWAP_pinch` | aVWAP pinch pairs — anchors a VWAP at a peak/valley and finds N counterpart structure points after it, forming convergence zones |
+| `OB` | Order blocks (bullish/bearish) |
+| `FVG` | Fair value gaps |
+| `BoS_CHoCH` | Break of Structure and Change of Character |
+| `liquidity` | Liquidity levels |
+| `peaks_valleys` | Peak and valley detection |
+| `supertrend` | Supertrend trend direction |
+| `banker_RSI` | Banker RSI momentum |
+| `QQEMOD` | QQE Mod oscillator |
+| `WAE` | Waddah Attar Explosion |
+| `TTM_squeeze` | TTM Squeeze momentum |
+| `RSI` | Relative Strength Index |
+| `SMA` | Simple Moving Averages |
+| `StDev` | Standard deviation bands |
+| `ZScore` | Z-Score normalization |
+| `candle_colors` | Candle coloring by indicator signal |
+| `engulfing_candle` | Engulfing candle detection |
+| `gaps` | Price gap detection |
+| `oscillation_volatility` | MA cross count and deviation score for volatility ranking |
+| `divergence_RSI` | RSI regular and hidden divergences |
+| `divergence_OBV` | On Balance Volume divergences |
+| `divergence_Volume` | Volume divergences |
+| `divergence_MACD` | MACD divergences |
+| `divergence_Stochastic` | Stochastic divergences |
+| `divergence_MFI` | Money Flow Index divergences |
+| `divergence_Fisher` | Fisher Transform divergences |
+| `divergence_Vortex` | Vortex Indicator divergences |
+| `divergence_ATR` | ATR divergences |
+| `divergence_Momentum` | Momentum divergences |
+| `divergence_Fractal` | Fractal divergences |
+
 ### Indicator Configuration Files
 ```
 ./src/indicators/ind_configs/:
@@ -244,7 +279,7 @@ params = {
 ## 🎯 Scanner & Advanced Configurations
 
 ### Scan Configuration Files
-Located in `./src/scanner/scan_configs/`:
+Located in `./src/scans/scan_configs/`:
 - scan_conf_1hour.py
 - scan_conf_4hour.py
 - scan_conf_5min.py
@@ -264,7 +299,7 @@ Located in `./src/scanner/scan_configs/`:
 The scan configs use a configuration system with this **general structure**:
 
 ```bash
-#./src/scanner/scan_configs/scan_conf_timeframe.py
+#./src/scans/scan_configs/scan_conf_timeframe.py
 scan_conf = {
     'scan_name': {                            # Unique scan identifier
         'criteria': {                         # Timeframe → criteria mapping
@@ -354,7 +389,7 @@ Examples of customizable scan configs include:
 ### Scan Lists
 
 - Custom scan lists are called to run a sequence of scans on indicators data in buffer
-- Scan lists are available in the file `./src/scanner/scan_lists.py`:
+- Scan lists are available in the file `./src/scans/scan_lists.py`:
 
 Scan lists are customizable and have the following format:
 

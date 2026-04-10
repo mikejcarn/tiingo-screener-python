@@ -29,11 +29,13 @@ indicators = {  # List of available indicator configurations
     ],
 
     'daily': [
-        'aVWAP',
+        # 'aVWAP',
+        'aVWAP_pinch',
         'candle_colors',
         # 'banker_RSI',
         # 'SMA',
         # 'liquidity',
+        'divergence_OBV',
     ],
 
     '4hour': [
@@ -161,10 +163,17 @@ params = {
                         'qqe_factor': 3.0, 'qqe_factor2': 1.61, 'threshold': 3,
                         'bb_length': 50, 'bb_multi': 0.35
                     },
+                    'banker_RSI': {
+                        'rsi_period': 50, 'rsi_base': 50, 'sensitivity': 1.5
+                    },
+                    'WAE': {
+                        'fast_period': 20, 'slow_period': 40, 
+                        'atr_period': 20, 'explosion_multiplier': 2.0
+                    },
                 }
             },
             'aVWAP': {
-                'peaks': True,
+                'peaks': False,
                 'valleys': True,
                 'peaks_avg': False,
                 'valleys_avg': False,
@@ -181,15 +190,15 @@ params = {
                 'aVWAP_channel': False,
                 'peaks_params': [
                     {
-                        'periods': 200,
+                        'periods': 100,
                         'max_aVWAPs': 1,
                         'avg_lookback': 100,
                     },
                 ],
                 'valleys_params': [
                     {
-                        'periods': 50,
-                        'max_aVWAPs': 1,
+                        'periods': 200,
+                        'max_aVWAPs': 5,
                         'avg_lookback': 100,
                     },
                 ],
@@ -199,54 +208,21 @@ params = {
                         'max_aVWAPs': None,
                         'avg_lookback': 50,
                     },
-                    {
-                        'periods': 20,
-                        'max_aVWAPs': None,
-                        'avg_lookback': 40,
-                    },
-                    {
-                        'periods': 20,
-                        'max_aVWAPs': None,
-                        'avg_lookback': 30,
-                    },
                 ],
                 'OB_params': [
                     {
                         'mode': 'none',
                     },
-                    {
-                        'mode': 'valleys',
-                        'periods': 50,
-                        'max_aVWAPs': None,
-                    },
-                    {
-                        'mode': 'peaks',
-                        'periods': 50,
-                        'max_aVWAPs': None,
-                    },
-                    {
-                        'mode': 'valleys',
-                        'periods': 20,
-                        'max_aVWAPs': None,
-                    },
-                    {
-                        'mode': 'peaks',
-                        'periods': 20,
-                        'max_aVWAPs': None,
-                    },
-                    {
-                        'mode': 'valleys',
-                        'periods': 10,
-                        'max_aVWAPs': None,
-                    },
-                    {
-                        'mode': 'peaks',
-                        'periods': 10,
-                        'max_aVWAPs': None,
-                    },
                 ],
                 'gaps_params': [ {'max_aVWAPs': 5, 'avg_lookback': 8}, ],
                 'BoS_CHoCH_params': [ {'swing_length': 15, 'max_aVWAPs': 4, 'avg_lookback': 7}, ],
+            },
+            'aVWAP_pinch': {
+                'anchor_type': 'peak',
+                'anchor_periods': 200,
+                'anchor_max_aVWAPs': 1,
+                'counterpart_periods': 25,
+                'counterpart_max_aVWAPs': 5,
             },
             'OB': {'periods': 20},
             'FVG': {
@@ -406,117 +382,32 @@ params = {
                         'avg_lookback': 50,
                     },
                 ],
-                # 'peaks_valleys_params': [
-                #     {
-                #         'periods': 10,
-                #         'max_aVWAPs': None,
-                #         'avg_lookback': 50,
-                #     },
-                #     {
-                #         'periods': 10,
-                #         'max_aVWAPs': None,
-                #         'avg_lookback': 40,
-                #     },
-                #     {
-                #         'periods': 10,
-                #         'max_aVWAPs': None,
-                #         'avg_lookback': 30,
-                #     },
-                #     {
-                #         'periods': 10,
-                #         'max_aVWAPs': None,
-                #         'avg_lookback': 20,
-                #     },
-                #     {
-                #         'periods': 10,
-                #         'max_aVWAPs': None,
-                #         'avg_lookback': 10,
-                #     },
-                # ],
                 'peaks_valleys_params': [
                     {
                         'periods': 10,
                         'max_aVWAPs': None,
                         'avg_lookback': 50,
                     },
-                    {
-                        'periods': 10,
-                        'max_aVWAPs': None,
-                        'avg_lookback': 40,
-                    },
-                    {
-                        'periods': 10,
-                        'max_aVWAPs': None,
-                        'avg_lookback': 30,
-                    },
-                    {
-                        'periods': 10,
-                        'max_aVWAPs': None,
-                        'avg_lookback': 20,
-                    },
-                    {
-                        'periods': 10,
-                        'max_aVWAPs': None,
-                        'avg_lookback': 10,
-                    },
                 ],
                 'OB_params': [
-                    {
-                        'mode': 'none',
-                    },
+                    # {
+                    #     'mode': 'none',
+                    # },
                     {
                         'mode': 'valleys',
                         'periods': 50,
-                        'max_aVWAPs': None,
-                    },
-                    {
-                        'mode': 'peaks',
-                        'periods': 50,
-                        'max_aVWAPs': None,
-                    },
-                    {
-                        'mode': 'valleys',
-                        'periods': 40,
-                        'max_aVWAPs': None,
-                    },
-                    {
-                        'mode': 'peaks',
-                        'periods': 40,
-                        'max_aVWAPs': None,
-                    },
-                    {
-                        'mode': 'valleys',
-                        'periods': 30,
-                        'max_aVWAPs': None,
-                    },
-                    {
-                        'mode': 'peaks',
-                        'periods': 30,
-                        'max_aVWAPs': None,
-                    },
-                    {
-                        'mode': 'valleys',
-                        'periods': 20,
-                        'max_aVWAPs': None,
-                    },
-                    {
-                        'mode': 'peaks',
-                        'periods': 20,
-                        'max_aVWAPs': None,
-                    },
-                    {
-                        'mode': 'valleys',
-                        'periods': 10,
-                        'max_aVWAPs': None,
-                    },
-                    {
-                        'mode': 'peaks',
-                        'periods': 10,
                         'max_aVWAPs': None,
                     },
                 ],
                 'gaps_params': [ {'max_aVWAPs': 5, 'avg_lookback': 8}, ],
                 'BoS_CHoCH_params': [ {'swing_length': 15, 'max_aVWAPs': 4, 'avg_lookback': 7}, ],
+            },
+            'aVWAP_pinch': {
+                'anchor_type': 'peak',
+                'anchor_periods': 100,
+                'anchor_max_aVWAPs': 1,
+                'counterpart_periods': 20,
+                'counterpart_max_aVWAPs': 3,
             },
             'OB': {'periods': 20},
             'FVG': {
@@ -728,12 +619,11 @@ params = {
                 'OB': False,
                 'OB_avg': False,
                 'OB_params': {
-                              'periods': 10, 
+                              'periods': 10,
                               'max_aVWAPs': None,
                               'include_bullish': True,
                               'include_bearish': True
                              },
-                'OB_params': {'periods': 10, 'max_aVWAPs': None},
                 'gaps': False,
                 'gaps_avg': False,
                 'gaps_params': {'max_aVWAPs': 20},

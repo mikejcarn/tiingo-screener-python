@@ -14,8 +14,8 @@ TICKERS_DIR     = PROJECT_ROOT / "data" / "tickers"
 
 # Indicator Configs & Scan Lists Directories
 IND_CONF_DIR     = PROJECT_ROOT / "src" / "indicators" / "ind_configs"
-SCAN_CONF_DIR    = PROJECT_ROOT / "src" / "scanner" / "scan_configs"
-SCAN_LIST_DIR    = PROJECT_ROOT / "src" / "scanner" / "scan_lists"
+SCAN_CONF_DIR    = PROJECT_ROOT / "src" / "scans" / "scan_configs"
+SCAN_LIST_DIR    = PROJECT_ROOT / "src" / "scans" / "scan_lists"
 
 # Screenshots taken from visualization application chart
 SCREENSHOTS_DIR = PROJECT_ROOT / "docs" / "screenshots"

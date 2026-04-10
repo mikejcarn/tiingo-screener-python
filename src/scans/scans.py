@@ -1,5 +1,6 @@
 import os
 import sys
+import inspect
 import pandas as pd
 from pathlib import Path
 from datetime import datetime
@@ -22,9 +23,6 @@ def run_scanner(criteria='banker_RSI', criteria_params=None, logic='AND', api_ke
     print(f"Input directory: {INDICATORS_DIR}")
     print(f"Output directory: {SCANNER_DIR}\n")
 
-    print(criteria)
-    print(criteria_params)
-
     if criteria_params is None:
         criteria_params = {}
 
@@ -34,6 +32,14 @@ def run_scanner(criteria='banker_RSI', criteria_params=None, logic='AND', api_ke
         return _multi_criteria_scan(criteria, api_key, criteria_params, scan_name)
     else:
         return _simple_scan(criteria, api_key, criteria_params, scan_name)
+
+def _call_criteria(criteria_func, df, params):
+    """Call a criteria function, passing params only if its signature accepts them."""
+    sig = inspect.signature(criteria_func)
+    if len(sig.parameters) > 1:
+        return criteria_func(df, **params)
+    return criteria_func(df)
+
 
 def _simple_scan(criteria, api_key=None, criteria_params=None, scan_name=None):
     """Single criteria applied to all files with optional parameters"""
@@ -55,11 +61,8 @@ def _simple_scan(criteria, api_key=None, criteria_params=None, scan_name=None):
         ticker, timeframe = _parse_filename(file)
         df = _load_indicator_file(INDICATORS_DIR / file)
         
-        try:
-            results = criteria_func(df, **params)
-        except TypeError:
-            results = criteria_func(df)
-      
+        results = _call_criteria(criteria_func, df, params)
+
         if not results.empty:
             results['Ticker'] = ticker
             results['Timeframe'] = timeframe
@@ -101,10 +104,7 @@ def _multi_criteria_scan(criteria_list, api_key=None, criteria_params=None, scan
                 else:
                     params = param_config
             
-            try:
-                result = criteria_func(df, **params)
-            except TypeError:
-                result = criteria_func(df)
+            result = _call_criteria(criteria_func, df, params)
                 
             if result.empty:
                 passed = False
@@ -246,18 +246,8 @@ def _advanced_scan(timeframe_criteria, logic='AND', api_key=None, criteria_param
                 
                 # Execute criteria function
                 try:
-                    results = criteria_func(df, **timeframe_params)
+                    results = _call_criteria(criteria_func, df, timeframe_params)
                     print(f"      Results: {len(results)} row(s)")
-                except TypeError as e:
-                    # Try without params if function doesn't accept them
-                    try:
-                        results = criteria_func(df)
-                        print(f"      Results (no params): {len(results)} row(s)")
-                    except Exception as e2:
-                        print(f"      ERROR: {e2}")
-                        results = pd.DataFrame()
-                        passed_all = False
-                        break
                 except Exception as e:
                     print(f"      ERROR: {e}")
                     results = pd.DataFrame()
@@ -336,7 +326,7 @@ def _advanced_scan(timeframe_criteria, logic='AND', api_key=None, criteria_param
 def _load_criteria(criteria_name):
     """Helper to load criteria function from src.scanner.criteria"""
     try:
-        criteria_module = importlib.import_module(f"src.scanner.criteria.{criteria_name}")
+        criteria_module = importlib.import_module(f"src.scans.criteria.{criteria_name}")
         return getattr(criteria_module, criteria_name)
     except Exception as e:
         print(f"Error loading criteria '{criteria_name}': {str(e)}")
