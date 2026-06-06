@@ -36,7 +36,7 @@ Each stage reads CSVs from the previous stage's buffer directory. All data is st
 
 **Indicator configs** (`src/indicators/ind_configs/ind_conf_*.py`) define which indicators run per timeframe and their parameters. Each file exports two dicts: `indicators` (timeframe → list of indicator names) and `params` (timeframe → indicator → param dict). The indicator runner (`src/indicators/indicators.py`) imports the config and calls each named indicator function from `src/indicators/indicators_list/`.
 
-**Scan configs** (`src/scans/scan_configs/scan_conf_*.py`) define named scans with a `criteria` dict (timeframe → criteria function name or list) and a `params` dict. Scan lists (`src/scans/scan_lists.py`) group scan names to run together. The scanner (`src/scans/scans.py`) loads criteria functions from `src/scans/criteria/` by name and applies them to indicator CSVs.
+**Scan configs** (`src/scans/scan_configs/scan_conf_{timeframe}.py`) define named scans with a `criteria` dict (timeframe → criteria function name or list) and a `params` dict. There is one config file per timeframe (e.g. `scan_conf_daily.py`, `scan_conf_1hour.py`). Scan lists (`src/scans/scan_lists.py`) group scan names to run together. The scanner (`src/scans/scans.py`) loads criteria functions from `src/scans/criteria/` by name and applies them to indicator CSVs.
 
 **Visualization** (`src/visualization/visualization.py`) supports up to 4 simultaneous charts via `lightweight-charts` (PyQt5/WebEngine). Charts are configured as a matrix of ticker × timeframe × ind_conf. The `--vis` command fetches data on-the-fly for a single ticker, or reads from the indicators buffer for scan-based browsing.
 
@@ -50,7 +50,7 @@ Each stage reads CSVs from the previous stage's buffer directory. All data is st
 ### Adding a New Scan Criteria
 
 1. Create `src/scans/criteria/my_criteria.py` with a function that accepts a DataFrame and returns a boolean or filtered DataFrame.
-2. Reference it by filename stem in a `scan_conf_*.py` criteria dict.
+2. Reference it by filename stem in the appropriate `scan_conf_{timeframe}.py` criteria dict.
 
 ### API Key
 

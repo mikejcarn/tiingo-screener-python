@@ -432,6 +432,52 @@ def _aVWAP_visualization(subchart, df):
         ).set(_line_set_df(df, col))
 
     # -------------------------
+    # aVWAP Pinch counterparts - solid, thin, matching peak/valley colors
+    # -------------------------
+    pinch_peak_cols = [col for col in df.columns if col.startswith('aVWAP_pinch_peak_')]
+    for col in pinch_peak_cols:
+        subchart.create_line(
+            price_line=False,
+            price_label=False,
+            color=colors['red_trans_3'],
+            width=1,
+            style='solid'
+        ).set(_line_set_df(df, col))
+
+    pinch_valley_cols = [col for col in df.columns if col.startswith('aVWAP_pinch_valley_')]
+    for col in pinch_valley_cols:
+        subchart.create_line(
+            price_line=False,
+            price_label=False,
+            color=colors['teal_trans_3'],
+            width=1,
+            style='solid'
+        ).set(_line_set_df(df, col))
+
+    # -------------------------
+    # aVWAP Pinch beyond (handoffs) - dotted, thin, matching peak/valley colors
+    # -------------------------
+    pinch_above_cols = [col for col in df.columns if col.startswith('aVWAP_pinch_above_')]
+    for col in pinch_above_cols:
+        subchart.create_line(
+            price_line=False,
+            price_label=False,
+            color=colors['teal_trans_2'],
+            width=1,
+            style='dotted'
+        ).set(_line_set_df(df, col))
+
+    pinch_below_cols = [col for col in df.columns if col.startswith('aVWAP_pinch_below_')]
+    for col in pinch_below_cols:
+        subchart.create_line(
+            price_line=False,
+            price_label=False,
+            color=colors['red_trans_2'],
+            width=1,
+            style='dotted'
+        ).set(_line_set_df(df, col))
+
+    # -------------------------
     # Gaps UP - with tiered styling
     # -------------------------
     gap_up_cols = [col for col in df.columns if col.startswith('Gap_Up_aVWAP_')]
