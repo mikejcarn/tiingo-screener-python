@@ -17,32 +17,35 @@ from src.core.globals import API_KEY, SCAN_CONF_DIR
 # FETCH TICKERS -------------------------------------------
 
 
-def fetch(timeframes=None):
+def fetch(timeframes=None, end_date=None):
     """
     Fetch ticker data for specified timeframes.
-    
+
     Parameters:
     - timeframes: List of timeframes to fetch (e.g., ['daily', 'weekly'])
                  If None, uses default timeframes
+    - end_date: Optional end date string 'YYYY-MM-DD' for historical slices
     """
     # Default timeframes
     if timeframes is None:
         timeframes = ['weekly', 'daily', '4hour', '1hour']
-    
+
     # Handle string input (from CLI)
     if isinstance(timeframes, str):
         if ',' in timeframes:
             timeframes = [tf.strip() for tf in timeframes.split(',')]
         else:
             timeframes = [timeframes]
-    
+
     print(f"\n=== FETCHING TICKERS ===\n")
+    if end_date:
+        print(f"End date: {end_date}")
     print(f"Fetching timeframes: {', '.join(timeframes)}")
-    
+
     for timeframe in timeframes:
         print(f"\nFetching {timeframe} data...")
-        fetch_tickers([timeframe], api_key=API_KEY)
-    
+        fetch_tickers([timeframe], api_key=API_KEY, end_date=end_date)
+
     print(f"\n✅ Fetch complete for {len(timeframes)} timeframe(s)")
 
 # INDICATORS ----------------------------------------------

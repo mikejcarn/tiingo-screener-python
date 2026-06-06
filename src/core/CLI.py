@@ -21,6 +21,8 @@ def init_cli(vis, fetch, ind, scan, full_run):
 
     # Data processing
     parser.add_argument('--fetch', action='store_true', help='Fetch ticker data')
+    parser.add_argument('--end-date', type=str, default=None, metavar='YYYY-MM-DD',
+                       help='End date for fetch (historical slice, e.g. 2024-09-14)')
     parser.add_argument('--ind', action='store_true', help='Generate indicators')
     # Note: --ind-conf and --timeframe are already defined above (shared)
     parser.add_argument('--scan', action='store_true', help='Run scanner')
@@ -72,16 +74,17 @@ def init_cli(vis, fetch, ind, scan, full_run):
     # Parse tickers if provided
     tickers = args.ticker.split(',') if args.ticker else None
    
-    # Execute commands using functions from app.py
-    if args.vis: 
-        # For visualization, ind-conf can be multiple values (comma-separated)
-        vis_ind_confs = args.ind_conf.split(',') if args.ind_conf else None
-        vis(tickers=tickers, timeframes=timeframes, ind_confs=vis_ind_confs, 
-            scan_file=args.scan_file)
+    # Parse end-date(s) - list for vis, single value for fetch
+    end_dates = args.end_date.split(',') if args.end_date else None
 
-    elif args.fetch: 
-        # Pass timeframes to fetch function (None = use defaults)
-        fetch(timeframes=timeframes)
+    # Execute commands using functions from app.py
+    if args.vis:
+        vis_ind_confs = args.ind_conf.split(',') if args.ind_conf else None
+        vis(tickers=tickers, timeframes=timeframes, ind_confs=vis_ind_confs,
+            scan_file=args.scan_file, end_dates=end_dates)
+
+    elif args.fetch:
+        fetch(timeframes=timeframes, end_date=end_dates[0] if end_dates else None)
 
     elif args.ind: 
         # For indicators, ind-conf is a single version number (not comma-separated)
@@ -166,6 +169,7 @@ def show_help() -> None:
   MAIN FUNCTIONS:
   --fetch                     Download tickers from API to tickers buffer
       --timeframe             Specify timeframe(s) to fetch (comma-separated, e.g., "daily,weekly")
+      --end-date              Fetch up to a specific date instead of today (e.g., "2024-09-14")
   --ind                       Calculate indicators from tickers buffer
       --ind-conf              Specify indicator config for generation ("1", "2", "3", "4")
       --timeframe             Specify timeframe(s) to process (comma-separated, e.g., "daily,weekly,4hour")
@@ -178,18 +182,22 @@ def show_help() -> None:
       --ticker                Specify ticker(s) ("MSFT" or "MSFT,AAPL,GOOGL")
       --timeframe             Specify timeframe(s) ("d" or "d,w,4h" or "daily,weekly,4hour")
       --ind-conf              Specify indicator config(s) ("2" or "1,2,3,4")
-      --scan-file             Specify scan file ("scan_*.csv") 
+      --scan-file             Specify scan file ("scan_*.csv")
+      --end-date              Visualize up to a specific date, or comma-separated dates per panel (e.g., "2024-09-14" or "2024-09-14,2024-03-01")
 
   EXAMPLES:
     Fetch:
       Default timeframes:     python app.py --fetch
       Specific timeframes:    python app.py --fetch --timeframe daily,weekly
       Single timeframe:       python app.py --fetch --timeframe daily
+      Historical slice:       python app.py --fetch --end-date 2024-09-14
 
     Visualization:
       Single ticker:          python app.py --vis --ticker MSFT --timeframe d --ind-conf 2
       Multiple tickers:       python app.py --vis --ticker MSFT,AAPL,GOOGL --timeframe d --ind-conf 2,2,2
       Multiple timeframes:    python app.py --vis --ticker MSFT --timeframe d,w,4h --ind-conf 2,3,4
+      Historical date:        python app.py --vis --ticker MSFT --timeframe d --ind-conf 2 --end-date 2024-09-14
+      Compare dates:          python app.py --vis --ticker MSFT --timeframe d,d,d,d --ind-conf 2 --end-date 2024-09-14,2024-03-01,2023-09-01,2023-03-01
  
     Indicators:
       All timeframes:         python app.py --ind --ind-conf 2

@@ -35,7 +35,10 @@ def fetch_ticker(timeframe='daily', ticker='BTCUSD', start_date=None, end_date=N
     Fetch historical price data for a given ticker and time period.
     """
     # Set default end_date to today if not provided
-    if not end_date: end_date = datetime.now().date()
+    if not end_date:
+        end_date = datetime.now().date()
+    elif isinstance(end_date, str):
+        end_date = datetime.strptime(end_date, '%Y-%m-%d').date()
 
     # Initialize Tiingo client
     client = TiingoClient({'api_key': api_key, 'session': True})
@@ -89,10 +92,11 @@ def fetch_ticker(timeframe='daily', ticker='BTCUSD', start_date=None, end_date=N
         raise ValueError(f"Unsupported time period: {timeframe}")
 
     # Calculate start_date if not provided
-    if start_date == None and config['default_timedelta']:
-        start_date = (datetime.now() - config['default_timedelta']).strftime('%Y-%m-%d')
-    elif start_date == None:
-        start_date = '2022-01-01'  # Default start date
+    end_dt = datetime(end_date.year, end_date.month, end_date.day)
+    if start_date is None and config['default_timedelta']:
+        start_date = (end_dt - config['default_timedelta']).strftime('%Y-%m-%d')
+    elif start_date is None:
+        start_date = (end_dt - timedelta(days=1825)).strftime('%Y-%m-%d')  # 5-year lookback
 
     # Fetch data (Tiingo API) -------------------------------------------------
 
@@ -260,7 +264,7 @@ def fetch_tickers(
     for ticker in df_stock_list['Ticker'].unique():
         processed_count += 1
         print(f"\rFetching {processed_count}/{total_tickers}: {str(ticker).strip().ljust(6)}", end="")
-        process_ticker(ticker, timeframes, api_key)
+        process_ticker(ticker, timeframes, api_key, end_date=end_date)
     
     print("\n\nData fetch complete!")
     print(f"Raw data saved with date format: {DATE_STAMP}")
@@ -268,25 +272,29 @@ def fetch_tickers(
 
 # Ticker Handling -------------------------------------------------------------
 
-def process_ticker(ticker, timeframes, api_key, save_to_disk=True):
+def process_ticker(ticker, timeframes, api_key, end_date=None, save_to_disk=True):
     """Fetch and save raw ticker data for all specified timeframes."""
     results = {}
-    
+
+    if end_date:
+        date_stamp = datetime.strptime(end_date, '%Y-%m-%d').strftime('%d%m%y') if isinstance(end_date, str) else end_date.strftime('%d%m%y')
+    else:
+        date_stamp = DATE_STAMP
+
     for timeframe in timeframes:
         try:
-            # Fetch raw data (no indicators applied)
-            df = fetch_ticker(timeframe, ticker, api_key=api_key)
+            df = fetch_ticker(timeframe, ticker, end_date=end_date, api_key=api_key)
             results[timeframe] = df
-            
+
             if save_to_disk:
                 os.makedirs(TICKERS_DIR, exist_ok=True)
-                filename = os.path.join(TICKERS_DIR, f"{ticker}_{timeframe}_{DATE_STAMP}.csv")
+                filename = os.path.join(TICKERS_DIR, f"{ticker}_{timeframe}_{date_stamp}.csv")
                 df.to_csv(filename, index=True)
-                
+
         except Exception as e:
             print(f"\nError fetching {ticker} ({timeframe}): {str(e)}")
             continue
-            
+
     return results
 
 def load_tickers(csv_path):
