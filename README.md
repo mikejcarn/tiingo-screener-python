@@ -438,6 +438,7 @@ scan_lists = {
 
 **`--fetch` Options:**
 - `--timeframe [TIMEFRAME]` - Timeframes(s) to fetch (comma-separated e.g., "daily,weekly")
+- `--end-date [YYYY-MM-DD]` - Fetch data up to a specific historical date instead of today
 - Default: `weekly,daily,4hour,1hour`
 
 **`--ind` Options:**
@@ -453,6 +454,9 @@ scan_lists = {
 - `--timeframe [TIMEFRAME]` - Timeframe(s) (`5min`, `w,d,4h,h`)
 - `--ind-conf [VERSION]` - Indicator config(s) (`1`, `1,2,3,4`)
 - `--scan-file [FILE]` - Scan results file (`scan_*.csv`)
+- `--end-date [YYYY-MM-DD]` - Visualize up to a specific date; comma-separated for one date per panel
+
+> **Chart count** is driven by whichever input has the most values. A single value for any parameter is automatically expanded to fill all panels. For example, `--end-date 2024-09-14,2024-03-01` alone will produce 2 panels of the default ticker at both dates.
 
 ## CLI EXAMPLES
 
@@ -464,6 +468,10 @@ python app.py --fetch
 python app.py --fetch --timeframe daily,weekly
 
 python app.py --fetch --timeframe 1hour
+
+python app.py --fetch --end-date 2024-09-14
+
+python app.py --fetch --timeframe daily --end-date 2024-09-14
 ```
 
 ### Calculate Indicators:
@@ -477,7 +485,8 @@ python app.py --ind --ind-conf 1 --timeframe daily
 ```
 
 ### Visualization:
-- Visualize multi-charts with any valid matrix of `--ticker` x `timeframe` x `--ind-conf` values
+- Visualize multi-charts with any valid matrix of `--ticker` x `--timeframe` x `--ind-conf` x `--end-date` values
+- Chart count is driven by whichever input has the most values — singles expand to fill all panels
 - Visualize charts for scan file from `./data/scans/` using `--scan-file`
 ```
 python app.py --vis --ticker MSFT --ind-conf 1
@@ -489,6 +498,12 @@ python app.py --vis --ticker MSFT --timeframe d,w,4h --ind-conf 1,2,3
 python app.py --vis --ticker MSFT,SOFI,META,TSLA --timeframe d,w,4h,1h --ind-conf 1,2,3,4
 
 python app.py --vis --scan-file scan_20240101.csv
+
+# Historical date — all panels at the same endpoint
+python app.py --vis --ticker AAPL --timeframe d,w --ind-conf 2 --end-date 2024-09-14
+
+# Compare dates — same ticker and timeframe across 4 panels
+python app.py --vis --ticker AAPL --timeframe d,d,d,d --ind-conf 2 --end-date 2025-01-01,2024-06-01,2024-01-01,2023-06-01
 ```
 
 ### Visualization Examples:
