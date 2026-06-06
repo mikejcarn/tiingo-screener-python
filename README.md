@@ -431,12 +431,12 @@ scan_lists = {
 | Command | Description | Example |
 |---------|-------------|---------|
 | `--full-run` | Complete process: fetch > indicators > scan | `--full-run` |
-| `--fetch` | Download tickers from API to buffer | `--fetch daily` |
+| `--tickers` | Download tickers from API to buffer | `--tickers daily` |
 | `--ind` | Calculate indicators from tickers buffer | `--ind --ind-conf 1` |
 | `--scan` | Run scanner on indicators buffer | `--scan --scan-list 1` |
 | `--vis` | Launch visualization | `--vis --ticker MSFT --timeframe d --ind-conf 1`<br> `--vis --ticker MSFT --timeframe w,d,4h,h --ind-conf 1,2,3,4`<br> `--vis --ticker MSFT,BTCUSD,AAPL,SOFI --timeframe w,d,4h,h --ind-conf 1` |
 
-**`--fetch` Options:**
+**`--tickers` Options:**
 - `--timeframe [TIMEFRAME]` - Timeframes(s) to fetch (comma-separated e.g., "daily,weekly")
 - `--end-date [YYYY-MM-DD]` - Fetch data up to a specific historical date instead of today
 - Default: `weekly,daily,4hour,1hour`
@@ -463,15 +463,15 @@ scan_lists = {
 ### Fetch Data:
 Default `--timeframe`: `weekly,daily,4hour,1hour`
 ```
-python app.py --fetch
+python app.py --tickers
 
-python app.py --fetch --timeframe daily,weekly
+python app.py --tickers --timeframe daily,weekly
 
-python app.py --fetch --timeframe 1hour
+python app.py --tickers --timeframe 1hour
 
-python app.py --fetch --end-date 2024-09-14
+python app.py --tickers --end-date 2024-09-14
 
-python app.py --fetch --timeframe daily --end-date 2024-09-14
+python app.py --tickers --timeframe daily --end-date 2024-09-14
 ```
 
 ### Calculate Indicators:

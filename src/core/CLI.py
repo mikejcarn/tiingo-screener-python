@@ -20,7 +20,7 @@ def init_cli(vis, fetch, ind, scan, full_run):
     parser.add_argument('--scan-file', type=str, default=None, help='Specify scan file')
 
     # Data processing
-    parser.add_argument('--fetch', action='store_true', help='Fetch ticker data')
+    parser.add_argument('--tickers', action='store_true', help='Fetch ticker data')
     parser.add_argument('--end-date', type=str, default=None, metavar='YYYY-MM-DD',
                        help='End date for fetch (historical slice, e.g. 2024-09-14)')
     parser.add_argument('--ind', action='store_true', help='Generate indicators')
@@ -83,7 +83,7 @@ def init_cli(vis, fetch, ind, scan, full_run):
         vis(tickers=tickers, timeframes=timeframes, ind_confs=vis_ind_confs,
             scan_file=args.scan_file, end_dates=end_dates)
 
-    elif args.fetch:
+    elif args.tickers:
         fetch(timeframes=timeframes, end_date=end_dates[0] if end_dates else None)
 
     elif args.ind: 
@@ -167,7 +167,7 @@ def show_help() -> None:
   STOCK ANALYSIS TOOLKIT - COMMAND REFERENCE:
 
   MAIN FUNCTIONS:
-  --fetch                     Download tickers from API to tickers buffer
+  --tickers                     Download tickers from API to tickers buffer
       --timeframe             Specify timeframe(s) to fetch (comma-separated, e.g., "daily,weekly")
       --end-date              Fetch up to a specific date instead of today (e.g., "2024-09-14")
   --ind                       Calculate indicators from tickers buffer
@@ -187,10 +187,10 @@ def show_help() -> None:
 
   EXAMPLES:
     Fetch:
-      Default timeframes:     python app.py --fetch
-      Specific timeframes:    python app.py --fetch --timeframe daily,weekly
-      Single timeframe:       python app.py --fetch --timeframe daily
-      Historical slice:       python app.py --fetch --end-date 2024-09-14
+      Default timeframes:     python app.py --tickers
+      Specific timeframes:    python app.py --tickers --timeframe daily,weekly
+      Single timeframe:       python app.py --tickers --timeframe daily
+      Historical slice:       python app.py --tickers --end-date 2024-09-14
 
     Visualization:
       Single ticker:          python app.py --vis --ticker MSFT --timeframe d --ind-conf 2

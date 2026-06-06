@@ -12,8 +12,8 @@ source venv/bin/activate
 python app.py
 
 # Core pipeline commands
-python app.py --fetch                                    # Fetch all default timeframes
-python app.py --fetch --timeframe daily,weekly           # Fetch specific timeframes
+python app.py --tickers                                    # Fetch all default timeframes
+python app.py --tickers --timeframe daily,weekly           # Fetch specific timeframes
 python app.py --ind --ind-conf 2                         # Run indicators (all timeframes)
 python app.py --ind --ind-conf 2 --timeframe daily       # Run indicators (specific timeframe)
 python app.py --scan --scan-list 2                       # Run scanner
