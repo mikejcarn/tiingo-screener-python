@@ -29,12 +29,12 @@ indicators = {  # List of available indicator configurations
     ],
 
     'daily': [
-        'aVWAP',
-        'aVWAP_pinch',
-        'candle_colors',
+        # 'aVWAP',
+        # 'aVWAP_pinch',
+        # 'candle_colors',
         # 'banker_RSI',
         # 'SMA',
-        # 'liquidity',
+        'liquidity',
         # 'divergence_OBV',
     ],
 

@@ -34,68 +34,64 @@ def run_indicators(ind_conf=None, timeframe=None):
     print(f"Input directory: {TICKERS_DIR}")
     print(f"Output directory: {INDICATORS_DIR}")
     
-    # Load all ticker data
-    tickers_data = _load_tickers(TICKERS_DIR)
-    if not tickers_data:
-        print("No ticker data found!")
-        return
-    
     # Process each timeframe
     for timeframe_name in timeframes_to_process:
         _process_timeframe_batch(
-            timeframe_name, indicators_dict, params_dict, tickers_data
+            timeframe_name, indicators_dict, params_dict
         )
     
     print(f"\n\nAll indicators processed\n")
 
 
-def _process_timeframe_batch(timeframe_name, indicators_dict, params_dict, tickers_data):
+def _process_timeframe_batch(timeframe_name, indicators_dict, params_dict):
     """Process all tickers for a specific timeframe"""
     if timeframe_name not in indicators_dict:
         print(f"\nWarning: No config found for timeframe '{timeframe_name}'")
         return
-    
-    # Get configs
+
     indicator_list = indicators_dict[timeframe_name]
     timeframe_params = params_dict[timeframe_name]
-    
-    # Filter tickers
-    timeframe_tickers = {
-        k: v for k, v in tickers_data.items() 
-        if v["timeframe"].lower() == timeframe_name.lower()
-    }
-    
-    if not timeframe_tickers:
+
+    files = [
+        f for f in os.listdir(TICKERS_DIR)
+        if f.endswith('.csv') and len(f.split('_')) >= 3
+        and f.split('_')[1].lower() == timeframe_name.lower()
+    ]
+
+    if not files:
         print(f"\nNo files found for timeframe: {timeframe_name}")
         return
-    
-    total_files = len(timeframe_tickers)
+
+    total_files = len(files)
     print(f"\nProcessing {timeframe_name} ({total_files} files)...")
-    
-    processed_count = 0
-    for key, data in timeframe_tickers.items():
-        processed_count += 1
-        ticker = data["ticker"]
-        
+
+    for processed_count, file in enumerate(files, 1):
+        parts = file.split('_')
+        ticker = parts[0]
+        date_stamp = parts[2].replace('.csv', '')
+
         print(f"\r  {processed_count}/{total_files}: {str(ticker).strip().ljust(6)}", end="")
-        
+
         try:
-            # Use get_indicators to calculate indicators for this single DataFrame
-            df_with_indicators = get_indicators(
-                data["df"], indicator_list, timeframe_params
+            df = pd.read_csv(
+                os.path.join(TICKERS_DIR, file),
+                parse_dates=['date'],
+                index_col='date'
             )
-            
+
+            df_with_indicators = get_indicators(df, indicator_list, timeframe_params)
+
             _save_ticker(
                 df=df_with_indicators,
                 ticker=ticker,
                 timeframe=timeframe_name,
-                date_stamp=data["date_stamp"],
+                date_stamp=date_stamp,
                 output_dir=INDICATORS_DIR
             )
-            
+
         except Exception as e:
             print(f"\nError processing {ticker}_{timeframe_name}: {str(e)}")
-    
+
     print(f"\n  {timeframe_name} complete!")
 
 # ===== SINGLE DATAFRAME FUNCTIONS =====
@@ -242,31 +238,6 @@ def _parse_timeframes(timeframe, indicators_dict):
         print(f"Error: Invalid timeframe parameter type: {type(timeframe)}")
         return None
 
-
-def _load_tickers(input_dir):
-    """Load CSVs with datetime index and metadata."""
-    tickers_data = {}
-    for file in os.listdir(input_dir):
-        if file.endswith(".csv"):
-            parts = file.split("_")
-            if len(parts) >= 3:
-                ticker, timeframe = parts[0], parts[1]
-                date_stamp = parts[2].replace(".csv", "")
-                
-                df = pd.read_csv(
-                    os.path.join(input_dir, file),
-                    parse_dates=["date"],
-                    index_col="date"
-                )
-                df.attrs = {"timeframe": timeframe}
-                
-                tickers_data[f"{ticker}_{timeframe}"] = {
-                    "df": df,
-                    "ticker": ticker,
-                    "timeframe": timeframe,
-                    "date_stamp": date_stamp
-                }
-    return tickers_data
 
 
 def _save_ticker(df, ticker, timeframe, date_stamp, output_dir):

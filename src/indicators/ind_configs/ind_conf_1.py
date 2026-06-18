@@ -16,12 +16,12 @@ indicators = {  # aVWAP_channel = False
         'daily': [
             'aVWAP', 
             'candle_colors', 
-            'StDev', 
-            'QQEMOD', 
-            'banker_RSI',
-            'OB', 
-            'TTM_squeeze', 
-            'divergence_Vortex', 'divergence_Fisher', 'divergence_OBV', 'divergence_Volume'
+            # 'StDev', 
+            # 'QQEMOD', 
+            # 'banker_RSI',
+            # 'OB', 
+            # 'TTM_squeeze', 
+            # 'divergence_Vortex', 'divergence_Fisher', 'divergence_OBV', 'divergence_Volume'
         ],
 
         '4hour': [
@@ -131,12 +131,23 @@ params = {
                 }
             },
             'aVWAP': {
-                'peaks_valleys': True,
-                'peaks_valleys_avg': True,
+                'peaks': True,
+                'valleys': True,
+                'peaks_valleys': False,
                 'peaks_avg': False,
                 'valleys_avg': False,
-                'peaks_valleys_params': {'periods': 20, 'max_aVWAPs': None},
-                'OB': True,
+                'peaks_valleys_avg': False,
+                'peaks_params': [ { 'periods': 50, 'max_aVWAPs': 5, 'avg_lookback': 100, }, ],
+                'valleys_params': [ { 'periods': 50, 'max_aVWAPs': 5, 'avg_lookback': 100, }, ],
+                'peaks_valleys_params': [
+                    {'periods': 100, 'max_aVWAPs': None},
+                    {'periods': 50, 'max_aVWAPs': None},
+                    {'periods': 20, 'max_aVWAPs': None},
+                ],
+                # 'peaks_params': [ { 'periods': 100, 'max_aVWAPs': 5, 'avg_lookback': 100, }, ],
+                # 'valleys_params': [ { 'periods': 100, 'max_aVWAPs': 5, 'avg_lookback': 100, }, ],
+                # 'peaks_valleys_params': {'periods': 100, 'max_aVWAPs': None},
+                'OB': False,
                 'OB_avg': False,
                 'OB_params': {'periods': 20, 'max_aVWAPs': None},
                 'gaps': False,

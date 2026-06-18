@@ -301,31 +301,26 @@ def _liquidity_visualization(subchart, df):
     df = _ensure_time_col(df)
 
     if all(col in df.columns for col in ['Liquidity', 'Liquidity_Level']):
-        liquidity_events = df[df['Liquidity'] != 0]
-
-        # Get the last valid data point (not the padded future dates)
         last_valid_idx = df[['open', 'high', 'low', 'close']].last_valid_index()
         if last_valid_idx is None:
             return
 
-        last_valid_time = df.loc[last_valid_idx, 'time']
-        first_time = df.iloc[0]['time']
+        chart_df = df[df.index <= last_valid_idx][['time']].copy()
+        liquidity_events = df[df['Liquidity'] != 0]
 
         for idx in liquidity_events.index:
             level = df.loc[idx, 'Liquidity_Level']
 
-            # Only draw if we have a valid level
-            if pd.notna(level):
+            if pd.notna(level) and level != 0:
+                level_df = chart_df.copy()
+                level_df['value'] = level
                 subchart.create_line(
                     price_line=False,
                     price_label=False,
                     color=colors['orange_liquidity'],
                     width=1,
                     style='solid'
-                ).set(pd.DataFrame({
-                    'time': [first_time, last_valid_time],
-                    'value': [level, level]
-                }))
+                ).set(level_df)
 
 
 # def _liquidity_visualization(subchart, df):
