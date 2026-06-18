@@ -70,6 +70,3 @@ def _find_valleys(series: pd.Series, lookback: int) -> pd.Series:
 def calculate_indicator(df, **params):
     """Wrapper function for consistent interface"""
     return calculate_stochastic_divergence(df, **params)
-
-def calculate_indicator(df, **params):
-    return calculate_stochastic_divergence(df, **params)

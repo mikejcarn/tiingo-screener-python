@@ -38,9 +38,6 @@ def calculate_rsi_divergence(df: pd.DataFrame,
     
     return results
 
-def calculate_indicator(df: pd.DataFrame, **params) -> Dict[str, pd.Series]:
-    return calculate_rsi_divergence(df, **params)
-
 # Helper functions ----------------------------------------------------------
 
 def _calculate_rsi(close: pd.Series, period: int) -> pd.Series:
@@ -84,9 +81,9 @@ def _detect_hidden_bullish_divergence(price: pd.Series, rsi: pd.Series,
 def _detect_hidden_bearish_divergence(price: pd.Series, rsi: pd.Series,
                                       price_peaks: pd.Series, rsi_peaks: pd.Series,
                                       lookback: int) -> pd.Series:
-    return (price_peaks & 
-            (price < price.shift(lookback)) & 
+    return (price_peaks &
+            (price < price.shift(lookback)) &
             (rsi > rsi.shift(lookback)))
 
-def calculate_indicator(df, **params):
+def calculate_indicator(df: pd.DataFrame, **params) -> Dict[str, pd.Series]:
     return calculate_rsi_divergence(df, **params)
