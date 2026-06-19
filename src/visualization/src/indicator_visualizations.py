@@ -644,7 +644,7 @@ def _aVWAP_visualization(subchart, df):
         matching_cols = [col for col in df.columns if col.startswith(avg_name)]
 
         for col in matching_cols:
-            width = avg_cfg['primary_width'] if col == avg_name else avg_cfg['secondary_width']
+            width = avg_cfg['primary_width'] if (col == avg_name and len(matching_cols) > 1) else avg_cfg['secondary_width']
 
             subchart.create_line(
                 price_line=False,
