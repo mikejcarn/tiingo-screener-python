@@ -541,6 +541,68 @@ def _aVWAP_visualization(subchart, df):
         ).set(_line_set_df(df, col))
 
     # -------------------------
+    # QQEMOD Bear solid - teal (anchored at lowest low = valley/support)
+    # -------------------------
+    QQEMOD_bear_cols = [col for col in df.columns
+                        if col.startswith('aVWAP_QQEMOD_bear_') and '_dot_' not in col]
+    for col in QQEMOD_bear_cols:
+        cfg = _cfg_idx(col)
+        width = 2 if cfg == 0 else 1
+        style = 'solid' if cfg == 0 else 'dotted'
+
+        subchart.create_line(
+            price_line=False,
+            price_label=False,
+            color=colors['teal'],
+            width=width,
+            style=style
+        ).set(_line_set_df(df, col))
+
+    # -------------------------
+    # QQEMOD Bear dotted - valley-to-valley handoff
+    # -------------------------
+    QQEMOD_bear_dot_cols = [col for col in df.columns if col.startswith('aVWAP_QQEMOD_bear_dot_')]
+    for col in QQEMOD_bear_dot_cols:
+        subchart.create_line(
+            price_line=False,
+            price_label=False,
+            color=colors['teal'],
+            width=1,
+            style='dotted'
+        ).set(_line_set_df(df, col))
+
+    # -------------------------
+    # QQEMOD Bull solid - red (anchored at highest high = peak/resistance)
+    # -------------------------
+    QQEMOD_bull_cols = [col for col in df.columns
+                        if col.startswith('aVWAP_QQEMOD_bull_') and '_dot_' not in col]
+    for col in QQEMOD_bull_cols:
+        cfg = _cfg_idx(col)
+        width = 2 if cfg == 0 else 1
+        style = 'solid' if cfg == 0 else 'dotted'
+
+        subchart.create_line(
+            price_line=False,
+            price_label=False,
+            color=colors['red'],
+            width=width,
+            style=style
+        ).set(_line_set_df(df, col))
+
+    # -------------------------
+    # QQEMOD Bull dotted - peak-to-peak handoff
+    # -------------------------
+    QQEMOD_bull_dot_cols = [col for col in df.columns if col.startswith('aVWAP_QQEMOD_bull_dot_')]
+    for col in QQEMOD_bull_dot_cols:
+        subchart.create_line(
+            price_line=False,
+            price_label=False,
+            color=colors['red'],
+            width=1,
+            style='dotted'
+        ).set(_line_set_df(df, col))
+
+    # -------------------------
     # OB aVWAPs - with tiered styling and limit option
     # -------------------------
     LIMIT_OB_ANCHORS_PER_CFG = True
@@ -629,6 +691,13 @@ def _aVWAP_visualization(subchart, df):
             'secondary_width': 1.5,
             'color': colors['orange_aVWAP'],
             'style': 'large_dashed'
+        },
+        {
+            'name': 'QQEMOD_avg',
+            'primary_width': 3,
+            'secondary_width': 1.5,
+            'color': colors['orange_aVWAP'],
+            'style': 'solid'
         },
         {
             'name': 'All_avg',

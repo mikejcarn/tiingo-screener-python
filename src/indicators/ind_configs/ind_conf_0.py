@@ -29,13 +29,13 @@ indicators = {  # List of available indicator configurations
     ],
 
     'daily': [
-        # 'aVWAP',
+        'aVWAP',
         # 'aVWAP_pinch',
-        'aVWAP_anchor_score',
-        # 'candle_colors',
+        # 'aVWAP_anchor_score',
+        'candle_colors',
         # 'banker_RSI',
         # 'SMA',
-        # 'liquidity',
+        'liquidity',
         # 'divergence_OBV',
     ],
 
@@ -153,12 +153,14 @@ params = {
 
         'daily': {
             'aVWAP': {
-                'peaks': True,
-                'valleys': True,
+                'peaks': False,
+                'valleys': False,
                 'peaks_avg': False,
                 'valleys_avg': False,
                 'peaks_valleys': False,
                 'peaks_valleys_avg': False,
+                'QQEMOD': True,
+                'QQEMOD_avg': True,
                 'OB': False,
                 'OB_avg': False,
                 'gaps': False,
@@ -183,6 +185,18 @@ params = {
                     # { 'periods': 20, 'max_aVWAPs': None, 'avg_lookback': 20, }, 
                     # { 'periods': 10, 'max_aVWAPs': None, 'avg_lookback': 20, }, 
                 ],
+                'QQEMOD_params': {
+                    'peak_to_peak':     False,  # dotted red:   peak anchor → next peak anchor
+                    'peak_to_valley':   False,  # solid red:    peak anchor → next teal candle
+                    'valley_to_peak':   True,  # solid teal:   valley anchor → next red candle
+                    'valley_to_valley': True,  # dotted teal:  valley anchor → next valley anchor
+                    'max_aVWAPs': None,        # int = most-recent N segments, None = all
+                    'qqe_params': {
+                        'rsi_period': 6, 'rsi_period2': 5, 'sf': 5, 'sf2': 5,
+                        'qqe_factor': 3.0, 'qqe_factor2': 1.61, 'threshold': 3,
+                        'bb_length': 50, 'bb_multi': 0.35
+                    }
+                },
                 'OB_params': [ { 'mode': 'none', }, ],
                 'gaps_params': [ {'max_aVWAPs': 5, 'avg_lookback': 8}, ],
                 'BoS_CHoCH_params': [ {'swing_length': 15, 'max_aVWAPs': 4, 'avg_lookback': 7}, ],
@@ -198,17 +212,19 @@ params = {
             'aVWAP_anchor_score': {
                 'valleys': True,
                 'peaks': False,
-                'top_n': 3,
+                'max_anchors': 1,
                 'min_score': None,
-                'distance': 5,
-                'max_window': 300,
+                'min_swing_spacing': 5,
+                'isolation_max_bars': 300,
                 'atr_period': 14,
-                'departure_lookback': 5,
-                'departure_lookforward': 5,
-                'vol_climax_window': 20,
-                'range_climax_window': 20,
+                'sharpness_bars_before': 5,
+                'sharpness_bars_after': 5,
+                'w_prominence': 1.0,
+                'w_isolation': 1.0,
+                'w_sharpness': 1.0,
                 'keep_scores': False,
             },
+            'liquidity': {'swing_length': 20, 'range_percent': 0.1},
             'candle_colors': {
                 'indicator_color': 'QQEMOD',
                 'custom_params': {
@@ -254,7 +270,6 @@ params = {
                 'fast_period': 20, 'slow_period': 40, 
                 'atr_period': 20, 'explosion_multiplier': 2.0
             },
-            'liquidity': {'swing_length': 20, 'range_percent': 0.1},
             'supertrend': {'periods': 14, 'multiplier': 3},
             'TTM_squeeze': {
                 'bb_length': 18, 'bb_std_dev': 1.9,

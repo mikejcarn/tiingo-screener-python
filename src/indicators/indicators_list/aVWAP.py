@@ -20,12 +20,14 @@ def calculate_avwap_channel(
     gaps=False,
     OB=False,
     BoS_CHoCH=False,
+    QQEMOD=False,
 
     gaps_avg=False,
     OB_avg=False,
     BoS_CHoCH_avg=False,
+    QQEMOD_avg=False,
     All_avg=False,
- 
+
     # Parameters for each type - ALL CAN BE LISTS
     peaks_params=None,           # Configs for peaks only (can be list)
     valleys_params=None,         # Configs for valleys only (can be list)
@@ -33,7 +35,8 @@ def calculate_avwap_channel(
     gaps_params=None,
     OB_params=None,
     BoS_CHoCH_params=None,
- 
+    QQEMOD_params=None,
+
     avg_lookback=25,
     keep_OB_column=False,
     aVWAP_channel=False
@@ -80,6 +83,21 @@ def calculate_avwap_channel(
         if param_dict and key in param_dict:
             return param_dict[key]
         return default
+
+    def add_qqemod_per_config(df_in: pd.DataFrame, qqemod_configs: list) -> pd.DataFrame:
+        """For each QQEMOD config, compute QQEMOD signal columns and attach as {col}_c{i}."""
+        out = df_in.copy()
+        base_cols = ['Open', 'High', 'Low', 'Close', 'Volume', 'date']
+        available_cols = [c for c in base_cols if c in df_in.columns]
+        base_df = df_in[available_cols].copy()
+        for i, cfg in enumerate(qqemod_configs):
+            qqe_p = cfg.get('qqe_params', {})
+            tmp = get_indicators(base_df.copy(), ['QQEMOD'], {'QQEMOD': qqe_p})
+            for col in ['QQE1_Above_Upper', 'QQE1_Below_Lower',
+                        'QQE2_Above_Threshold', 'QQE2_Below_Threshold', 'QQE2_Above_TL']:
+                if col in tmp.columns:
+                    out[f'{col}_c{i}'] = tmp[col]
+        return out
 
     def add_ob_per_config(df_in: pd.DataFrame, ob_configs: list) -> pd.DataFrame:
         """For each OB config, compute OB columns and attach them as OB_c{i}, etc."""
@@ -135,6 +153,11 @@ def calculate_avwap_channel(
         'max_aVWAPs': None
     }) if BoS_CHoCH else []
 
+    QQEMOD_configs = ensure_config_list(QQEMOD_params, {
+        'mode': 'combined',
+        'max_aVWAPs': None
+    }) if (QQEMOD or QQEMOD_avg) else []
+
     # -------------------------
     # Determine what to display
     # -------------------------
@@ -155,10 +178,10 @@ def calculate_avwap_channel(
     need_all_avg = All_avg
  
     # If nothing is requested, return empty
-    if not (show_peaks or show_valleys or show_peaks_valleys or 
-            gaps or OB or BoS_CHoCH or
-            need_peaks_for_avg or need_valleys_for_avg or 
-            need_peaks_valleys_for_avg or need_all_avg):
+    if not (show_peaks or show_valleys or show_peaks_valleys or
+            gaps or OB or BoS_CHoCH or QQEMOD or
+            need_peaks_for_avg or need_valleys_for_avg or
+            need_peaks_valleys_for_avg or QQEMOD_avg or need_all_avg):
         return {}
 
     # -------------------------
@@ -175,6 +198,8 @@ def calculate_avwap_channel(
         aVWAP_anchors.append('OB')
     if BoS_CHoCH or BoS_CHoCH_avg or need_all_avg:
         aVWAP_anchors.append('BoS_CHoCH')
+    if QQEMOD or QQEMOD_avg or need_all_avg:
+        aVWAP_anchors.append('QQEMOD')
 
     if not aVWAP_anchors:
         return {}
@@ -212,6 +237,10 @@ def calculate_avwap_channel(
     if OB and OB_configs:
         df = add_ob_per_config(df, OB_configs)
 
+    # Compute QQEMOD signals per config if requested
+    if 'QQEMOD' in aVWAP_anchors and QQEMOD_configs:
+        df = add_qqemod_per_config(df, QQEMOD_configs)
+
     # Standardize structure
     df = df.reset_index()
     df['date'] = pd.to_datetime(df['date'])
@@ -224,6 +253,7 @@ def calculate_avwap_channel(
     gaps_aVWAPs = {}
     OB_aVWAPs = {}
     BoS_CHoCH_aVWAPs = {}
+    QQEMOD_aVWAPs = {}
 
     # Track extreme points for channel calculation
     highest_peak_idx = None
@@ -544,9 +574,106 @@ def calculate_avwap_channel(
           
             if BoS_CHoCH_avg:
                 BoS_CHoCH_aVWAPs.update(config_BoS)
-          
+
             if BoS_CHoCH:
                 all_individual_aVWAPs.update(config_BoS)
+
+    # =====================
+    # Process QQEMOD - segment-based anchors
+    # =====================
+    if 'QQEMOD' in aVWAP_anchors:
+        vol_mask = df['Volume'].fillna(0) > 0
+        _last_valid = int(vol_mask[vol_mask].index[-1]) if vol_mask.any() else len(df) - 1
+
+        def find_qqemod_segments(config_idx):
+            bull = (df[f'QQE1_Above_Upper_c{config_idx}'].fillna(False).values &
+                    df[f'QQE2_Above_Threshold_c{config_idx}'].fillna(False).values &
+                    df[f'QQE2_Above_TL_c{config_idx}'].fillna(False).values)
+            bear = (df[f'QQE1_Below_Lower_c{config_idx}'].fillna(False).values &
+                    df[f'QQE2_Below_Threshold_c{config_idx}'].fillna(False).values &
+                    ~df[f'QQE2_Above_TL_c{config_idx}'].fillna(False).values)
+            n = len(df)
+            segments = []
+            i = 0
+            while i < n:
+                if bull[i]:
+                    start = i
+                    j = i + 1
+                    while j < n and not bear[j]:
+                        j += 1
+                    anchor_end = min(j - 1, _last_valid)
+                    display_end = min(j, _last_valid)
+                    anchor = int(np.argmax(df['High'].values[start:anchor_end + 1])) + start
+                    segments.append({'type': 'bull', 'start': start, 'end': display_end,
+                                     'anchor': anchor})
+                    i = j if j < n else n
+                elif bear[i]:
+                    start = i
+                    j = i + 1
+                    while j < n and not bull[j]:
+                        j += 1
+                    anchor_end = min(j - 1, _last_valid)
+                    display_end = min(j, _last_valid)
+                    anchor = int(np.argmin(df['Low'].values[start:anchor_end + 1])) + start
+                    segments.append({'type': 'bear', 'start': start, 'end': display_end,
+                                     'anchor': anchor})
+                    i = j if j < n else n
+                else:
+                    i += 1
+            return segments
+
+        for config_idx, config in enumerate(QQEMOD_configs):
+            max_aVWAPs = config.get('max_aVWAPs', None)
+            peak_to_valley   = config.get('peak_to_valley',   True)
+            valley_to_peak   = config.get('valley_to_peak',   True)
+            peak_to_peak     = config.get('peak_to_peak',     True)
+            valley_to_valley = config.get('valley_to_valley', True)
+
+            include_bull = peak_to_valley or peak_to_peak or QQEMOD_avg
+            include_bear = valley_to_peak or valley_to_valley or QQEMOD_avg
+
+            segments = find_qqemod_segments(config_idx)
+            if max_aVWAPs is not None:
+                segments = segments[-max_aVWAPs:]
+
+            config_QQEMOD = {}
+
+            # Solid lines: peak→valley and valley→peak
+            for seg in segments:
+                if seg['type'] == 'bull' and not peak_to_valley:
+                    continue
+                if seg['type'] == 'bear' and not valley_to_peak:
+                    continue
+                anchor = seg['anchor']
+                direction = 'bull' if seg['type'] == 'bull' else 'bear'
+                col = f'aVWAP_QQEMOD_{direction}_c{config_idx}_{anchor}'
+                avwap = calculate_avwap(df, anchor).copy()
+                avwap.iloc[seg['end'] - anchor + 1:] = np.nan
+                config_QQEMOD[col] = avwap
+
+            # Dotted lines: peak→peak and valley→valley
+            # Always computed when QQEMOD_avg is True; only displayed when the flag is True
+            for seg_type, direction, display_flag in (
+                ('bull', 'bull', peak_to_peak),
+                ('bear', 'bear', valley_to_valley),
+            ):
+                need_dir = include_bull if seg_type == 'bull' else include_bear
+                if not need_dir:
+                    continue
+                same_type = [s for s in segments if s['type'] == seg_type]
+                for k in range(len(same_type) - 1):
+                    anchor = same_type[k]['anchor']
+                    next_anchor = same_type[k + 1]['anchor']
+                    col = f'aVWAP_QQEMOD_{direction}_dot_c{config_idx}_{anchor}'
+                    avwap = calculate_avwap(df, anchor).copy()
+                    avwap.iloc[next_anchor - anchor + 1:] = np.nan
+                    if QQEMOD_avg:
+                        QQEMOD_aVWAPs[col] = avwap
+                    if display_flag:
+                        config_QQEMOD[col] = avwap
+
+            if QQEMOD:
+                all_individual_aVWAPs.update(config_QQEMOD)
 
     # =====================
     # Add individual aVWAPs to dataframe
@@ -652,21 +779,33 @@ def calculate_avwap_channel(
         for config_idx in range(len(BoS_CHoCH_configs)):
             config = BoS_CHoCH_configs[config_idx]
             lookback = get_lookback(config, 'avg_lookback', avg_lookback)
-          
+
             config_BoS = {}
             patterns = [f'aVWAP_BoS_CHoCH_bull_c{config_idx}_', f'aVWAP_BoS_CHoCH_bear_c{config_idx}_']
             for key, value in BoS_CHoCH_aVWAPs.items():
                 if any(key.startswith(p) for p in patterns):
                     config_BoS[key] = value
-          
+
             if config_BoS:
                 avg_name = 'BoS_CHoCH_avg' if config_idx == 0 else f'BoS_CHoCH_avg_{config_idx}'
                 df[avg_name] = calculate_rolling_aVWAP_avg(df, config_BoS, lookback)
 
+    # QQEMOD_avg — average of the active peak-to-peak and valley-to-valley dotted lines
+    if QQEMOD_avg:
+        for config_idx in range(len(QQEMOD_configs)):
+            config_q = {k: v for k, v in QQEMOD_aVWAPs.items()
+                        if k.startswith(f'aVWAP_QQEMOD_bull_dot_c{config_idx}_')
+                        or k.startswith(f'aVWAP_QQEMOD_bear_dot_c{config_idx}_')}
+
+            if config_q:
+                avg_name = 'QQEMOD_avg' if config_idx == 0 else f'QQEMOD_avg_{config_idx}'
+                df[avg_name] = calculate_rolling_aVWAP_avg(df, config_q, lookback=None)
+
     # All_avg (combines all aVWAPs)
     if All_avg and all_individual_aVWAPs:
         max_configs = max(len(peaks_configs), len(valleys_configs), len(peaks_valleys_configs),
-                         len(gaps_configs), len(OB_configs), len(BoS_CHoCH_configs))
+                         len(gaps_configs), len(OB_configs), len(BoS_CHoCH_configs),
+                         len(QQEMOD_configs))
         for config_idx in range(max_configs):
             lookback = avg_lookback
             avg_name = 'All_avg' if config_idx == 0 else f'All_avg_{config_idx}'
@@ -692,6 +831,14 @@ def calculate_avwap_channel(
             ])
     if not BoS_CHoCH:
         cols_to_drop.extend(['BoS', 'CHoCH', 'BoS_CHoCH_Price', 'BoS_CHoCH_Break_Index'])
+    for i in range(len(QQEMOD_configs)):
+        cols_to_drop.extend([
+            f'QQE1_Above_Upper_c{i}', f'QQE1_Below_Lower_c{i}',
+            f'QQE2_Above_Threshold_c{i}', f'QQE2_Below_Threshold_c{i}',
+            f'QQE2_Above_TL_c{i}',
+        ])
+    cols_to_drop.extend(['QQEMOD', 'QQE1_Value', 'QQE1_Above_Upper', 'QQE1_Below_Lower',
+                         'QQE2_Above_Threshold', 'QQE2_Below_Threshold', 'QQE2_Above_TL'])
 
     df = df.drop(columns=[col for col in cols_to_drop if col in df.columns])
     df.set_index('date', inplace=True)
