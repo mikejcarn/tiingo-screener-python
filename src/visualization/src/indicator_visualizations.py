@@ -564,6 +564,11 @@ def _aVWAP_visualization(subchart, df):
             style=style
         ).set(_line_set_df(df, col))
 
+    # QQEMOD lines are clipped to real candles only — padded rows have close=NaN
+    # and are explicitly populated with the last real value by prepare_dataframe,
+    # so we must filter them out here to prevent lines extending into empty space.
+    _qqemod_df = df[df['close'].notna()] if 'close' in df.columns else df
+
     # -------------------------
     # QQEMOD Bear solid - teal (anchored at lowest low = valley/support)
     # -------------------------
@@ -580,7 +585,7 @@ def _aVWAP_visualization(subchart, df):
             color=colors['teal'],
             width=width,
             style=style
-        ).set(_line_set_df(df, col))
+        ).set(_line_set_df(_qqemod_df, col))
 
     # -------------------------
     # QQEMOD Bear dotted - valley-to-valley handoff
@@ -593,7 +598,7 @@ def _aVWAP_visualization(subchart, df):
             color=colors['teal'],
             width=1,
             style='dotted'
-        ).set(_line_set_df(df, col))
+        ).set(_line_set_df(_qqemod_df, col))
 
     # -------------------------
     # QQEMOD Bull solid - red (anchored at highest high = peak/resistance)
@@ -611,7 +616,7 @@ def _aVWAP_visualization(subchart, df):
             color=colors['red'],
             width=width,
             style=style
-        ).set(_line_set_df(df, col))
+        ).set(_line_set_df(_qqemod_df, col))
 
     # -------------------------
     # QQEMOD Bull dotted - peak-to-peak handoff
@@ -624,7 +629,7 @@ def _aVWAP_visualization(subchart, df):
             color=colors['red'],
             width=1,
             style='dotted'
-        ).set(_line_set_df(df, col))
+        ).set(_line_set_df(_qqemod_df, col))
 
     # -------------------------
     # OB aVWAPs - with tiered styling and limit option

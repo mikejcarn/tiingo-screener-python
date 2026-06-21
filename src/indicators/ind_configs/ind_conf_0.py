@@ -30,27 +30,27 @@ indicators = {  # List of available indicator configurations
 
     'daily': [
         'aVWAP',
-        # 'aVWAP_pinch',
-        # 'aVWAP_anchor_score',
         'candle_colors',
+        'aVWAP_anchor_score',
+        # 'aVWAP_pinch',
         # 'banker_RSI',
         # 'SMA',
-        'liquidity',
-        'POC',
+        # 'liquidity',
+        # 'POC',
         # 'divergence_OBV',
+    ],
+
+    '1hour': [
+        'aVWAP',
+        'candle_colors',
+        # 'aVWAP_pinch',
+        # 'SMA',
+        # 'liquidity',
     ],
 
     '4hour': [
         # 'aVWAP',
         # 'candle_colors',
-        # 'SMA',
-        # 'liquidity',
-    ],
-
-    '1hour': [
-        'aVWAP',
-        'aVWAP_pinch',
-        'candle_colors',
         # 'SMA',
         # 'liquidity',
     ],
@@ -182,15 +182,15 @@ params = {
                     { 'periods': 200, 'max_aVWAPs': 1, 'avg_lookback': 100, }, 
                 ],
                 'peaks_valleys_params': [ 
-                    { 'periods': 50, 'max_aVWAPs': None, 'avg_lookback': 20, }, 
+                    { 'periods': 20, 'max_aVWAPs': None, 'avg_lookback': 20, }, 
                     # { 'periods': 20, 'max_aVWAPs': None, 'avg_lookback': 20, }, 
                     # { 'periods': 10, 'max_aVWAPs': None, 'avg_lookback': 20, }, 
                 ],
                 'QQEMOD_params': {
+                    'peak_to_valley':   False,  # solid red:    peak anchor → next teal candle
+                    'valley_to_peak':   False,  # solid teal:   valley anchor → next red candle
                     'peak_to_peak':     False,  # dotted red:   peak anchor → next peak anchor
-                    'peak_to_valley':   True,  # solid red:    peak anchor → next teal candle
-                    'valley_to_peak':   True,  # solid teal:   valley anchor → next red candle
-                    'valley_to_valley': False,  # dotted teal:  valley anchor → next valley anchor
+                    'valley_to_valley': True,  # dotted teal:  valley anchor → next valley anchor
                     'max_aVWAPs': None,        # int = most-recent N segments, None = all
                     'qqe_params': {
                         'rsi_period': 6, 'rsi_period2': 5, 'sf': 5, 'sf2': 5,
@@ -213,7 +213,7 @@ params = {
             'aVWAP_anchor_score': {
                 'valleys': True,
                 'peaks': False,
-                'max_anchors': 1,
+                'max_anchors': 10,
                 'min_score': None,
                 'min_swing_spacing': 5,
                 'isolation_max_bars': 300,
@@ -267,7 +267,7 @@ params = {
                 'qqe_factor': 3.0, 'qqe_factor2': 1.61, 'threshold': 3,
                 'bb_length': 50, 'bb_multi': 0.35
             },
-            'SMA': {'periods': [200]},
+            'SMA': {'periods': [50, 200]},
             'WAE': {
                 'fast_period': 20, 'slow_period': 40, 
                 'atr_period': 20, 'explosion_multiplier': 2.0
@@ -378,11 +378,13 @@ params = {
             },
             'aVWAP': {
                 'peaks': False,
-                'valleys': True,
+                'valleys': False,
                 'peaks_avg': False,
                 'valleys_avg': False,
                 'peaks_valleys': False,
                 'peaks_valleys_avg': False,
+                'QQEMOD': True,
+                'QQEMOD_avg': False,
                 'OB': False,
                 'OB_avg': False,
                 'gaps': False,
@@ -413,6 +415,18 @@ params = {
                         'avg_lookback': 50,
                     },
                 ],
+                'QQEMOD_params': {
+                    'peak_to_valley':   False,  # solid red:    peak anchor → next teal candle
+                    'valley_to_peak':   False,   # solid teal:   valley anchor → next red candle
+                    'peak_to_peak':     False,  # dotted red:   peak anchor → next peak anchor
+                    'valley_to_valley': True,   # dotted teal:  valley anchor → next valley anchor
+                    'max_aVWAPs': None,
+                    'qqe_params': {
+                        'rsi_period': 6, 'rsi_period2': 5, 'sf': 5, 'sf2': 5,
+                        'qqe_factor': 3.0, 'qqe_factor2': 1.61, 'threshold': 3,
+                        'bb_length': 50, 'bb_multi': 0.35
+                    }
+                },
                 'OB_params': [
                     # {
                     #     'mode': 'none',
@@ -458,6 +472,7 @@ params = {
                 'atr_period': 20, 'explosion_multiplier': 2.0
             },
             'liquidity': {'swing_length': 20, 'range_percent': 0.1},
+            'POC': {'num_bins': 200, 'num_bars': 200},
             'supertrend': {'periods': 14, 'multiplier': 3},
             'TTM_squeeze': {
                 'bb_length': 18, 'bb_std_dev': 1.9,

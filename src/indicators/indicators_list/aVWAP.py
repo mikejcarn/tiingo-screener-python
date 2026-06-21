@@ -671,6 +671,16 @@ def calculate_avwap_channel(
                         QQEMOD_aVWAPs[col] = avwap
                     if display_flag:
                         config_QQEMOD[col] = avwap
+                # Open line for the most recent anchor — no next partner yet, extend to last real bar
+                if same_type:
+                    anchor = same_type[-1]['anchor']
+                    col = f'aVWAP_QQEMOD_{direction}_dot_c{config_idx}_{anchor}'
+                    avwap = calculate_avwap(df, anchor).copy()
+                    avwap.iloc[_last_valid - anchor + 1:] = np.nan
+                    if QQEMOD_avg:
+                        QQEMOD_aVWAPs[col] = avwap
+                    if display_flag:
+                        config_QQEMOD[col] = avwap
 
             if QQEMOD:
                 all_individual_aVWAPs.update(config_QQEMOD)
