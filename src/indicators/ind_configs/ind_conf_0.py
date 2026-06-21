@@ -36,6 +36,7 @@ indicators = {  # List of available indicator configurations
         # 'banker_RSI',
         # 'SMA',
         'liquidity',
+        'POC',
         # 'divergence_OBV',
     ],
 
@@ -160,7 +161,7 @@ params = {
                 'peaks_valleys': False,
                 'peaks_valleys_avg': False,
                 'QQEMOD': True,
-                'QQEMOD_avg': True,
+                'QQEMOD_avg': False,
                 'OB': False,
                 'OB_avg': False,
                 'gaps': False,
@@ -187,9 +188,9 @@ params = {
                 ],
                 'QQEMOD_params': {
                     'peak_to_peak':     False,  # dotted red:   peak anchor → next peak anchor
-                    'peak_to_valley':   False,  # solid red:    peak anchor → next teal candle
+                    'peak_to_valley':   True,  # solid red:    peak anchor → next teal candle
                     'valley_to_peak':   True,  # solid teal:   valley anchor → next red candle
-                    'valley_to_valley': True,  # dotted teal:  valley anchor → next valley anchor
+                    'valley_to_valley': False,  # dotted teal:  valley anchor → next valley anchor
                     'max_aVWAPs': None,        # int = most-recent N segments, None = all
                     'qqe_params': {
                         'rsi_period': 6, 'rsi_period2': 5, 'sf': 5, 'sf2': 5,
@@ -225,6 +226,7 @@ params = {
                 'keep_scores': False,
             },
             'liquidity': {'swing_length': 20, 'range_percent': 0.1},
+            'POC': {'num_bins': 200, 'num_bars': 200},
             'candle_colors': {
                 'indicator_color': 'QQEMOD',
                 'custom_params': {

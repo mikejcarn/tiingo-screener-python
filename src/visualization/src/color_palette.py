@@ -24,6 +24,7 @@ def get_color_palette():
         'orange_volume': f"rgba(255, 165, 0, 0.5)",
         'orange_aVWAP': f"rgba(255, 165, 0, 0.6)",
         'orange_liquidity': f"rgba(255, 165, 0, 0.5)",
+        'orange_poc': f"rgba(255, 165, 0, 0.25)",
 
         'blue': f"rgba(33, 150, 243, 1.0)",
         'blue_SMA': f"rgba(33, 150, 243, 0.5)",

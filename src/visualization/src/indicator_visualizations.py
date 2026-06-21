@@ -17,6 +17,7 @@ def add_visualizations(subchart, df, show_banker_RSI):
     _OB_visualization(subchart, df)
     _BoS_CHoCH_visualization(subchart, df)
     _liquidity_visualization(subchart, df)
+    _POC_visualization(subchart, df)
     _aVWAP_visualization(subchart, df)
     _supertrend_visualization(subchart, df)
     _SMA_visualization(subchart, df)
@@ -341,6 +342,29 @@ def _liquidity_visualization(subchart, df):
 #                 'time': [df.iloc[0]['time'], df.iloc[-1]['time']],
 #                 'value': [level, level]
 #             }))
+
+
+def _POC_visualization(subchart, df):
+    df = _ensure_time_col(df)
+
+    if 'POC' not in df.columns:
+        return
+
+    poc_values = df['POC'].dropna()
+    if poc_values.empty:
+        return
+
+    poc_price = float(poc_values.iloc[0])
+    chart_df = df[df['POC'].notna()][['time']].copy()
+    chart_df['value'] = poc_price
+
+    subchart.create_line(
+        price_line=False,
+        price_label=False,
+        color=colors['orange_poc'],
+        width=6,
+        style='solid'
+    ).set(chart_df)
 
 
 def _banker_RSI_visualization(subchart, df):
