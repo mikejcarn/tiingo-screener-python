@@ -47,7 +47,7 @@ def calculate_avwap_quality(
     valleys=True,
     peaks=False,
     max_anchors=3,
-    min_score=None,
+    min_score_pct=None,
     keep_scores=False,
     # --- Candidate detection (which bars are considered before scoring) ---
     min_swing_spacing=5,
@@ -61,6 +61,8 @@ def calculate_avwap_quality(
     w_prominence=1.0,
     w_isolation=1.0,
     w_sharpness=1.0,
+    # --- Proximity filter ---
+    max_atr_distance=None,
 ):
     """
     Score every candidate swing point and return aVWAPs anchored only to the
@@ -81,10 +83,11 @@ def calculate_avwap_quality(
         valleys           — score valley swings (support anchors)
         peaks             — score peak swings (resistance anchors)
         max_anchors       — how many top-scoring aVWAPs to keep per mode
-        min_score         — optional floor: drop candidates below this score
-                            before the max_anchors cut (score is sum of weighted
-                            percentiles, max possible = w_prominence + w_isolation
-                            + w_sharpness)
+        min_score_pct     — optional floor as a fraction of the max possible score
+                            (0.0–1.0). Scales automatically with weights so the
+                            threshold stays meaningful when weights change.
+                            0.5 = top half, 0.67 = above average, 0.8 = strong.
+                            None = no floor (default).
         keep_scores       — if True, attach constant columns per aVWAP showing
                             the raw score and each component's percentile rank,
                             useful for inspecting why a candidate was chosen
@@ -114,6 +117,13 @@ def calculate_avwap_quality(
                                 high score = sharp V or inverted-V shape;
                                 low score = slow grind (not disqualified, just
                                 ranked lower than sharper reversals)
+
+    PROXIMITY FILTER (applied after scoring, before max_anchors cut)
+        max_atr_distance  — discard any candidate whose aVWAP value at the
+                            current bar is more than this many ATRs from the
+                            current close. None = no filter (default).
+                            Age of the anchor is irrelevant; only whether the
+                            resulting line is near price today matters.
 
     Returns a DataFrame (date-indexed) with only the aVWAP_* (and optional
     _score/_pct) columns — no OHLCV columns — so get_indicators can concat it
@@ -189,14 +199,30 @@ def calculate_avwap_quality(
     if peaks:
         all_rows.extend(apply_weighted_score(collect_candidates(high, 'peak')))
 
+    current_close = close[-1]
+    current_atr = atr[-1]
+    proximity_active = (
+        max_atr_distance is not None
+        and not np.isnan(current_close)
+        and not np.isnan(current_atr)
+        and current_atr > 0
+    )
+
     aVWAP_series = {}
     for mode in ('valley', 'peak'):
         mode_rows = sorted(
             (r for r in all_rows if r['mode'] == mode),
             key=lambda r: (r['score'], r['idx']), reverse=True,
         )
-        if min_score is not None:
-            mode_rows = [r for r in mode_rows if r['score'] >= min_score]
+        if min_score_pct is not None:
+            max_score = w_prominence + w_isolation + w_sharpness
+            mode_rows = [r for r in mode_rows if r['score'] >= min_score_pct * max_score]
+        if proximity_active:
+            mode_rows = [
+                r for r in mode_rows
+                if abs(calculate_avwap(work, r['idx']).iloc[-1] - current_close) / current_atr
+                   <= max_atr_distance
+            ]
         mode_rows = mode_rows[:max_anchors]
 
         for rank, r in enumerate(mode_rows, start=1):

@@ -1,4 +1,4 @@
-# ind_conf_0
+# ind_conf_9
 
 indicators = {  # List of available indicator configurations
 
@@ -189,8 +189,8 @@ params = {
                 'QQEMOD_params': {
                     'peak_to_valley':   False,  # solid red:    peak anchor → next teal candle
                     'valley_to_peak':   False,  # solid teal:   valley anchor → next red candle
-                    'peak_to_peak':     True,  # dotted red:   peak anchor → next peak anchor
-                    'valley_to_valley': False,  # dotted teal:  valley anchor → next valley anchor
+                    'peak_to_peak':     False,  # dotted red:   peak anchor → next peak anchor
+                    'valley_to_valley': True,  # dotted teal:  valley anchor → next valley anchor
                     'max_aVWAPs': None,        # int = most-recent N segments, None = all
                     'qqe_params': {
                         'rsi_period': 6, 'rsi_period2': 5, 'sf': 5, 'sf2': 5,
@@ -211,8 +211,8 @@ params = {
                 'beyond_max_aVWAPs': 0,
             },
             'aVWAP_anchor_score': {
-                'valleys': True,
-                'peaks': False,
+                'valleys': False,
+                'peaks': True,
                 'max_anchors': 3,
                 'min_score_pct': 0.5,
                 'min_swing_spacing': 5,
@@ -224,7 +224,7 @@ params = {
                 'w_isolation': 1.0,
                 'w_sharpness': 1.0,
                 'keep_scores': False,
-                'max_atr_distance': 5.0
+                'max_atr_distance': 5.0,
             },
             'liquidity': {'swing_length': 20, 'range_percent': 0.1},
             'POC': {'num_bins': 200, 'num_bars': 200},
