@@ -31,7 +31,7 @@ indicators = {  # List of available indicator configurations
     'daily': [
         'aVWAP',
         'candle_colors',
-        'aVWAP_anchor_score',
+        # 'aVWAP_anchor_score',
         # 'aVWAP_pinch',
         # 'banker_RSI',
         # 'SMA',
@@ -56,8 +56,9 @@ indicators = {  # List of available indicator configurations
     ],
 
     '30min': [
-        # 'aVWAP',
-        # 'candle_colors',
+        'aVWAP',
+        'candle_colors',
+        'aVWAP_anchor_score',
         # 'SMA',
         # 'liquidity',
     ],
@@ -168,29 +169,24 @@ params = {
                 'gaps_avg': False,
                 'BoS_CHoCH': False,
                 'BoS_CHoCH_avg': False,
+                'price_maxima_minima': True,
                 'All_avg': False,
                 'keep_OB_column': False,
                 'aVWAP_channel': False,
                 'peaks_params': [ 
-                    { 'periods': 400, 'max_aVWAPs': 1, 'avg_lookback': 100, }, 
-                    { 'periods': 300, 'max_aVWAPs': 1, 'avg_lookback': 100, }, 
-                    { 'periods': 200, 'max_aVWAPs': 1, 'avg_lookback': 100, }, 
+                    { 'periods': 20, 'max_aVWAPs': None, 'avg_lookback': 100, }, 
                 ],
                 'valleys_params': [ 
-                    { 'periods': 400, 'max_aVWAPs': 1, 'avg_lookback': 100, }, 
-                    { 'periods': 300, 'max_aVWAPs': 1, 'avg_lookback': 100, }, 
-                    { 'periods': 200, 'max_aVWAPs': 1, 'avg_lookback': 100, }, 
+                    { 'periods': 20, 'max_aVWAPs': None, 'avg_lookback': 100, }, 
                 ],
                 'peaks_valleys_params': [ 
                     { 'periods': 20, 'max_aVWAPs': None, 'avg_lookback': 20, }, 
-                    # { 'periods': 20, 'max_aVWAPs': None, 'avg_lookback': 20, }, 
-                    # { 'periods': 10, 'max_aVWAPs': None, 'avg_lookback': 20, }, 
                 ],
                 'QQEMOD_params': {
                     'peak_to_valley':   False,  # solid red:    peak anchor → next teal candle
                     'valley_to_peak':   False,  # solid teal:   valley anchor → next red candle
-                    'peak_to_peak':     True,  # dotted red:   peak anchor → next peak anchor
-                    'valley_to_valley': False,  # dotted teal:  valley anchor → next valley anchor
+                    'peak_to_peak':     False,  # dotted red:   peak anchor → next peak anchor
+                    'valley_to_valley': True,  # dotted teal:  valley anchor → next valley anchor
                     'max_aVWAPs': None,        # int = most-recent N segments, None = all
                     'qqe_params': {
                         'rsi_period': 6, 'rsi_period2': 5, 'sf': 5, 'sf2': 5,
@@ -198,9 +194,15 @@ params = {
                         'bb_length': 50, 'bb_multi': 0.35
                     }
                 },
+                'BoS_CHoCH_params': [ {'mode': 'bullish', 'swing_length': 15, 'max_aVWAPs': 5, 'avg_lookback': 7}, ],
+                'price_maxima_minima_params': {
+                    'valleys': True,
+                    'peaks': True,
+                    'max_anchors': 10,
+                    'min_swing_spacing': 10,
+                },
                 'OB_params': [ { 'mode': 'none', }, ],
                 'gaps_params': [ {'max_aVWAPs': 5, 'avg_lookback': 8}, ],
-                'BoS_CHoCH_params': [ {'swing_length': 15, 'max_aVWAPs': 4, 'avg_lookback': 7}, ],
             },
             'aVWAP_pinch': {
                 'anchor_type': 'peak',
@@ -212,9 +214,9 @@ params = {
             },
             'aVWAP_anchor_score': {
                 'valleys': True,
-                'peaks': False,
-                'max_anchors': 3,
-                'min_score_pct': 0.5,
+                'peaks': True,
+                'max_anchors': 5,
+                'min_score_pct': None,
                 'min_swing_spacing': 5,
                 'isolation_max_bars': 300,
                 'atr_period': 14,
@@ -224,7 +226,7 @@ params = {
                 'w_isolation': 1.0,
                 'w_sharpness': 1.0,
                 'keep_scores': False,
-                'max_atr_distance': 5.0
+                'max_atr_distance': None,
             },
             'liquidity': {'swing_length': 20, 'range_percent': 0.1},
             'POC': {'num_bins': 200, 'num_bars': 200},
@@ -491,7 +493,7 @@ params = {
 
         '30min': {
             'candle_colors': {
-                'indicator_color': 'StDev',
+                'indicator_color': 'QQEMOD',
                 'custom_params': {
                     'StDev': {
                         'centreline': 'peaks_valleys_avg',
@@ -506,26 +508,63 @@ params = {
                 }
             },
             'aVWAP': {
-                'peaks_valleys': False,
-                'peaks_valleys_avg': False,
+                'peaks': False,
+                'valleys': True,
                 'peaks_avg': False,
                 'valleys_avg': False,
-                'peaks_valleys_params': {'periods': 30, 'max_aVWAPs': 1},
-                'OB': True,
+                'peaks_valleys': False,
+                'peaks_valleys_avg': False,
+                'QQEMOD': True,
+                'QQEMOD_avg': False,
+                'OB': False,
                 'OB_avg': False,
-                'OB_params': {
-                              'periods': 30, 
-                              'max_aVWAPs': 1,
-                              'include_bullish': False,
-                              'include_bearish': True
-                             },
                 'gaps': False,
                 'gaps_avg': False,
-                'gaps_params': {'max_aVWAPs': 20},
+                'BoS_CHoCH': False,
+                'BoS_CHoCH_avg': False,
                 'All_avg': False,
-                'avg_lookback': 20,
                 'keep_OB_column': False,
                 'aVWAP_channel': False,
+                'peaks_params': [ 
+                    { 'periods': 1, 'max_aVWAPs': None, 'avg_lookback': 100, }, 
+                ],
+                'valleys_params': [ 
+                    { 'periods': 1, 'max_aVWAPs': None, 'avg_lookback': 100, }, 
+                ],
+                'peaks_valleys_params': [ 
+                    { 'periods': 20, 'max_aVWAPs': None, 'avg_lookback': 20, }, 
+                ],
+                'QQEMOD_params': {
+                    'peak_to_valley':   False,  # solid red:    peak anchor → next teal candle
+                    'valley_to_peak':   False,  # solid teal:   valley anchor → next red candle
+                    'peak_to_peak':     True,  # dotted red:   peak anchor → next peak anchor
+                    'valley_to_valley': False,  # dotted teal:  valley anchor → next valley anchor
+                    'max_aVWAPs': None,        # int = most-recent N segments, None = all
+                    'qqe_params': {
+                        'rsi_period': 6, 'rsi_period2': 5, 'sf': 5, 'sf2': 5,
+                        'qqe_factor': 3.0, 'qqe_factor2': 1.61, 'threshold': 3,
+                        'bb_length': 50, 'bb_multi': 0.35
+                    }
+                },
+                'OB_params': [ { 'mode': 'none', }, ],
+                'gaps_params': [ {'max_aVWAPs': 5, 'avg_lookback': 8}, ],
+                'BoS_CHoCH_params': [ {'swing_length': 15, 'max_aVWAPs': 4, 'avg_lookback': 7}, ],
+            },
+            'aVWAP_anchor_score': {
+                'valleys': True,
+                'peaks': False,
+                'max_anchors': 5,
+                'min_score_pct': 0.5,
+                'min_swing_spacing': 10,
+                'isolation_max_bars': 600,
+                'atr_period': 14,
+                'sharpness_bars_before': 5,
+                'sharpness_bars_after': 5,
+                'w_prominence': 1.0,
+                'w_isolation': 3.0,
+                'w_sharpness': 0.3,
+                'keep_scores': False,
+                'max_atr_distance': 5.0
             },
             'OB': {'periods': 20},
             'FVG': {

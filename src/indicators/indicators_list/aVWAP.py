@@ -21,6 +21,7 @@ def calculate_avwap_channel(
     OB=False,
     BoS_CHoCH=False,
     QQEMOD=False,
+    price_maxima_minima=False,
 
     gaps_avg=False,
     OB_avg=False,
@@ -36,6 +37,7 @@ def calculate_avwap_channel(
     OB_params=None,
     BoS_CHoCH_params=None,
     QQEMOD_params=None,
+    price_maxima_minima_params=None,
 
     avg_lookback=25,
     keep_OB_column=False,
@@ -158,6 +160,13 @@ def calculate_avwap_channel(
         'max_aVWAPs': None
     }) if (QQEMOD or QQEMOD_avg) else []
 
+    price_maxima_minima_configs = ensure_config_list(price_maxima_minima_params, {
+        'valleys': True,
+        'peaks': False,
+        'max_anchors': 5,
+        'min_swing_spacing': 30,
+    }) if price_maxima_minima else []
+
     # -------------------------
     # Determine what to display
     # -------------------------
@@ -179,7 +188,7 @@ def calculate_avwap_channel(
  
     # If nothing is requested, return empty
     if not (show_peaks or show_valleys or show_peaks_valleys or
-            gaps or OB or BoS_CHoCH or QQEMOD or
+            gaps or OB or BoS_CHoCH or QQEMOD or price_maxima_minima or
             need_peaks_for_avg or need_valleys_for_avg or
             need_peaks_valleys_for_avg or QQEMOD_avg or need_all_avg):
         return {}
@@ -200,6 +209,8 @@ def calculate_avwap_channel(
         aVWAP_anchors.append('BoS_CHoCH')
     if QQEMOD or QQEMOD_avg or need_all_avg:
         aVWAP_anchors.append('QQEMOD')
+    if price_maxima_minima:
+        aVWAP_anchors.append('price_maxima_minima')
 
     if not aVWAP_anchors:
         return {}
@@ -207,7 +218,7 @@ def calculate_avwap_channel(
     # -------------------------
     # Build params for get_indicators (EXCEPT OB)
     # -------------------------
-    base_anchors = [a for a in aVWAP_anchors if a != 'OB']
+    base_anchors = [a for a in aVWAP_anchors if a not in ('OB', 'price_maxima_minima')]
 
     params = {}
     if 'peaks_valleys' in base_anchors:
@@ -528,7 +539,14 @@ def calculate_avwap_channel(
        
         for config_idx, config in enumerate(BoS_CHoCH_configs):
             max_aVWAPs = config.get('max_aVWAPs', None)
-          
+            _bos_mode = config.get('mode', 'combined').lower()
+            if _bos_mode in ['bullish', 'bull', 'valleys', 'valley']:
+                include_bull, include_bear = True, False
+            elif _bos_mode in ['bearish', 'bear', 'peaks', 'peak']:
+                include_bull, include_bear = False, True
+            else:
+                include_bull, include_bear = True, True
+
             def process_BoS_CHoCH_range(signal_idx, break_idx, signal_type):
                 if pd.isna(break_idx) or break_idx <= signal_idx:
                     return None
@@ -538,33 +556,35 @@ def calculate_avwap_channel(
                 else:
                     extreme_idx = range_df['High'].idxmax()
                 return calculate_avwap(df, extreme_idx)
-          
+
             config_BoS = {}
-          
+
             if 'BoS' in df.columns and 'CHoCH' in df.columns:
-                # Process bullish signals with dedup
-                bullish_signals = df[(df['BoS'] == 1) | (df['CHoCH'] == 1)].index
-                for idx in bullish_signals:
-                    if idx in seen_BoS_bull_indices:
-                        continue
-                    break_idx = int(df.loc[idx, 'BoS_CHoCH_Break_Index']) if 'BoS_CHoCH_Break_Index' in df.columns and not pd.isna(df.loc[idx, 'BoS_CHoCH_Break_Index']) else None
-                    if break_idx:
-                        vwap = process_BoS_CHoCH_range(idx, break_idx, 'bullish')
-                        if vwap is not None:
-                            config_BoS[f'aVWAP_BoS_CHoCH_bull_c{config_idx}_{idx}'] = vwap
-                            seen_BoS_bull_indices.add(idx)
-              
-                # Process bearish signals with dedup
-                bearish_signals = df[(df['BoS'] == -1) | (df['CHoCH'] == -1)].index
-                for idx in bearish_signals:
-                    if idx in seen_BoS_bear_indices:
-                        continue
-                    break_idx = int(df.loc[idx, 'BoS_CHoCH_Break_Index']) if 'BoS_CHoCH_Break_Index' in df.columns and not pd.isna(df.loc[idx, 'BoS_CHoCH_Break_Index']) else None
-                    if break_idx:
-                        vwap = process_BoS_CHoCH_range(idx, break_idx, 'bearish')
-                        if vwap is not None:
-                            config_BoS[f'aVWAP_BoS_CHoCH_bear_c{config_idx}_{idx}'] = vwap
-                            seen_BoS_bear_indices.add(idx)
+                if include_bull:
+                    # Process bullish signals with dedup
+                    bullish_signals = df[(df['BoS'] == 1) | (df['CHoCH'] == 1)].index
+                    for idx in bullish_signals:
+                        if idx in seen_BoS_bull_indices:
+                            continue
+                        break_idx = int(df.loc[idx, 'BoS_CHoCH_Break_Index']) if 'BoS_CHoCH_Break_Index' in df.columns and not pd.isna(df.loc[idx, 'BoS_CHoCH_Break_Index']) else None
+                        if break_idx:
+                            vwap = process_BoS_CHoCH_range(idx, break_idx, 'bullish')
+                            if vwap is not None:
+                                config_BoS[f'aVWAP_BoS_CHoCH_bull_c{config_idx}_{idx}'] = vwap
+                                seen_BoS_bull_indices.add(idx)
+
+                if include_bear:
+                    # Process bearish signals with dedup
+                    bearish_signals = df[(df['BoS'] == -1) | (df['CHoCH'] == -1)].index
+                    for idx in bearish_signals:
+                        if idx in seen_BoS_bear_indices:
+                            continue
+                        break_idx = int(df.loc[idx, 'BoS_CHoCH_Break_Index']) if 'BoS_CHoCH_Break_Index' in df.columns and not pd.isna(df.loc[idx, 'BoS_CHoCH_Break_Index']) else None
+                        if break_idx:
+                            vwap = process_BoS_CHoCH_range(idx, break_idx, 'bearish')
+                            if vwap is not None:
+                                config_BoS[f'aVWAP_BoS_CHoCH_bear_c{config_idx}_{idx}'] = vwap
+                                seen_BoS_bear_indices.add(idx)
           
             if max_aVWAPs is not None and len(config_BoS) > max_aVWAPs:
                 sorted_keys = sorted(config_BoS.keys(), 
@@ -684,6 +704,46 @@ def calculate_avwap_channel(
 
             if QQEMOD:
                 all_individual_aVWAPs.update(config_QQEMOD)
+
+    # =====================
+    # Process STRUCTURAL - greedy extrema anchors
+    # =====================
+    if 'price_maxima_minima' in aVWAP_anchors:
+        high_vals = df['High'].values
+        low_vals = df['Low'].values
+
+        def greedy_extrema(values, mode, n_anchors, spacing):
+            mask = np.ones(len(values), dtype=bool)
+            selected = []
+            for _ in range(n_anchors):
+                available = np.where(mask)[0]
+                if not len(available):
+                    break
+                rel = int(np.argmin(values[available])) if mode == 'valley' else int(np.argmax(values[available]))
+                idx = int(available[rel])
+                selected.append(idx)
+                mask[max(0, idx - spacing):min(len(values), idx + spacing + 1)] = False
+            return selected
+
+        for config_idx, config in enumerate(price_maxima_minima_configs):
+            include_valleys = config.get('valleys', True)
+            include_peaks = config.get('peaks', False)
+            max_anchors = config.get('max_anchors', 5)
+            spacing = config.get('min_swing_spacing', 30)
+
+            config_price_maxima_minima = {}
+
+            if include_valleys:
+                for rank, idx in enumerate(greedy_extrema(low_vals, 'valley', max_anchors, spacing), start=1):
+                    col = f'aVWAP_price_maxima_minima_valley_c{config_idx}_{rank}'
+                    config_price_maxima_minima[col] = calculate_avwap(df, idx)
+
+            if include_peaks:
+                for rank, idx in enumerate(greedy_extrema(high_vals, 'peak', max_anchors, spacing), start=1):
+                    col = f'aVWAP_price_maxima_minima_peak_c{config_idx}_{rank}'
+                    config_price_maxima_minima[col] = calculate_avwap(df, idx)
+
+            all_individual_aVWAPs.update(config_price_maxima_minima)
 
     # =====================
     # Add individual aVWAPs to dataframe

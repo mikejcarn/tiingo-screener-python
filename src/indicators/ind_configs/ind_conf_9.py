@@ -30,8 +30,8 @@ indicators = {  # List of available indicator configurations
 
     'daily': [
         'aVWAP',
-        'candle_colors',
-        'aVWAP_anchor_score',
+        # 'candle_colors',
+        # 'aVWAP_anchor_score',
         # 'aVWAP_pinch',
         # 'banker_RSI',
         # 'SMA',
@@ -160,37 +160,32 @@ params = {
                 'valleys_avg': False,
                 'peaks_valleys': False,
                 'peaks_valleys_avg': False,
-                'QQEMOD': True,
+                'QQEMOD': False,
                 'QQEMOD_avg': False,
                 'OB': False,
                 'OB_avg': False,
                 'gaps': False,
                 'gaps_avg': False,
-                'BoS_CHoCH': False,
+                'BoS_CHoCH': True,
                 'BoS_CHoCH_avg': False,
+                'price_maxima_minima': False,
                 'All_avg': False,
                 'keep_OB_column': False,
                 'aVWAP_channel': False,
                 'peaks_params': [ 
-                    { 'periods': 400, 'max_aVWAPs': 1, 'avg_lookback': 100, }, 
-                    { 'periods': 300, 'max_aVWAPs': 1, 'avg_lookback': 100, }, 
-                    { 'periods': 200, 'max_aVWAPs': 1, 'avg_lookback': 100, }, 
+                    { 'periods': 1, 'max_aVWAPs': None, 'avg_lookback': 100, }, 
                 ],
                 'valleys_params': [ 
-                    { 'periods': 400, 'max_aVWAPs': 1, 'avg_lookback': 100, }, 
-                    { 'periods': 300, 'max_aVWAPs': 1, 'avg_lookback': 100, }, 
-                    { 'periods': 200, 'max_aVWAPs': 1, 'avg_lookback': 100, }, 
+                    { 'periods': 1, 'max_aVWAPs': None, 'avg_lookback': 100, }, 
                 ],
                 'peaks_valleys_params': [ 
                     { 'periods': 20, 'max_aVWAPs': None, 'avg_lookback': 20, }, 
-                    # { 'periods': 20, 'max_aVWAPs': None, 'avg_lookback': 20, }, 
-                    # { 'periods': 10, 'max_aVWAPs': None, 'avg_lookback': 20, }, 
                 ],
                 'QQEMOD_params': {
                     'peak_to_valley':   False,  # solid red:    peak anchor → next teal candle
                     'valley_to_peak':   False,  # solid teal:   valley anchor → next red candle
-                    'peak_to_peak':     False,  # dotted red:   peak anchor → next peak anchor
-                    'valley_to_valley': True,  # dotted teal:  valley anchor → next valley anchor
+                    'peak_to_peak':     True,  # dotted red:   peak anchor → next peak anchor
+                    'valley_to_valley': False,  # dotted teal:  valley anchor → next valley anchor
                     'max_aVWAPs': None,        # int = most-recent N segments, None = all
                     'qqe_params': {
                         'rsi_period': 6, 'rsi_period2': 5, 'sf': 5, 'sf2': 5,
@@ -198,9 +193,15 @@ params = {
                         'bb_length': 50, 'bb_multi': 0.35
                     }
                 },
+                'BoS_CHoCH_params': [ {'mode': 'bearish', 'swing_length': 15, 'max_aVWAPs': 10, 'avg_lookback': 7}, ],
                 'OB_params': [ { 'mode': 'none', }, ],
                 'gaps_params': [ {'max_aVWAPs': 5, 'avg_lookback': 8}, ],
-                'BoS_CHoCH_params': [ {'swing_length': 15, 'max_aVWAPs': 4, 'avg_lookback': 7}, ],
+                'price_maxima_minima_params': {
+                    'valleys': True,
+                    'peaks': False,
+                    'max_anchors': 5,
+                    'min_swing_spacing': 30,
+                },
             },
             'aVWAP_pinch': {
                 'anchor_type': 'peak',
@@ -211,8 +212,8 @@ params = {
                 'beyond_max_aVWAPs': 0,
             },
             'aVWAP_anchor_score': {
-                'valleys': False,
-                'peaks': True,
+                'valleys': True,
+                'peaks': False,
                 'max_anchors': 3,
                 'min_score_pct': 0.5,
                 'min_swing_spacing': 5,
@@ -224,7 +225,7 @@ params = {
                 'w_isolation': 1.0,
                 'w_sharpness': 1.0,
                 'keep_scores': False,
-                'max_atr_distance': 5.0,
+                'max_atr_distance': 5.0
             },
             'liquidity': {'swing_length': 20, 'range_percent': 0.1},
             'POC': {'num_bins': 200, 'num_bars': 200},

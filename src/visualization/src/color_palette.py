@@ -29,6 +29,8 @@ def get_color_palette():
         'blue': f"rgba(33, 150, 243, 1.0)",
         'blue_SMA': f"rgba(33, 150, 243, 0.5)",
 
+        'purple_price_maxima_minima': f"rgba(186, 104, 200, 0.9)",
+
         'yellow': f"rgba(250, 250, 0, 1.0)",
 
         'neon': f"rgba(0, 255, 0, 1.0)",

@@ -676,6 +676,32 @@ def _aVWAP_visualization(subchart, df):
         ).set(_line_set_df(df, col))
 
     # -------------------------
+    # Price maxima/minima valley aVWAPs
+    # -------------------------
+    price_maxima_minima_valley_cols = [col for col in df.columns if col.startswith('aVWAP_price_maxima_minima_valley_')]
+    for col in price_maxima_minima_valley_cols:
+        subchart.create_line(
+            price_line=False,
+            price_label=False,
+            color=colors['teal'],
+            width=2,
+            style='solid'
+        ).set(_line_set_df(df, col))
+
+    # -------------------------
+    # Price maxima/minima peak aVWAPs
+    # -------------------------
+    price_maxima_minima_peak_cols = [col for col in df.columns if col.startswith('aVWAP_price_maxima_minima_peak_')]
+    for col in price_maxima_minima_peak_cols:
+        subchart.create_line(
+            price_line=False,
+            price_label=False,
+            color=colors['red'],
+            width=2,
+            style='solid'
+        ).set(_line_set_df(df, col))
+
+    # -------------------------
     # Average aVWAPs - with primary/secondary styling
     # -------------------------
     avg_configs = [
