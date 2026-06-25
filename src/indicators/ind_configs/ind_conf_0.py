@@ -186,9 +186,9 @@ params = {
                 'QQEMOD_params': {
                     'peak_to_valley':   False,  # solid red:    peak anchor → next teal candle
                     'valley_to_peak':   False,  # solid teal:   valley anchor → next red candle
-                    'peak_to_peak':     False,  # dotted red:   peak anchor → next peak anchor
-                    'valley_to_valley': True,  # dotted teal:  valley anchor → next valley anchor
-                    'max_aVWAPs': None,        # int = most-recent N segments, None = all
+                    'peak_to_peak':     True,   # dotted red:   peak anchor → next peak anchor
+                    'valley_to_valley': False,  # dotted teal:  valley anchor → next valley anchor
+                    'max_aVWAPs': None,         # int = most-recent N segments, None = all
                     'qqe_params': {
                         'rsi_period': 6, 'rsi_period2': 5, 'sf': 5, 'sf2': 5,
                         'qqe_factor': 3.0, 'qqe_factor2': 1.61, 'threshold': 3,

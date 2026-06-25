@@ -1467,7 +1467,7 @@ scan_conf = {
         },
         'params': {
             'QQEMOD_aVWAP': {
-                'daily': {'mode': 'bullish', 'distance_pct': 100.0},
+                'daily': {'mode': 'bullish'},
             }
         }
     },
@@ -1478,7 +1478,7 @@ scan_conf = {
         },
         'params': {
             'QQEMOD_aVWAP': {
-                'daily': {'mode': 'bearish', 'distance_pct': 100.0},
+                'daily': {'mode': 'bearish'},
             }
         }
     },
