@@ -31,6 +31,7 @@ indicators = {  # List of available indicator configurations
     'daily': [
         'aVWAP',
         'candle_colors',
+        # 'QQEMOD',
         # 'aVWAP_anchor_score',
         # 'aVWAP_pinch',
         # 'banker_RSI',
@@ -155,13 +156,14 @@ params = {
 
         'daily': {
             'aVWAP': {
-                'peaks': False,
-                'valleys': False,
+                'peaks': True,
+                'valleys': True,
                 'peaks_avg': False,
                 'valleys_avg': False,
                 'peaks_valleys': False,
                 'peaks_valleys_avg': False,
-                'QQEMOD': True,
+                'price_maxima_minima': False,
+                'QQEMOD': False,
                 'QQEMOD_avg': False,
                 'OB': False,
                 'OB_avg': False,
@@ -169,15 +171,14 @@ params = {
                 'gaps_avg': False,
                 'BoS_CHoCH': False,
                 'BoS_CHoCH_avg': False,
-                'price_maxima_minima': True,
                 'All_avg': False,
                 'keep_OB_column': False,
                 'aVWAP_channel': False,
                 'peaks_params': [ 
-                    { 'periods': 20, 'max_aVWAPs': None, 'avg_lookback': 100, }, 
+                    { 'periods': 20, 'max_aVWAPs': None, 'avg_lookback': 100, 'max_atr_distance': 1.0 }, 
                 ],
                 'valleys_params': [ 
-                    { 'periods': 20, 'max_aVWAPs': None, 'avg_lookback': 100, }, 
+                    { 'periods': 20, 'max_aVWAPs': None, 'avg_lookback': 100, 'max_atr_distance': 1.0 }, 
                 ],
                 'peaks_valleys_params': [ 
                     { 'periods': 20, 'max_aVWAPs': None, 'avg_lookback': 20, }, 
@@ -222,9 +223,9 @@ params = {
                 'atr_period': 14,
                 'sharpness_bars_before': 5,
                 'sharpness_bars_after': 5,
-                'w_prominence': 1.0,
+                'w_prominence': 1.5,
                 'w_isolation': 1.0,
-                'w_sharpness': 1.0,
+                'w_sharpness': 0.5,
                 'keep_scores': False,
                 'max_atr_distance': None,
             },

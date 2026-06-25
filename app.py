@@ -77,21 +77,24 @@ def ind(ind_conf=None, timeframes=None):
 # SCANNER -------------------------------------------------
 
 
-def scan(scan_list='2'):
+def scan(scan_list='2', ind_conf=None):
     """
     Execute a scanner pipeline using specified scan configurations.
     1. Dynamically loads scan configurations from `scan_conf_*.py` files
     2. Retrieves the specified scan list containing scan names
     3. Executes each scan using its configuration criteria and parameters
     4. Handles errors and missing configurations gracefully
-    
+
     Parameters:
     scan_list : str, optional
         Identifier of the scan list to execute (e.g., '0', '1', '2').
         Corresponds to keys in `scan_lists` dictionary prefixed with 'scan_list_'.
         Default: '2'
+    ind_conf : str, optional
+        Indicator config number to read from (e.g., '0', '9').
+        Reads from data/indicators/ind_conf_{N}/
     """
-    
+
     # Load configs
     scan_configs = {}
     for config_file in Path(SCAN_CONF_DIR).glob('scan_conf_*.py'):
@@ -102,7 +105,7 @@ def scan(scan_list='2'):
         except Exception as e:
             print(f"Error loading {config_file.stem}: {e}")
             continue
-    
+
     # Run scans
     scans = scan_lists[f"scan_list_{scan_list}"]
     for scan_name in scans:
@@ -110,7 +113,8 @@ def scan(scan_list='2'):
             run_scanner(
                 criteria=scan_configs[scan_name]['criteria'],
                 criteria_params=scan_configs[scan_name].get('params', {}),
-                scan_name=scan_name
+                scan_name=scan_name,
+                ind_conf=ind_conf,
             )
         else:
             print(f"Warning: Scan '{scan_name}' not found")
@@ -133,37 +137,16 @@ def full_run(fetch, ind, scan) -> None:
 
     # fetch()
 
-    # INDICATORS
+    # INDICATORS — each conf writes to its own data/indicators/ind_conf_{N}/ subdir
 
-    ind('ind_conf_1')
-    dm.save_indicators('ind_conf_1')
-    dm.clear_buffer(dm.indicators_dir)
+    ind('1')
+    ind('2')
+    ind('3')
+    ind('4')
 
-    ind('ind_conf_2')
-    dm.save_indicators('ind_conf_2')
-    dm.clear_buffer(dm.indicators_dir)
-
-    ind('ind_conf_3')
-    dm.save_indicators('ind_conf_3')
-    dm.clear_buffer(dm.indicators_dir)
-
-    ind('ind_conf_4')
-    dm.save_indicators('ind_conf_4')
-    dm.clear_buffer(dm.indicators_dir)
-
-    # SCANNER
-
-    # scan(scan_lists['scan_list_1'])
-    # dm.save_scans('ind_conf_1')
-    # dm.clear_buffer(dm.scanner_dir)
-    #
-    # scan(scan_lists['scan_list_1'])
-    # dm.save_scans('ind_conf_2')
-    # dm.clear_buffer(dm.scanner_dir)
-    #
-    # scan(scan_lists['scan_list_1'])
-    # dm.save_scans('ind_conf_3')
-    # dm.clear_buffer(dm.scanner_dir)
+    # SCANNER — pass ind_conf to read from the right subdir
+    # scan('1', ind_conf='1')
+    # scan('2', ind_conf='2')
 
     # COMPLETE
 

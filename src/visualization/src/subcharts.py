@@ -18,6 +18,7 @@ def subcharts(
     show_volume=True,
     show_banker_RSI=False,
     scan_file=None,
+    ind_confs=None,
 ):
     """
     Visualize data with prioritized loading:
@@ -83,7 +84,7 @@ def subcharts(
         
         # Mode 4: Default - First Indicator File
         else:
-            indicator_files = sorted(INDICATORS_DIR.glob("*_*_*.csv"))
+            indicator_files = sorted(INDICATORS_DIR.glob("ind_conf_*/*_*_*.csv"))
             if not indicator_files:
                 raise FileNotFoundError("No indicator files found in indicators directory")
             
@@ -105,24 +106,27 @@ def subcharts(
     for i, (df, chart) in enumerate(zip(dfs, charts)):
         # Get ticker for this specific chart
         chart_ticker = ticker_list[i] if i < len(ticker_list) else f"Chart_{i+1}"
-        
+
         # Get timeframe from DataFrame attributes or file
         df_timeframe = df.attrs.get('timeframe', '')
-        
+
         prepared_df, timeframe = prepare_dataframe(df, show_volume)
-        
+
         # If timeframe not in attributes, use the one from prepare_dataframe
         if not df_timeframe:
             df_timeframe = timeframe
-        
+
+        chart_ind_conf = ind_confs[i] if ind_confs and i < len(ind_confs) else None
+
         configure_base_chart(prepared_df, chart, show_volume, show_banker_RSI)
         add_ui_elements(
-            chart, 
-            charts, 
-            chart_ticker,  # Use individual ticker for each chart
+            chart,
+            charts,
+            chart_ticker,
             df_timeframe,
             show_volume,
             show_banker_RSI,
+            ind_conf=chart_ind_conf,
         )
         add_visualizations(chart, prepared_df, show_banker_RSI)
         chart.set(prepared_df)
@@ -157,17 +161,30 @@ def _load_scan_data(scan_file):
     return df
 
 
-def _load_indicator_data(ticker, timeframe=None):
-    """Load indicator data for specified ticker"""
-    # If timeframe not specified, find first available
-    if not timeframe:
-        indicator_files = sorted(INDICATORS_DIR.glob(f"{ticker}_*.csv"))
-        if not indicator_files:
-            raise FileNotFoundError(f"No indicator files found for {ticker}")
-        indicator_file = indicator_files[0]
-        timeframe = indicator_file.stem.split('_')[1]
+def _load_indicator_data(ticker, timeframe=None, ind_conf=None):
+    """Load indicator data for specified ticker from the appropriate conf subdir"""
+    if ind_conf is not None:
+        search_dirs = [INDICATORS_DIR / f"ind_conf_{ind_conf}"]
     else:
-        indicator_file = next(INDICATORS_DIR.glob(f"{ticker}_{timeframe}_*.csv"), None)
+        search_dirs = sorted(INDICATORS_DIR.glob("ind_conf_*/"))
+
+    if not timeframe:
+        indicator_file = None
+        for d in search_dirs:
+            files = sorted(d.glob(f"{ticker}_*.csv"))
+            if files:
+                indicator_file = files[0]
+                timeframe = indicator_file.stem.split('_')[1]
+                break
+        if not indicator_file:
+            raise FileNotFoundError(f"No indicator files found for {ticker}")
+    else:
+        indicator_file = None
+        for d in search_dirs:
+            f = next(d.glob(f"{ticker}_{timeframe}_*.csv"), None)
+            if f:
+                indicator_file = f
+                break
         if not indicator_file:
             raise FileNotFoundError(f"No indicator data for {ticker} {timeframe}")
 

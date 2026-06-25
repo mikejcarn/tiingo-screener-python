@@ -76,15 +76,16 @@ def vis(tickers=None, timeframes=None, ind_confs=None, scan_file=None, end_dates
     end_dates  = _expand(end_dates,  target_len, None)
 
     # Fetch and process each chart
-    dfs, loaded_tickers = [], []
+    dfs, loaded_tickers, loaded_confs = [], [], []
     for i in range(target_len):
         df = _fetch_and_process_chart(tickers[i], timeframes[i], ind_confs[i], end_dates[i])
         if df is not None:
             dfs.append(df)
             loaded_tickers.append(tickers[i])
+            loaded_confs.append(ind_confs[i])
 
     if dfs:
-        subcharts(df_list=dfs, ticker=loaded_tickers, show_volume=False, show_banker_RSI=True)
+        subcharts(df_list=dfs, ticker=loaded_tickers, show_volume=False, show_banker_RSI=True, ind_confs=loaded_confs)
 
 
 def _ensure_list(item: Union[str, List, None]) -> List:

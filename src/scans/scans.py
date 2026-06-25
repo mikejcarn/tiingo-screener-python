@@ -8,7 +8,7 @@ import importlib
 import requests
 from src.core.globals import SCANNER_DIR, INDICATORS_DIR, DATE_STAMP
 
-def run_scanner(criteria='banker_RSI', criteria_params=None, logic='AND', api_key=None, scan_name=None):
+def run_scanner(criteria='banker_RSI', criteria_params=None, logic='AND', api_key=None, scan_name=None, ind_conf=None):
     """Ultimate flexible scanner with support for criteria parameters.
 
     Args:
@@ -17,21 +17,24 @@ def run_scanner(criteria='banker_RSI', criteria_params=None, logic='AND', api_ke
         logic: 'AND'/'OR' for dict mode only
         api_key: Optional Tiingo API key
         scan_name: Optional custom name suffix for output file
+        ind_conf: Indicator config number — reads from data/indicators/ind_conf_{N}/
     """
+    indicators_dir = INDICATORS_DIR / f"ind_conf_{ind_conf}" if ind_conf is not None else INDICATORS_DIR
+
     print('\n=== SCANNER ===\n')
     print(f"Scan: {scan_name}\n")
-    print(f"Input directory: {INDICATORS_DIR}")
+    print(f"Input directory: {indicators_dir}")
     print(f"Output directory: {SCANNER_DIR}\n")
 
     if criteria_params is None:
         criteria_params = {}
 
     if isinstance(criteria, dict):
-        return _advanced_scan(criteria, logic, api_key, criteria_params, scan_name)
+        return _advanced_scan(criteria, logic, api_key, criteria_params, scan_name, indicators_dir)
     elif isinstance(criteria, list):
-        return _multi_criteria_scan(criteria, api_key, criteria_params, scan_name)
+        return _multi_criteria_scan(criteria, api_key, criteria_params, scan_name, indicators_dir)
     else:
-        return _simple_scan(criteria, api_key, criteria_params, scan_name)
+        return _simple_scan(criteria, api_key, criteria_params, scan_name, indicators_dir)
 
 def _call_criteria(criteria_func, df, params):
     """Call a criteria function, passing params only if its signature accepts them."""
@@ -41,8 +44,10 @@ def _call_criteria(criteria_func, df, params):
     return criteria_func(df)
 
 
-def _simple_scan(criteria, api_key=None, criteria_params=None, scan_name=None):
+def _simple_scan(criteria, api_key=None, criteria_params=None, scan_name=None, indicators_dir=None):
     """Single criteria applied to all files with optional parameters"""
+    if indicators_dir is None:
+        indicators_dir = INDICATORS_DIR
     criteria_func = _load_criteria(criteria)
     if not criteria_func:
         return pd.DataFrame()
@@ -57,9 +62,9 @@ def _simple_scan(criteria, api_key=None, criteria_params=None, scan_name=None):
             params = param_config
 
     all_results = []
-    for file in _get_data_files():
+    for file in _get_data_files(indicators_dir):
         ticker, timeframe = _parse_filename(file)
-        df = _load_indicator_file(INDICATORS_DIR / file)
+        df = _load_indicator_file(indicators_dir / file)
         
         results = _call_criteria(criteria_func, df, params)
 
@@ -70,8 +75,10 @@ def _simple_scan(criteria, api_key=None, criteria_params=None, scan_name=None):
   
     return _process_results(all_results, f"'{criteria}' scan", api_key, scan_name)
 
-def _multi_criteria_scan(criteria_list, api_key=None, criteria_params=None, scan_name=None):
+def _multi_criteria_scan(criteria_list, api_key=None, criteria_params=None, scan_name=None, indicators_dir=None):
     """Multiple criteria (ALL must pass) for all files with parameters"""
+    if indicators_dir is None:
+        indicators_dir = INDICATORS_DIR
     # Create indexed criteria list
     indexed_criteria = []
     for idx, criteria_name in enumerate(criteria_list):
@@ -82,9 +89,9 @@ def _multi_criteria_scan(criteria_list, api_key=None, criteria_params=None, scan
             return pd.DataFrame()
 
     all_results = []
-    for file in _get_data_files():
+    for file in _get_data_files(indicators_dir):
         ticker, timeframe = _parse_filename(file)
-        df = _load_indicator_file(INDICATORS_DIR / file)
+        df = _load_indicator_file(indicators_dir / file)
         
         passed = True
         criteria_data = {}
@@ -129,8 +136,10 @@ def _multi_criteria_scan(criteria_list, api_key=None, criteria_params=None, scan
     
     return _process_results(all_results, f"multi-criteria {criteria_list} scan", api_key, scan_name)
 
-def _advanced_scan(timeframe_criteria, logic='AND', api_key=None, criteria_params=None, scan_name=None):
+def _advanced_scan(timeframe_criteria, logic='AND', api_key=None, criteria_params=None, scan_name=None, indicators_dir=None):
     """Enhanced timeframe scanner with parameter support - OCCURRENCE-BASED FIX"""
+    if indicators_dir is None:
+        indicators_dir = INDICATORS_DIR
 
     print(f"\n=== ADVANCED SCAN: {scan_name or 'unnamed'} ===")
     print(f"Timeframe criteria: {timeframe_criteria}")
@@ -181,7 +190,7 @@ def _advanced_scan(timeframe_criteria, logic='AND', api_key=None, criteria_param
 
     # Group files by ticker
     ticker_files = {}
-    for file in _get_data_files():
+    for file in _get_data_files(indicators_dir):
         ticker, timeframe = _parse_filename(file)
         ticker_files.setdefault(ticker, {})[timeframe] = file
 
@@ -206,7 +215,7 @@ def _advanced_scan(timeframe_criteria, logic='AND', api_key=None, criteria_param
         # Process each timeframe
         for timeframe, criteria_calls in timeframe_configs.items():
             print(f"  {timeframe}:")
-            df = _load_indicator_file(INDICATORS_DIR / files[timeframe])
+            df = _load_indicator_file(indicators_dir / files[timeframe])
             
             passed_all = True
             timeframe_criteria_data = {}
@@ -332,9 +341,11 @@ def _load_criteria(criteria_name):
         print(f"Error loading criteria '{criteria_name}': {str(e)}")
         return None
 
-def _get_data_files():
+def _get_data_files(indicators_dir=None):
     """Get all data files in input directory"""
-    return [f for f in os.listdir(INDICATORS_DIR) if f.endswith(".csv")]
+    if indicators_dir is None:
+        indicators_dir = INDICATORS_DIR
+    return [f for f in os.listdir(indicators_dir) if f.endswith(".csv")]
 
 def _process_results(results, scan_type, api_key=None, scan_name=None):
     """Process and format results without fragmentation"""

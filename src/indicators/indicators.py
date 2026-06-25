@@ -29,21 +29,24 @@ def run_indicators(ind_conf=None, timeframe=None):
     if timeframes_to_process is None:
         return
     
+    output_dir = INDICATORS_DIR / f"ind_conf_{ind_conf}"
+    output_dir.mkdir(parents=True, exist_ok=True)
+
     print(f'\n=== INDICATORS (Config: {ind_conf}) ===\n')
     print(f"Timeframes to process: {', '.join(timeframes_to_process)}")
     print(f"Input directory: {TICKERS_DIR}")
-    print(f"Output directory: {INDICATORS_DIR}")
-    
+    print(f"Output directory: {output_dir}")
+
     # Process each timeframe
     for timeframe_name in timeframes_to_process:
         _process_timeframe_batch(
-            timeframe_name, indicators_dict, params_dict
+            timeframe_name, indicators_dict, params_dict, output_dir
         )
     
     print(f"\n\nAll indicators processed\n")
 
 
-def _process_timeframe_batch(timeframe_name, indicators_dict, params_dict):
+def _process_timeframe_batch(timeframe_name, indicators_dict, params_dict, output_dir):
     """Process all tickers for a specific timeframe"""
     if timeframe_name not in indicators_dict:
         print(f"\nWarning: No config found for timeframe '{timeframe_name}'")
@@ -86,7 +89,7 @@ def _process_timeframe_batch(timeframe_name, indicators_dict, params_dict):
                 ticker=ticker,
                 timeframe=timeframe_name,
                 date_stamp=date_stamp,
-                output_dir=INDICATORS_DIR
+                output_dir=output_dir
             )
 
         except Exception as e:

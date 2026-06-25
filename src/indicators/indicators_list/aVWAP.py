@@ -270,6 +270,27 @@ def calculate_avwap_channel(
     highest_peak_idx = None
     lowest_valley_idx = None
 
+    # Precompute ATR for proximity filtering
+    _close = df['Close'].values
+    _high  = df['High'].values
+    _low   = df['Low'].values
+    _prev_close = pd.Series(_close).shift(1).values
+    _tr = np.maximum(_high - _low,
+                     np.maximum(np.abs(_high - _prev_close), np.abs(_low - _prev_close)))
+    _atr_series = pd.Series(_tr).rolling(14).mean().values
+    _current_close = float(_close[-1]) if not np.isnan(_close[-1]) else None
+    _current_atr   = float(_atr_series[-1]) if not np.isnan(_atr_series[-1]) else None
+
+    def _apply_atr_filter(avwap_dict, max_atr_dist):
+        """Remove aVWAPs whose current value is more than max_atr_dist ATRs from close."""
+        if max_atr_dist is None or _current_close is None or _current_atr is None or _current_atr == 0:
+            return avwap_dict
+        return {
+            col: series for col, series in avwap_dict.items()
+            if pd.notna(series.iloc[-1]) and
+               abs(float(series.iloc[-1]) - _current_close) / _current_atr <= max_atr_dist
+        }
+
     def process_anchors(indices, prefix, max_count=None):
         """Process anchors and return dictionary of aVWAP series"""
         if not indices:
@@ -292,34 +313,36 @@ def calculate_avwap_channel(
         for config_idx, config in enumerate(peaks_configs):
             periods = config.get('periods', 25)
             max_aVWAPs = config.get('max_aVWAPs', None)
-            
+            max_atr_distance = config.get('max_atr_distance', None)
+
             # Create a fresh DataFrame for this config
             base_cols = ['Open', 'High', 'Low', 'Close', 'Volume']
             available_cols = [col for col in base_cols if col in df.columns]
             if 'date' in df.columns:
                 available_cols.append('date')
-                
+
             base_df = df[available_cols].copy() if available_cols else df.copy()
-            
+
             # Calculate peaks/valleys for THIS SPECIFIC config
             temp_df = get_indicators(base_df, ['peaks_valleys'], {'peaks_valleys': {'periods': periods}})
-            
+
             # Get peak indices for this config
             peaks_indices = temp_df[temp_df['Peaks'] == 1].index.tolist() if 'Peaks' in temp_df.columns else []
-            
+
             # Filter out already seen indices (deduplication)
             peaks_indices = [i for i in peaks_indices if i not in seen_peak_indices]
             seen_peak_indices.update(peaks_indices)
-            
+
             if aVWAP_channel and highest_peak_idx is not None:
                 peaks_indices = [i for i in peaks_indices if i >= highest_peak_idx]
-            
+
             # Calculate aVWAPs for this config
             config_peaks = process_anchors(peaks_indices, f'aVWAP_peak_c{config_idx}', max_aVWAPs)
-            
+            config_peaks = _apply_atr_filter(config_peaks, max_atr_distance)
+
             if peaks_avg:
                 peaks_only_aVWAPs.update(config_peaks)
-            
+
             if show_peaks:
                 all_individual_aVWAPs.update(config_peaks)
 
@@ -333,34 +356,36 @@ def calculate_avwap_channel(
         for config_idx, config in enumerate(valleys_configs):
             periods = config.get('periods', 25)
             max_aVWAPs = config.get('max_aVWAPs', None)
-            
+            max_atr_distance = config.get('max_atr_distance', None)
+
             # Create a fresh DataFrame for this config
             base_cols = ['Open', 'High', 'Low', 'Close', 'Volume']
             available_cols = [col for col in base_cols if col in df.columns]
             if 'date' in df.columns:
                 available_cols.append('date')
-                
+
             base_df = df[available_cols].copy() if available_cols else df.copy()
-            
+
             # Calculate peaks/valleys for THIS SPECIFIC config
             temp_df = get_indicators(base_df, ['peaks_valleys'], {'peaks_valleys': {'periods': periods}})
-            
+
             # Get valley indices for this config
             valleys_indices = temp_df[temp_df['Valleys'] == 1].index.tolist() if 'Valleys' in temp_df.columns else []
-            
+
             # Filter out already seen indices (deduplication)
             valleys_indices = [i for i in valleys_indices if i not in seen_valley_indices]
             seen_valley_indices.update(valleys_indices)
-            
+
             if aVWAP_channel and lowest_valley_idx is not None:
                 valleys_indices = [i for i in valleys_indices if i >= lowest_valley_idx]
-            
+
             # Calculate aVWAPs for this config
             config_valleys = process_anchors(valleys_indices, f'aVWAP_valley_c{config_idx}', max_aVWAPs)
-            
+            config_valleys = _apply_atr_filter(config_valleys, max_atr_distance)
+
             if valleys_avg:
                 valleys_only_aVWAPs.update(config_valleys)
-            
+
             if show_valleys:
                 all_individual_aVWAPs.update(config_valleys)
 
@@ -393,43 +418,44 @@ def calculate_avwap_channel(
         for config_idx, config in enumerate(peaks_valleys_configs):
             periods = config.get('periods', 25)
             max_aVWAPs = config.get('max_aVWAPs', None)
-            
+            max_atr_distance = config.get('max_atr_distance', None)
+
             # Create a completely fresh DataFrame for each config
             base_cols = ['Open', 'High', 'Low', 'Close', 'Volume']
             available_cols = [col for col in base_cols if col in df.columns]
             if 'date' in df.columns:
                 available_cols.append('date')
-                
+
             base_df = df[available_cols].copy() if available_cols else df.copy()
-            
+
             # Calculate peaks/valleys for THIS SPECIFIC config
             temp_df = get_indicators(base_df, ['peaks_valleys'], {'peaks_valleys': {'periods': periods}})
-            
+
             # Get indices for this config
             peaks_indices = temp_df[temp_df['Peaks'] == 1].index.tolist() if 'Peaks' in temp_df.columns else []
             valleys_indices = temp_df[temp_df['Valleys'] == 1].index.tolist() if 'Valleys' in temp_df.columns else []
-            
+
             # Remove duplicates with individual configs
             peaks_indices = [i for i in peaks_indices if i not in existing_peaks]
             valleys_indices = [i for i in valleys_indices if i not in existing_valleys]
-            
+
             if aVWAP_channel:
                 if highest_peak_idx is not None:
                     peaks_indices = [i for i in peaks_indices if i >= highest_peak_idx]
                 if lowest_valley_idx is not None:
                     valleys_indices = [i for i in valleys_indices if i >= lowest_valley_idx]
-            
-            # Process peaks for this combined config
+
+            # Process peaks and valleys for this combined config
             config_peaks = process_anchors(peaks_indices, f'aVWAP_peak_c{len(peaks_configs)+config_idx}', max_aVWAPs)
-            
-            # Process valleys for this combined config
             config_valleys = process_anchors(valleys_indices, f'aVWAP_valley_c{len(valleys_configs)+config_idx}', max_aVWAPs)
-            
+            config_peaks = _apply_atr_filter(config_peaks, max_atr_distance)
+            config_valleys = _apply_atr_filter(config_valleys, max_atr_distance)
+
             # Store for combined averages
             if peaks_valleys_avg:
                 combined = {**config_peaks, **config_valleys}
                 peaks_valleys_aVWAPs.update(combined)
-            
+
             if show_peaks_valleys:
                 all_individual_aVWAPs.update(config_peaks)
                 all_individual_aVWAPs.update(config_valleys)

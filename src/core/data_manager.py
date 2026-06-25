@@ -66,9 +66,14 @@ class DataManager:
 
     # Specialized Operations -----------------------------
 
-    def save_indicators(self, version_name: str) -> None:
-        """Save current indicators"""
-        self.save_version(self.indicators_dir, version_name)
+    def indicators_conf_dir(self, ind_conf) -> Path:
+        """Return path for a specific ind_conf subdir"""
+        return self.indicators_dir / f"ind_conf_{ind_conf}"
+
+    def save_indicators(self, version_name: str, ind_conf=None) -> None:
+        """Save current indicators (optionally from a specific conf subdir)"""
+        source_dir = self.indicators_conf_dir(ind_conf) if ind_conf is not None else self.indicators_dir
+        self.save_version(source_dir, version_name)
 
     def save_scans(self, version_name: str) -> None:
         """Save current scans"""
@@ -83,13 +88,23 @@ class DataManager:
         print("\n=== CLEAR SCREENSHOTS ===\n")
         self.clear_buffer(self.screenshots_dir, "*.png")
 
+    def clear_ind_conf(self, ind_conf=None) -> None:
+        """Clear a specific ind_conf subdir, or all conf subdirs if ind_conf is None"""
+        if ind_conf is not None:
+            conf_dir = self.indicators_conf_dir(ind_conf)
+            if conf_dir.exists():
+                self.clear_buffer(conf_dir)
+        else:
+            for conf_dir in self.indicators_dir.glob("ind_conf_*/"):
+                self.clear_buffer(conf_dir)
+
     def clear_all_buffers(self) -> None:
         """Clear all working directories while preserving versions"""
         print()
         self.clear_buffer(self.tickers_dir)
-        self.clear_buffer(self.indicators_dir)
+        self.clear_ind_conf()
         self.clear_buffer(self.scanner_dir, "scan_*.csv")
-        self.clear_buffer(self.screenshots_dir, "*.png")  # Added screenshots
+        self.clear_buffer(self.screenshots_dir, "*.png")
         print("\n  ✨ All buffers cleared (versions preserved)")
 
     def format_duration(self, seconds):
@@ -182,16 +197,20 @@ class DataManager:
         print()
 
     def list_ind(self, limit: int = 10) -> None:
-        """List indicator files in buffer with nice formatting"""
-        all_indicators = sorted(self.indicators_dir.glob("*.csv"))
-        total_indicators = len(all_indicators)
-        indicators_to_show = all_indicators[:limit]
-        
-        print(f"\n  INDICATORS in buffer (Total: {total_indicators}, Showing first {limit}):")
-        for i, indicator in enumerate(indicators_to_show, 1):
-            print(f"  {i}. {indicator.name}")
-        if total_indicators > limit:
-            print(f"\n  ... and {total_indicators - limit} more")
+        """List indicator conf subdirs and their file counts"""
+        conf_dirs = sorted(self.indicators_dir.glob("ind_conf_*/"))
+        if not conf_dirs:
+            print(f"\n  No indicator conf subdirs found in {self.indicators_dir}")
+            return
+        print(f"\n  INDICATOR BUFFERS ({len(conf_dirs)} conf(s)):\n")
+        for conf_dir in conf_dirs:
+            files = sorted(conf_dir.glob("*.csv"))
+            total = len(files)
+            print(f"  [{conf_dir.name}]  {total} file(s)")
+            for f in files[:limit]:
+                print(f"    {f.name}")
+            if total > limit:
+                print(f"    ... and {total - limit} more")
         print()
 
     def list_tickers(self, limit: int = 10, timeframe: Optional[str] = None) -> None:

@@ -91,8 +91,8 @@ def init_cli(vis, fetch, ind, scan, full_run):
         # timeframe is already parsed above
         ind(args.ind_conf, timeframes=timeframes)
 
-    elif args.scan: 
-        scan(args.scan_list)
+    elif args.scan:
+        scan(args.scan_list, ind_conf=args.ind_conf)
 
     elif args.full_run: 
         full_run(fetch, ind, scan)
@@ -101,11 +101,11 @@ def init_cli(vis, fetch, ind, scan, full_run):
     elif args.clear_tickers:
         dm.clear_buffer(dm.tickers_dir)
     elif args.clear_ind:
-        dm.clear_buffer(dm.indicators_dir)
+        dm.clear_ind_conf(args.ind_conf)
     elif args.clear_scans:
         dm.clear_buffer(dm.scanner_dir, "scan_*.csv")
     elif args.clear_ind_scans:
-        dm.clear_buffer(dm.indicators_dir)
+        dm.clear_ind_conf(args.ind_conf)
         dm.clear_buffer(dm.scanner_dir, "scan_*.csv")
     elif args.clear_all:
         dm.clear_all_buffers()
@@ -175,6 +175,7 @@ def show_help() -> None:
       --timeframe             Specify timeframe(s) to process (comma-separated, e.g., "daily,weekly,4hour")
   --scan                      Run scanner on indicators buffer
       --scan-list             Specify scan list ("scan_list_1")
+      --ind-conf              Specify which indicator conf buffer to scan ("0", "9")
   --full-run                  Run full process: fetch > indicators > scan
 
   VISUALIZATION
