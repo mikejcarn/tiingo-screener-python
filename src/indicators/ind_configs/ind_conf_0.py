@@ -31,7 +31,7 @@ indicators = {  # List of available indicator configurations
     'daily': [
         'aVWAP',
         'candle_colors',
-        # 'QQEMOD',
+        'QQEMOD',
         # 'aVWAP_anchor_score',
         # 'aVWAP_pinch',
         # 'banker_RSI',
@@ -156,14 +156,14 @@ params = {
 
         'daily': {
             'aVWAP': {
-                'peaks': True,
-                'valleys': True,
+                'peaks': False,
+                'valleys': False,
                 'peaks_avg': False,
                 'valleys_avg': False,
                 'peaks_valleys': False,
                 'peaks_valleys_avg': False,
                 'price_maxima_minima': False,
-                'QQEMOD': False,
+                'QQEMOD': True,
                 'QQEMOD_avg': False,
                 'OB': False,
                 'OB_avg': False,

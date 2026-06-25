@@ -9,6 +9,29 @@ from src.visualization.src.color_palette import get_color_palette
 from src.visualization.src.indicator_visualizations import add_visualizations
 from src.core.globals import INDICATORS_DIR, SCREENSHOTS_DIR
 
+def _get_indicators_search_dirs(ind_conf):
+    """Return list of dirs to search for indicator CSVs.
+    If ind_conf is set, returns [ind_conf_N/]. Otherwise returns all ind_conf_*/ subdirs."""
+    if ind_conf:
+        return [INDICATORS_DIR / f"ind_conf_{ind_conf}"]
+    dirs = sorted(INDICATORS_DIR.glob("ind_conf_*/"))
+    return dirs if dirs else [INDICATORS_DIR]
+
+def _find_in_search_dirs(search_dirs, pattern):
+    """Glob a pattern across a list of dirs, return first match or None."""
+    for d in search_dirs:
+        match = next(d.glob(pattern), None)
+        if match:
+            return match
+    return None
+
+def _glob_all_search_dirs(search_dirs, pattern):
+    """Glob a pattern across all search dirs, return combined list."""
+    results = []
+    for d in search_dirs:
+        results.extend(d.glob(pattern))
+    return results
+
 def prepare_dataframe(df, show_volume, padding_ratio=0.25):
     df = df.copy()
     df = df.rename(columns={
@@ -155,7 +178,7 @@ def _load_ticker_csv(charts, key, show_volume=False, show_banker_RSI=False):
         current_ticker = chart.topbar['ticker'].value
         timeframe = chart.topbar['timeframe'].value
         ind_conf = chart.topbar['ind_conf'].value
-        indicators_subdir = INDICATORS_DIR / f"ind_conf_{ind_conf}" if ind_conf else INDICATORS_DIR
+        search_dirs = _get_indicators_search_dirs(ind_conf)
 
         # Auto-detect source
         if CURRENT_SCAN_FILE and CURRENT_SCAN_FILE.exists():
@@ -168,24 +191,24 @@ def _load_ticker_csv(charts, key, show_volume=False, show_banker_RSI=False):
 
                 if not available_tickers:
                     print("No tickers in scan for this timeframe, using all tickers")
-                    available_tickers = sorted(list({
+                    available_tickers = sorted({
                         f.name.split('_')[0] for f in
-                        indicators_subdir.glob(f"*_{timeframe}_*.csv")
-                    }))
+                        _glob_all_search_dirs(search_dirs, f"*_{timeframe}_*.csv")
+                    })
             except Exception as e:
                 print(f"Error reading scan file: {e}, falling back to all tickers")
-                available_tickers = sorted(list({
+                available_tickers = sorted({
                     f.name.split('_')[0] for f in
-                    indicators_subdir.glob(f"*_{timeframe}_*.csv")
-                }))
+                    _glob_all_search_dirs(search_dirs, f"*_{timeframe}_*.csv")
+                })
         else:
-            available_tickers = sorted(list({
+            available_tickers = sorted({
                 f.name.split('_')[0] for f in
-                indicators_subdir.glob(f"*_{timeframe}_*.csv")
-            }))
+                _glob_all_search_dirs(search_dirs, f"*_{timeframe}_*.csv")
+            })
 
         if not available_tickers:
-            print(f"No tickers available for {timeframe} timeframe in {indicators_subdir.name}")
+            print(f"No tickers available for {timeframe} timeframe")
             return
 
         try:
@@ -195,7 +218,7 @@ def _load_ticker_csv(charts, key, show_volume=False, show_banker_RSI=False):
             next_index = 0
 
         next_ticker = available_tickers[next_index]
-        indicator_file = next(indicators_subdir.glob(f"{next_ticker}_{timeframe}_*.csv"), None)
+        indicator_file = _find_in_search_dirs(search_dirs, f"{next_ticker}_{timeframe}_*.csv")
         if not indicator_file:
             print(f"No indicator data found for {next_ticker} {timeframe}")
             return
@@ -268,8 +291,8 @@ def _on_search(chart, input_ticker):
     try:
         current_timeframe = chart.topbar['timeframe'].value
         ind_conf = chart.topbar['ind_conf'].value
-        indicators_subdir = INDICATORS_DIR / f"ind_conf_{ind_conf}" if ind_conf else INDICATORS_DIR
-        matching_files = sorted(indicators_subdir.glob(f"{input_ticker}_{current_timeframe}_*.csv"), reverse=True)
+        search_dirs = _get_indicators_search_dirs(ind_conf)
+        matching_files = sorted(_glob_all_search_dirs(search_dirs, f"{input_ticker}_{current_timeframe}_*.csv"), reverse=True)
         if not matching_files:
             print(f"No {current_timeframe} data found for {input_ticker}")
             return
@@ -303,16 +326,16 @@ def _load_timeframe_csv(charts, key, show_volume=False, show_banker_RSI=False):
     ticker = chart.topbar['ticker'].value
     current_timeframe = chart.topbar['timeframe'].value
     ind_conf = chart.topbar['ind_conf'].value
-    indicators_subdir = INDICATORS_DIR / f"ind_conf_{ind_conf}" if ind_conf else INDICATORS_DIR
+    search_dirs = _get_indicators_search_dirs(ind_conf)
 
     timeframe_order = ['weekly','daily','4hour','1hour','30min','15min','5min','1min']
     available_timeframes = []
     for tf in timeframe_order:
-        if list(indicators_subdir.glob(f"{ticker}_{tf}_*.csv")):
+        if _glob_all_search_dirs(search_dirs, f"{ticker}_{tf}_*.csv"):
             available_timeframes.append(tf)
 
     if not available_timeframes:
-        print(f"No timeframe data found for {ticker} in {indicators_subdir.name}")
+        print(f"No timeframe data found for {ticker}")
         return
 
     try:
@@ -322,8 +345,7 @@ def _load_timeframe_csv(charts, key, show_volume=False, show_banker_RSI=False):
 
     next_index = (current_index + 1) % len(available_timeframes)
     next_timeframe = available_timeframes[next_index]
-    matching_files = sorted(indicators_subdir.glob(f"{ticker}_{next_timeframe}_*.csv"), reverse=True)
-    selected_file = matching_files[0]
+    selected_file = _find_in_search_dirs(search_dirs, f"{ticker}_{next_timeframe}_*.csv")
     print(f"Loading {ticker} {next_timeframe} data from: {selected_file}")
 
     df = pd.read_csv(selected_file).rename(columns={'Open':'open','Close':'close','Low':'low','High':'high'}).copy()
@@ -346,9 +368,8 @@ def get_most_recent_scanner_file():
     return scan_files[0] if scan_files else None
 
 def find_indicator_file(ticker, timeframe, ind_conf=None):
-    search_dir = INDICATORS_DIR / f"ind_conf_{ind_conf}" if ind_conf else INDICATORS_DIR
-    files = sorted(search_dir.glob(f"{ticker}_{timeframe}_*.csv"), reverse=True)
-    return files[0] if files else None
+    search_dirs = _get_indicators_search_dirs(ind_conf)
+    return _find_in_search_dirs(search_dirs, f"{ticker}_{timeframe}_*.csv")
 
 SCREENSHOT_KEY_MAPPINGS = {'_':0,'+':1,'{':2,'}':3}
 

@@ -1,0 +1,6 @@
+date,Close,High,Low,Open,Volume,color,QQEMOD,QQE1_Value,QQE1_Above_Upper,QQE1_Below_Lower,QQE2_Above_Threshold,QQE2_Below_Threshold,QQE2_Above_TL
+2026-06-04 00:00:00+00:00,0.075,0.08,0.075,0.075,241830,#000000,,,False,False,False,False,False
+2026-06-05 00:00:00+00:00,0.07,0.08,0.07,0.08,1269140,"rgba(239, 83, 80, 0.5)",0.0,,False,False,False,True,False
+2026-06-08 00:00:00+00:00,0.075,0.075,0.07,0.075,55977,"rgba(239, 83, 80, 0.5)",17.46031746031746,-84.92063492063492,False,False,False,True,True
+2026-06-09 00:00:00+00:00,0.075,0.075,0.07,0.075,56409,"rgba(239, 83, 80, 0.5)",29.100529100529094,-72.79541446208114,False,False,False,True,True
+2026-06-10 00:00:00+00:00,0.07,0.075,0.07,0.07,14431,"rgba(239, 83, 80, 0.5)",30.087227308639918,-70.11257543739165,False,False,False,True,True

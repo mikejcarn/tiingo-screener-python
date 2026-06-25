@@ -1453,11 +1453,33 @@ scan_conf = {
         'params': {
             'engulfing_candle': {
                 'daily': {
-                          'mode': 'both', 
-                          'min_patterns': 3, 
+                          'mode': 'both',
+                          'min_patterns': 3,
                           'lookback_candles': None
                 },
             },
+        }
+    },
+
+    'd_QQEMOD_aVWAP_bullish': {
+        'criteria': {
+            'daily': ['QQEMOD_aVWAP'],
+        },
+        'params': {
+            'QQEMOD_aVWAP': {
+                'daily': {'mode': 'bullish', 'distance_pct': 100.0},
+            }
+        }
+    },
+
+    'd_QQEMOD_aVWAP_bearish': {
+        'criteria': {
+            'daily': ['QQEMOD_aVWAP'],
+        },
+        'params': {
+            'QQEMOD_aVWAP': {
+                'daily': {'mode': 'bearish', 'distance_pct': 100.0},
+            }
         }
     },
 

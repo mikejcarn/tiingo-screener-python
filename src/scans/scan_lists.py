@@ -2,6 +2,9 @@ scan_lists = {
 
     'scan_list_0': [
 
+        'd_QQEMOD_aVWAP_bullish',
+        'd_QQEMOD_aVWAP_bearish',
+
         # 'd_EngulfingCandle'
         # 'd_OBaVWAPBullish_liquidity',
         # 'd_OBaVWAPBullish_aVWAPavg',
@@ -11,7 +14,7 @@ scan_lists = {
         # 'd_aVWAPavgMulti_h_aVWAPavgMulti',
         # 'd_aVWAPavgMulti_h_aVWAPChannelSupport',
 
-        'd_aVWAPChannel_Support',
+        # 'd_aVWAPChannel_Support',
 
         # 'd_SMAAbove',
         # 'd_OBaVWAPPinch',
