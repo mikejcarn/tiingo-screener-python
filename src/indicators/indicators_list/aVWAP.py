@@ -669,7 +669,8 @@ def calculate_avwap_channel(
             return segments
 
         for config_idx, config in enumerate(QQEMOD_configs):
-            max_aVWAPs = config.get('max_aVWAPs', None)
+            max_anchors      = config.get('max_anchors', config.get('max_aVWAPs', None))
+            extend_to_end    = config.get('extend_to_end', False)
             peak_to_valley   = config.get('peak_to_valley',   True)
             valley_to_peak   = config.get('valley_to_peak',   True)
             peak_to_peak     = config.get('peak_to_peak',     True)
@@ -679,8 +680,12 @@ def calculate_avwap_channel(
             include_bear = valley_to_peak or valley_to_valley or QQEMOD_avg
 
             segments = find_qqemod_segments(config_idx)
-            if max_aVWAPs is not None:
-                segments = segments[-max_aVWAPs:]
+
+            # Limit per direction so bear and bull each keep their own N most recent anchors
+            if max_anchors is not None:
+                bear_segs = [s for s in segments if s['type'] == 'bear'][-max_anchors:]
+                bull_segs = [s for s in segments if s['type'] == 'bull'][-max_anchors:]
+                segments = sorted(bear_segs + bull_segs, key=lambda s: s['start'])
 
             config_QQEMOD = {}
 
@@ -694,7 +699,8 @@ def calculate_avwap_channel(
                 direction = 'bull' if seg['type'] == 'bull' else 'bear'
                 col = f'aVWAP_QQEMOD_{direction}_c{config_idx}_{anchor}'
                 avwap = calculate_avwap(df, anchor).copy()
-                avwap.iloc[seg['end'] - anchor + 1:] = np.nan
+                end_idx = _last_valid if extend_to_end else seg['end']
+                avwap.iloc[end_idx - anchor + 1:] = np.nan
                 config_QQEMOD[col] = avwap
 
             # Dotted lines: peak→peak and valley→valley
@@ -712,12 +718,13 @@ def calculate_avwap_channel(
                     next_anchor = same_type[k + 1]['anchor']
                     col = f'aVWAP_QQEMOD_{direction}_dot_c{config_idx}_{anchor}'
                     avwap = calculate_avwap(df, anchor).copy()
-                    avwap.iloc[next_anchor - anchor + 1:] = np.nan
+                    end_idx = _last_valid if extend_to_end else next_anchor
+                    avwap.iloc[end_idx - anchor + 1:] = np.nan
                     if QQEMOD_avg:
                         QQEMOD_aVWAPs[col] = avwap
                     if display_flag:
                         config_QQEMOD[col] = avwap
-                # Open line for the most recent anchor — no next partner yet, extend to last real bar
+                # Most recent anchor — always extends to last real bar
                 if same_type:
                     anchor = same_type[-1]['anchor']
                     col = f'aVWAP_QQEMOD_{direction}_dot_c{config_idx}_{anchor}'

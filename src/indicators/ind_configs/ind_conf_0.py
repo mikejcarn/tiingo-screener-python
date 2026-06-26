@@ -29,10 +29,10 @@ indicators = {  # List of available indicator configurations
     ],
 
     'daily': [
-        'aVWAP',
+        # 'aVWAP',
         'candle_colors',
-        'QQEMOD',
-        # 'aVWAP_anchor_score',
+        # 'QQEMOD',
+        'aVWAP_anchor_score',
         # 'aVWAP_pinch',
         # 'banker_RSI',
         # 'SMA',
@@ -175,20 +175,21 @@ params = {
                 'keep_OB_column': False,
                 'aVWAP_channel': False,
                 'peaks_params': [ 
-                    { 'periods': 20, 'max_aVWAPs': None, 'avg_lookback': 100, 'max_atr_distance': 1.0 }, 
+                    { 'periods': 20, 'max_aVWAPs': None, 'avg_lookback': 100, 'max_atr_distance': None }, 
                 ],
                 'valleys_params': [ 
-                    { 'periods': 20, 'max_aVWAPs': None, 'avg_lookback': 100, 'max_atr_distance': 1.0 }, 
+                    { 'periods': 20, 'max_aVWAPs': None, 'avg_lookback': 100, 'max_atr_distance': None }, 
                 ],
                 'peaks_valleys_params': [ 
                     { 'periods': 20, 'max_aVWAPs': None, 'avg_lookback': 20, }, 
                 ],
                 'QQEMOD_params': {
-                    'peak_to_valley':   False,  # solid red:    peak anchor → next teal candle
-                    'valley_to_peak':   False,  # solid teal:   valley anchor → next red candle
-                    'peak_to_peak':     True,   # dotted red:   peak anchor → next peak anchor
-                    'valley_to_valley': False,  # dotted teal:  valley anchor → next valley anchor
-                    'max_aVWAPs': None,         # int = most-recent N segments, None = all
+                    'peak_to_valley':   False,   # solid red:    peak anchor → next teal candle
+                    'valley_to_peak':   False,   # solid teal:   valley anchor → next red candle
+                    'peak_to_peak':     False,   # dotted red:   peak anchor → next peak anchor
+                    'valley_to_valley': True,    # dotted teal:  valley anchor → next valley anchor
+                    'max_anchors':      None,    # keep N most recent bear + N most recent bull anchors
+                    'extend_to_end':    True,    # run each aVWAP to the last bar
                     'qqe_params': {
                         'rsi_period': 6, 'rsi_period2': 5, 'sf': 5, 'sf2': 5,
                         'qqe_factor': 3.0, 'qqe_factor2': 1.61, 'threshold': 3,
@@ -215,10 +216,10 @@ params = {
             },
             'aVWAP_anchor_score': {
                 'valleys': True,
-                'peaks': True,
-                'max_anchors': 5,
-                'min_score_pct': None,
-                'min_swing_spacing': 5,
+                'peaks': False,
+                'max_anchors': None,
+                'min_score_pct': 0.5,
+                'min_swing_spacing': 50,
                 'isolation_max_bars': 300,
                 'atr_period': 14,
                 'sharpness_bars_before': 5,
@@ -538,9 +539,10 @@ params = {
                 'QQEMOD_params': {
                     'peak_to_valley':   False,  # solid red:    peak anchor → next teal candle
                     'valley_to_peak':   False,  # solid teal:   valley anchor → next red candle
-                    'peak_to_peak':     True,  # dotted red:   peak anchor → next peak anchor
+                    'peak_to_peak':     True,   # dotted red:   peak anchor → next peak anchor
                     'valley_to_valley': False,  # dotted teal:  valley anchor → next valley anchor
-                    'max_aVWAPs': None,        # int = most-recent N segments, None = all
+                    'max_anchors':      5,      # keep N most recent bear + N most recent bull anchors
+                    'extend_to_end':    True,   # run each aVWAP to the last bar
                     'qqe_params': {
                         'rsi_period': 6, 'rsi_period2': 5, 'sf': 5, 'sf2': 5,
                         'qqe_factor': 3.0, 'qqe_factor2': 1.61, 'threshold': 3,
