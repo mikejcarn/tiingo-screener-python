@@ -111,3 +111,37 @@ Scans for price validly testing a QQEMOD-anchored aVWAP during an opposing zone.
 `Distance_Pct` is included as an informational output column but is not used as a filter.
 
 Scan entries `d_QQEMOD_aVWAP_bullish` and `d_QQEMOD_aVWAP_bearish` are defined in `src/scans/scan_configs/scan_conf_daily.py` and grouped in `scan_list_0` in `src/scans/scan_lists.py`.
+
+## Planned Feature: Bar-by-Bar Replay Mode
+
+The goal is to watch QQEMOD_aVWAP levels develop dynamically as price action plays out bar by bar — useful for building intuition about how anchor points form and how price interacts with them over time.
+
+### Approach: Progressive Reveal (recommended)
+
+Pre-compute all indicators on the full dataset as normal (run `--ind` first). Playback reveals the pre-computed values bar by bar — each aVWAP column is masked beyond the current playback bar, and anchor lines only appear once their anchor bar has been reached. No recomputation per step; the aVWAP values are already in the CSV.
+
+The alternative (true recomputation at every step) was considered but ruled out: QQEMOD_aVWAP is expensive enough that recomputing it for every bar in a 1000-bar history would take minutes.
+
+### Library Support
+
+`lightweight-charts-python` supports this natively:
+- `chart.update(series)` — adds one OHLCV bar at a time
+- `chart.show_async()` — runs the chart in an async loop so Python can keep feeding it data
+- `chart.hotkey()` — bind play/pause/step/speed controls
+- Line series have `set()` to refresh indicator data per step
+
+### Implementation Plan
+
+New mode triggered by a `--replay` flag alongside `--vis`. Approximately 200–300 lines in a self-contained new module (e.g. `src/visualization/replay.py`). Requires:
+
+1. Load pre-computed indicator CSV for the ticker/timeframe/ind_conf
+2. Start chart with bar 0 only (`chart.show_async()`)
+3. Hotkey controls: step forward (→), step back (←), play/pause (Space), speed up/down
+4. Per-step: call `chart.update(new_bar)` for OHLCV, then `line.set(slice_df)` for each indicator column up to the current bar
+5. Anchor lines (aVWAP columns) only appear once their anchor index ≤ current bar index
+
+### Example Command (not yet implemented)
+
+```bash
+python app.py --vis --ticker AAPL --ind-conf 0 --timeframe daily --replay
+```
