@@ -29,10 +29,10 @@ indicators = {  # List of available indicator configurations
     ],
 
     'daily': [
-        # 'aVWAP',
+        'aVWAP',
         'candle_colors',
-        # 'QQEMOD',
-        'aVWAP_anchor_score',
+        'QQEMOD',
+        # 'aVWAP_anchor_score',
         # 'aVWAP_pinch',
         # 'banker_RSI',
         # 'SMA',
@@ -188,7 +188,7 @@ params = {
                     'valley_to_peak':   False,   # solid teal:   valley anchor → next red candle
                     'peak_to_peak':     False,   # dotted red:   peak anchor → next peak anchor
                     'valley_to_valley': True,    # dotted teal:  valley anchor → next valley anchor
-                    'max_anchors':      None,    # keep N most recent bear + N most recent bull anchors
+                    'max_anchors':      5,    # keep N most recent bear + N most recent bull anchors
                     'extend_to_end':    True,    # run each aVWAP to the last bar
                     'qqe_params': {
                         'rsi_period': 6, 'rsi_period2': 5, 'sf': 5, 'sf2': 5,

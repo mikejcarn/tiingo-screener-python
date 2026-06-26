@@ -94,6 +94,9 @@ def scan(scan_list='2', ind_conf=None):
         Indicator config number to read from (e.g., '0', '9').
         Reads from data/indicators/ind_conf_{N}/
     """
+    if ind_conf is None:
+        print("Error: --ind-conf is required for --scan (e.g., python app.py --scan --ind-conf 0)")
+        return
 
     # Load configs
     scan_configs = {}

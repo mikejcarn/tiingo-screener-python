@@ -5,6 +5,9 @@ import numpy as np
 def QQEMOD_aVWAP(
     df: pd.DataFrame,
     mode: str = 'bullish',
+    max_lines: int = None,
+    min_lines: int = 1,
+    extend_to_end: bool = False,
 ) -> pd.DataFrame:
     """
     Scan for price validly testing a QQEMOD-anchored aVWAP during an opposing zone.
@@ -17,17 +20,24 @@ def QQEMOD_aVWAP(
     Bullish setup:
         - Current candle is in a red (bearish) QQEMOD zone
         - During the current red streak, max(High) >= bear aVWAP value
-          (price wicked up to or above the aVWAP at some point)
 
     Bearish setup:
         - Current candle is in a teal (bullish) QQEMOD zone
         - During the current teal streak, min(Low) <= bull aVWAP value
-          (price wicked down to or below the aVWAP at some point)
 
     Distance_Pct is included in output for reference but is not used as a filter.
 
     Parameters:
-        mode  — 'bullish', 'bearish', or 'both'
+        mode          — 'bullish', 'bearish', or 'both'
+        max_lines     — maximum number of aVWAP lines to check per direction
+                        (most recent N by anchor index); None = no limit
+        min_lines     — minimum number of aVWAPs that must pass the valid-test check
+                        before any signals are emitted; default 1 (any single hit fires)
+        extend_to_end — mirrors the indicator's extend_to_end flag:
+                        False (default): solid lines are clipped at zone end; look for
+                          the last non-NaN value within the current zone slice
+                        True: solid lines extend to the latest bar; require non-NaN
+                          at the latest bar (faster — no zone slice scan)
     """
     if df is None or len(df) == 0:
         return pd.DataFrame()
@@ -53,19 +63,37 @@ def QQEMOD_aVWAP(
     close = float(latest['Close'])
     signals = []
 
+    def _resolve_avwap_val(col, zone_start):
+        if extend_to_end:
+            val = latest.get(col)
+            return float(val) if pd.notna(val) else None
+        zone_slice = df[col].iloc[zone_start:]
+        valid = zone_slice.dropna()
+        return float(valid.iloc[-1]) if len(valid) > 0 else None
+
+    def _select_cols(prefix, zone_start):
+        cols = [
+            c for c in df.columns
+            if c.startswith(prefix) and int(c.split('_')[-1]) < zone_start
+        ]
+        cols.sort(key=lambda c: int(c.split('_')[-1]), reverse=True)
+        if max_lines is not None:
+            cols = cols[:max_lines]
+        return cols
+
     if mode in ('bullish', 'both') and is_red:
         zone_start = _find_zone_start(df, 'red')
         zone_highs = df['High'].iloc[zone_start:].values
+        candidates = []
 
-        bear_cols = [c for c in df.columns
-                     if c.startswith('aVWAP_QQEMOD_bear_') and pd.notna(latest.get(c))
-                     and int(c.split('_')[-1]) < zone_start]  # anchored before this zone
-        for col in bear_cols:
-            avwap_val = float(latest[col])
+        for col in _select_cols('aVWAP_QQEMOD_bear_', zone_start):
+            avwap_val = _resolve_avwap_val(col, zone_start)
+            if avwap_val is None:
+                continue
             if np.max(zone_highs) < avwap_val:
                 continue  # price never touched the aVWAP — not a valid test
             dist = (close - avwap_val) / avwap_val * 100.0
-            signals.append({
+            candidates.append({
                 'Signal': 'bullish_pullback_to_aVWAP',
                 'Close': close,
                 'aVWAP': avwap_val,
@@ -74,19 +102,22 @@ def QQEMOD_aVWAP(
                 'Zone': 'red',
             })
 
+        if len(candidates) >= min_lines:
+            signals.extend(candidates)
+
     if mode in ('bearish', 'both') and is_teal:
         zone_start = _find_zone_start(df, 'teal')
         zone_lows = df['Low'].iloc[zone_start:].values
+        candidates = []
 
-        bull_cols = [c for c in df.columns
-                     if c.startswith('aVWAP_QQEMOD_bull_') and pd.notna(latest.get(c))
-                     and int(c.split('_')[-1]) < zone_start]  # anchored before this zone
-        for col in bull_cols:
-            avwap_val = float(latest[col])
+        for col in _select_cols('aVWAP_QQEMOD_bull_', zone_start):
+            avwap_val = _resolve_avwap_val(col, zone_start)
+            if avwap_val is None:
+                continue
             if np.min(zone_lows) > avwap_val:
                 continue  # price never touched the aVWAP — not a valid test
             dist = (close - avwap_val) / avwap_val * 100.0
-            signals.append({
+            candidates.append({
                 'Signal': 'bearish_pullback_to_aVWAP',
                 'Close': close,
                 'aVWAP': avwap_val,
@@ -94,6 +125,9 @@ def QQEMOD_aVWAP(
                 'aVWAP_Column': col,
                 'Zone': 'teal',
             })
+
+        if len(candidates) >= min_lines:
+            signals.extend(candidates)
 
     if not signals:
         return pd.DataFrame()

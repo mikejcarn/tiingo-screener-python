@@ -1,0 +1,2 @@
+date,Close,High,Low,Open,Volume,color,QQEMOD,QQE1_Value,QQE1_Above_Upper,QQE1_Below_Lower,QQE2_Above_Threshold,QQE2_Below_Threshold,QQE2_Above_TL
+2026-06-17 00:00:00+00:00,6.5,8.88,5.75,6.9,463151,#000000,,,False,False,False,False,False
