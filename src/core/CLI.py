@@ -18,6 +18,8 @@ def init_cli(vis, fetch, ind, scan, full_run):
                        help='Indicator config: single number for --ind (e.g., "2"), comma-separated for --vis (e.g., "1,2,3")')
    
     parser.add_argument('--scan-file', type=str, default=None, help='Specify scan file')
+    parser.add_argument('--replay', action='store_true',
+                        help='Bar-by-bar replay from indicator buffer (requires --ticker, --timeframe, --ind-conf)')
 
     # Data processing
     parser.add_argument('--tickers', action='store_true', help='Fetch ticker data')
@@ -82,6 +84,13 @@ def init_cli(vis, fetch, ind, scan, full_run):
         vis_ind_confs = args.ind_conf.split(',') if args.ind_conf else None
         vis(tickers=tickers, timeframes=timeframes, ind_confs=vis_ind_confs,
             scan_file=args.scan_file, end_dates=end_dates)
+
+    elif args.replay:
+        from src.visualization.replay import start_replay
+        ticker_val = tickers[0] if tickers else 'BTCUSD'
+        tf_val = timeframes[0] if timeframes else 'd'
+        ic_val = args.ind_conf or '2'
+        start_replay(ticker_val, tf_val, ic_val)
 
     elif args.tickers:
         fetch(timeframes=timeframes, end_date=end_dates[0] if end_dates else None)
@@ -185,6 +194,11 @@ def show_help() -> None:
       --ind-conf              Specify indicator config(s) ("2" or "1,2,3,4")
       --scan-file             Specify scan file ("scan_*.csv")
       --end-date              Visualize up to a specific date, or comma-separated dates per panel (e.g., "2024-09-14" or "2024-09-14,2024-03-01")
+  --replay                    Bar-by-bar replay from indicator buffer
+      --ticker                Ticker to replay ("BTCUSD")
+      --timeframe             Timeframe ("d", "w", "4h", "h", "5min")
+      --ind-conf              Indicator config buffer to read ("2")
+                              Controls: ← → step | Shift+←→ jump 20 | Home/End start/end | Space play/pause | , . speed
 
   EXAMPLES:
     Fetch:
