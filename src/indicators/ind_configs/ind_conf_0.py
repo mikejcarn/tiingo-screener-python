@@ -162,8 +162,8 @@ params = {
                 'valleys_avg': False,
                 'peaks_valleys': False,
                 'peaks_valleys_avg': False,
-                'price_maxima_minima': False,
-                'QQEMOD': True,
+                'price_maxima_minima': True,
+                'QQEMOD': False,
                 'QQEMOD_avg': False,
                 'OB': False,
                 'OB_avg': False,
@@ -174,14 +174,14 @@ params = {
                 'All_avg': False,
                 'keep_OB_column': False,
                 'aVWAP_channel': False,
-                'peaks_params': [ 
-                    { 'periods': 20, 'max_aVWAPs': None, 'avg_lookback': 100, 'max_atr_distance': None }, 
+                'peaks_params': [
+                    { 'periods': 20, 'max_aVWAPs': None, 'avg_lookback': 100, 'max_atr_distance': None },
                 ],
-                'valleys_params': [ 
-                    { 'periods': 20, 'max_aVWAPs': None, 'avg_lookback': 100, 'max_atr_distance': None }, 
+                'valleys_params': [
+                    { 'periods': 20, 'max_aVWAPs': None, 'avg_lookback': 100, 'max_atr_distance': None },
                 ],
-                'peaks_valleys_params': [ 
-                    { 'periods': 20, 'max_aVWAPs': None, 'avg_lookback': 20, }, 
+                'peaks_valleys_params': [
+                    { 'periods': 20, 'max_aVWAPs': None, 'avg_lookback': 20, },
                 ],
                 'QQEMOD_params': {
                     'peak_to_valley':   False,   # solid red:    peak anchor → next teal candle

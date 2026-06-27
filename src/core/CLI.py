@@ -86,7 +86,7 @@ def init_cli(vis, fetch, ind, scan, full_run):
             scan_file=args.scan_file, end_dates=end_dates)
 
     elif args.replay:
-        from src.visualization.replay import start_replay
+        from src.visualization.src.replay import start_replay
         ticker_val = tickers[0] if tickers else 'BTCUSD'
         tf_val = timeframes[0] if timeframes else 'd'
         ic_val = args.ind_conf or '2'
