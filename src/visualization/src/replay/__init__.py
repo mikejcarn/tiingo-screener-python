@@ -55,8 +55,7 @@ from src.visualization.src.charts import prepare_dataframe, configure_base_chart
 from src.visualization.src.indicator_visualizations import (
     _cfg_idx, _ensure_time_col, _line_set_df,
 )
-from src.visualization.src.subcharts import _load_indicator_data
-from src.visualization.src.replay.event_log import AnchorEvent, simulate_qqemod_avwap, active_at
+from src.visualization.src.replay.event_log import AnchorEvent, simulate_qqemod_avwap, active_at, precompute_live_anchors
 from src.visualization.src.replay.vwap import build_cumulative_arrays, precompute_vwap_paths, get_vwap_df
 
 _TIMEFRAME_MAP = {
@@ -78,16 +77,70 @@ _RECOMPUTED_PREFIXES = (
 
 
 # ---------------------------------------------------------------------------
+# Data loading
+# ---------------------------------------------------------------------------
+
+def _load_for_replay(ticker: str, timeframe: str, ind_conf: str) -> Optional[pd.DataFrame]:
+    """
+    Load OHLCV data for replay, then compute indicators in memory.
+
+    Lookup order:
+      1. data/tickers/ buffer — most recent CSV for this ticker+timeframe
+      2. Tiingo API           — live fetch if no buffer CSV found
+
+    The indicator buffer is never used: indicators are always computed fresh
+    from raw OHLCV so replay works for any ticker without running --ind first.
+    """
+    from src.core.globals import TICKERS_DIR, API_KEY
+    from src.tickers.tickers import fetch_ticker
+    from src.indicators.indicators import get_indicators, load_indicator_config
+    from pathlib import Path
+
+    timeframe_dir = Path(TICKERS_DIR)
+    pattern = f"{ticker}_{timeframe}_*.csv"
+    candidates = sorted(timeframe_dir.glob(pattern))
+
+    if candidates:
+        latest = candidates[-1]
+        print(f"  Loading from tickers buffer: {latest.name}")
+        raw_df = pd.read_csv(latest)
+    else:
+        print(f"  No tickers buffer found for {ticker}/{timeframe} — fetching from API...")
+        raw_df = fetch_ticker(timeframe=timeframe, ticker=ticker, api_key=API_KEY)
+        if raw_df is None or raw_df.empty:
+            print(f"  Error: could not fetch {ticker}/{timeframe}")
+            return None
+
+    config_result = load_indicator_config(ind_conf, timeframe)
+    if config_result is None:
+        print(f"  Warning: no indicator config for ind_conf={ind_conf}/{timeframe} — replaying raw OHLCV only")
+    else:
+        ind_config, ind_params = config_result
+        if ind_config and ind_params:
+            print(f"  Computing indicators (ind_conf={ind_conf})...")
+            raw_df = get_indicators(raw_df, ind_config, ind_params)
+
+    # Stamp attrs so prepare_dataframe can read the timeframe.
+    # fetch_ticker sets this automatically; the tickers buffer CSV path does not.
+    raw_df.attrs['timeframe'] = timeframe
+    raw_df.attrs['ticker'] = ticker
+
+    return raw_df
+
+
+# ---------------------------------------------------------------------------
 # Public entry point
 # ---------------------------------------------------------------------------
 
 def start_replay(ticker: str, timeframe: str, ind_conf: str):
-    """Load indicator CSV and launch bar-by-bar replay."""
+    """Fetch/load OHLCV, compute indicators in memory, and launch bar-by-bar replay."""
     timeframe = _TIMEFRAME_MAP.get(timeframe, timeframe)
     print(f"\nReplay: {ticker} / {timeframe} / ind_conf={ind_conf}")
     print("Controls: ← → step | Shift+←→ jump 20 | Home/End start/end | Space play/pause | , . speed\n")
 
-    raw_df = _load_indicator_data(ticker, timeframe=timeframe, ind_conf=ind_conf)
+    raw_df = _load_for_replay(ticker, timeframe, ind_conf)
+    if raw_df is None or raw_df.empty:
+        return
     # No padding — the "current bar" is always the last bar in the slice.
     prepared_df, tf = prepare_dataframe(raw_df, show_volume=False, padding_ratio=0)
 
@@ -167,6 +220,48 @@ def start_replay(ticker: str, timeframe: str, ind_conf: str):
 # QQEMOD historical data (Track 2)
 # ---------------------------------------------------------------------------
 
+def _ensure_qqemod_zone_cols(raw_df: pd.DataFrame, ind_conf: str, timeframe: str) -> pd.DataFrame:
+    """
+    Compute QQEMOD zone label columns in memory if they are not already in raw_df.
+
+    Uses the standalone QQEMOD params from ind_conf when available (so zone boundaries
+    match any configured indicator), otherwise falls back to calculate_qqemod defaults.
+    The resulting columns (QQE1_Above_Upper, QQE1_Below_Lower, etc.) are added directly
+    to a copy of raw_df and returned.
+    """
+    from src.indicators.indicators_list.QQEMOD import calculate_qqemod
+
+    qqemod_params = {}
+    try:
+        from src.indicators.indicators import load_indicator_config
+        result = load_indicator_config(ind_conf, timeframe)
+        if result:
+            _, params = result
+            qqemod_params = params.get('QQEMOD', {}) or {}
+    except Exception:
+        pass
+
+    print(f"  QQEMOD zone labels not in data — computing on the fly (params: {qqemod_params or 'defaults'})")
+
+    # calculate_qqemod expects a 'Close' column (title case)
+    work = raw_df.copy()
+    if 'Close' not in work.columns and 'close' in work.columns:
+        work = work.rename(columns={'close': 'Close'})
+
+    try:
+        zone_dict = calculate_qqemod(work, **qqemod_params)
+    except Exception as e:
+        print(f"  Warning: QQEMOD computation failed: {e}")
+        return raw_df
+
+    result = raw_df.copy()
+    for col in ('QQE1_Above_Upper', 'QQE1_Below_Lower',
+                'QQE2_Above_Threshold', 'QQE2_Below_Threshold', 'QQE2_Above_TL'):
+        if col in zone_dict:
+            result[col] = zone_dict[col].values if hasattr(zone_dict[col], 'values') else zone_dict[col]
+    return result
+
+
 def _build_qqemod_data(raw_df: pd.DataFrame, ind_conf: str, timeframe: str, colors: dict) -> Optional[dict]:
     """
     Build the QQEMOD historical anchor event log and VWAP paths.
@@ -205,13 +300,18 @@ def _build_qqemod_data(raw_df: pd.DataFrame, ind_conf: str, timeframe: str, colo
             cfg_idx = int(m.group(1))
             break
 
-    # Check that zone-label columns exist (needed for simulation)
+    # Ensure zone-label columns exist — compute QQEMOD on the fly if missing.
+    # This removes the requirement to have QQEMOD enabled as a standalone indicator.
     zone_col = f'QQE1_Above_Upper_c{cfg_idx}'
     if zone_col not in raw_df.columns:
         zone_col = 'QQE1_Above_Upper'
     if zone_col not in raw_df.columns:
-        print("  QQEMOD historical mode: zone label columns not found in CSV — run --ind first")
-        return None
+        raw_df = _ensure_qqemod_zone_cols(raw_df, ind_conf, timeframe)
+        zone_col = 'QQE1_Above_Upper'
+        if zone_col not in raw_df.columns:
+            print("  QQEMOD historical mode: could not compute zone labels")
+            return None
+        cfg_idx = 0  # freshly computed columns have no suffix
 
     print(f"  QQEMOD historical mode: cfg_idx={cfg_idx}, max_anchors={max_anchors}, enabled={[k for k,v in enabled.items() if v]}")
 
@@ -225,7 +325,25 @@ def _build_qqemod_data(raw_df: pd.DataFrame, ind_conf: str, timeframe: str, colo
     paths = precompute_vwap_paths(anchor_bars, cum_tpv, cum_vol)
 
     # Date array aligned to raw_df rows (for VWAP series time column)
-    dates = raw_df['date'].values if 'date' in raw_df.columns else np.arange(len(raw_df)).astype(str)
+    if 'date' in raw_df.columns:
+        dates = raw_df['date'].values
+    elif raw_df.index.name == 'date':
+        dates = raw_df.index.astype(str).values
+    else:
+        dates = np.arange(len(raw_df)).astype(str)
+
+    # Precompute live (floating) anchor arrays — one per bar, for active zones
+    live_bear, live_bull = precompute_live_anchors(raw_df, cfg_idx=cfg_idx)
+
+    # Add VWAP paths for any live anchor bars not already in paths
+    live_anchor_bars = set()
+    if enabled.get('bear_dot') or enabled.get('bear'):
+        live_anchor_bars.update(int(b) for b in live_bear if b >= 0)
+    if enabled.get('bull_dot') or enabled.get('bull'):
+        live_anchor_bars.update(int(b) for b in live_bull if b >= 0)
+    new_bars = list(live_anchor_bars - set(paths.keys()))
+    if new_bars:
+        paths.update(precompute_vwap_paths(new_bars, cum_tpv, cum_vol))
 
     directions_present = [d for d, v in enabled.items() if v]
 
@@ -238,6 +356,8 @@ def _build_qqemod_data(raw_df: pd.DataFrame, ind_conf: str, timeframe: str, colo
         'directions': directions_present,
         'slots': {},
         'colors': colors,
+        'live_bear': live_bear,
+        'live_bull': live_bull,
     }
 
 
@@ -258,6 +378,18 @@ def _create_qqemod_slot_lines(chart: Chart, qqemod_data: dict, colors: dict) -> 
                               color=color, width=width, style=style)
             for _ in range(max_anchors)
         ]
+
+    # One extra slot per zone type for the live (not-yet-committed) floating anchor
+    directions = qqemod_data['directions']
+    if any(d in directions for d in ('bear_dot', 'bear')):
+        slots['_live_bear'] = chart.create_line(
+            price_line=False, price_label=False,
+            color=colors['teal'], width=2, style='solid')
+    if any(d in directions for d in ('bull_dot', 'bull')):
+        slots['_live_bull'] = chart.create_line(
+            price_line=False, price_label=False,
+            color=colors['red'], width=2, style='solid')
+
     qqemod_data['slots'] = slots
 
 
@@ -340,7 +472,12 @@ def _build_pmm_data(raw_df: pd.DataFrame, ind_conf: str, timeframe: str, colors:
     cum_tpv, cum_vol = build_cumulative_arrays(raw_df)
     low_vals = raw_df['low'].values if 'low' in raw_df.columns else raw_df['Low'].values
     high_vals = raw_df['high'].values if 'high' in raw_df.columns else raw_df['High'].values
-    dates = raw_df['date'].values if 'date' in raw_df.columns else np.arange(len(raw_df)).astype(str)
+    if 'date' in raw_df.columns:
+        dates = raw_df['date'].values
+    elif raw_df.index.name == 'date':
+        dates = raw_df.index.astype(str).values
+    else:
+        dates = np.arange(len(raw_df)).astype(str)
 
     directions = (['valley'] if include_valleys else []) + (['peak'] if include_peaks else [])
     print(f"  price_maxima_minima historical mode: max_anchors={max_anchors}, spacing={spacing}, types={directions}")
@@ -429,6 +566,8 @@ def _render_qqemod_slots(qqemod: dict, n: int) -> None:
     _empty = pd.DataFrame(columns=['time', 'value'])
 
     for direction, slot_lines in slots.items():
+        if direction.startswith('_live'):
+            continue  # handled separately below
         active = active_at(events, n, direction)
         for idx, line in enumerate(slot_lines):
             if idx < len(active):
@@ -437,6 +576,16 @@ def _render_qqemod_slots(qqemod: dict, n: int) -> None:
                 line.set(df_v)
             else:
                 line.set(_empty)
+
+    # Live floating anchors — visible during an active zone before it closes
+    live_bear = qqemod.get('live_bear')
+    live_bull = qqemod.get('live_bull')
+    if '_live_bear' in slots and live_bear is not None and n < len(live_bear):
+        bar = int(live_bear[n])
+        slots['_live_bear'].set(get_vwap_df(bar, n, paths, dates) if bar >= 0 else _empty)
+    if '_live_bull' in slots and live_bull is not None and n < len(live_bull):
+        bar = int(live_bull[n])
+        slots['_live_bull'].set(get_vwap_df(bar, n, paths, dates) if bar >= 0 else _empty)
 
 
 # ---------------------------------------------------------------------------

@@ -159,6 +159,105 @@ def simulate_qqemod_avwap(
     return events
 
 
+def precompute_live_anchors(
+    df: pd.DataFrame,
+    cfg_idx: int = 0,
+) -> tuple:
+    """
+    For every bar N, compute the current floating anchor bar if an active zone is open.
+
+    Returns (live_bear, live_bull): two int arrays of length len(df).
+    live_bear[N] = the running argmin(Low) from zone_start to N (bear zone active).
+    live_bull[N] = the running argmax(High) from zone_start to N (bull zone active).
+    -1 means no active zone of that type at bar N.
+
+    Matches the zone-boundary rules of simulate_qqemod_avwap exactly:
+    neutral bars between bear and bull are included in the zone span.
+    """
+    def _col(base: str) -> str:
+        suffixed = f'{base}_c{cfg_idx}'
+        return suffixed if suffixed in df.columns else base
+
+    bull_col = _col('QQE1_Above_Upper')
+    bear_col = _col('QQE1_Below_Lower')
+    thresh_above_col = _col('QQE2_Above_Threshold')
+    thresh_below_col = _col('QQE2_Below_Threshold')
+    tl_col = _col('QQE2_Above_TL')
+
+    if bull_col not in df.columns:
+        n = len(df)
+        return np.full(n, -1, dtype=int), np.full(n, -1, dtype=int)
+
+    bull = (
+        df[bull_col].fillna(False).values.astype(bool)
+        & df[thresh_above_col].fillna(False).values.astype(bool)
+        & df[tl_col].fillna(False).values.astype(bool)
+    )
+    bear = (
+        df[bear_col].fillna(False).values.astype(bool)
+        & df[thresh_below_col].fillna(False).values.astype(bool)
+        & ~df[tl_col].fillna(False).values.astype(bool)
+    )
+
+    high = df['high'].values if 'high' in df.columns else df['High'].values
+    low  = df['low'].values  if 'low'  in df.columns else df['Low'].values
+
+    n = len(df)
+    live_bear = np.full(n, -1, dtype=int)
+    live_bull = np.full(n, -1, dtype=int)
+
+    bear_zone_active = bear[0]
+    bull_zone_active = bull[0]
+    running_bear_min = low[0]  if bear_zone_active else None
+    running_bear_anchor = 0    if bear_zone_active else None
+    running_bull_max = high[0] if bull_zone_active else None
+    running_bull_anchor = 0    if bull_zone_active else None
+
+    if bear_zone_active:
+        live_bear[0] = 0
+    if bull_zone_active:
+        live_bull[0] = 0
+
+    for i in range(1, n):
+        prev_bear, prev_bull = bear[i - 1], bull[i - 1]
+        cur_bear, cur_bull = bear[i], bull[i]
+
+        # Bull zone starts → close any open bear zone
+        if cur_bull and not prev_bull:
+            bear_zone_active = False
+            running_bear_min = None
+            running_bear_anchor = None
+            if not bull_zone_active:
+                bull_zone_active = True
+                running_bull_max = high[i]
+                running_bull_anchor = i
+
+        # Bear zone starts → close any open bull zone
+        if cur_bear and not prev_bear:
+            bull_zone_active = False
+            running_bull_max = None
+            running_bull_anchor = None
+            if not bear_zone_active:
+                bear_zone_active = True
+                running_bear_min = low[i]
+                running_bear_anchor = i
+
+        # Update running extrema and record live anchor
+        if bear_zone_active:
+            if low[i] < running_bear_min:
+                running_bear_min = low[i]
+                running_bear_anchor = i
+            live_bear[i] = running_bear_anchor
+
+        if bull_zone_active:
+            if high[i] > running_bull_max:
+                running_bull_max = high[i]
+                running_bull_anchor = i
+            live_bull[i] = running_bull_anchor
+
+    return live_bear, live_bull
+
+
 def active_at(events: List[AnchorEvent], bar: int, direction: str) -> List[AnchorEvent]:
     """Anchors of given direction active at `bar`, sorted oldest-to-newest anchor_bar."""
     result = [

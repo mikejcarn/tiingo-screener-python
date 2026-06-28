@@ -112,36 +112,34 @@ Scans for price validly testing a QQEMOD-anchored aVWAP during an opposing zone.
 
 Scan entries `d_QQEMOD_aVWAP_bullish` and `d_QQEMOD_aVWAP_bearish` are defined in `src/scans/scan_configs/scan_conf_daily.py` and grouped in `scan_list_0` in `src/scans/scan_lists.py`.
 
-## Planned Feature: Bar-by-Bar Replay Mode
+## Bar-by-Bar Replay Mode
 
-The goal is to watch QQEMOD_aVWAP levels develop dynamically as price action plays out bar by bar — useful for building intuition about how anchor points form and how price interacts with them over time.
-
-### Approach: Progressive Reveal (recommended)
-
-Pre-compute all indicators on the full dataset as normal (run `--ind` first). Playback reveals the pre-computed values bar by bar — each aVWAP column is masked beyond the current playback bar, and anchor lines only appear once their anchor bar has been reached. No recomputation per step; the aVWAP values are already in the CSV.
-
-The alternative (true recomputation at every step) was considered but ruled out: QQEMOD_aVWAP is expensive enough that recomputing it for every bar in a 1000-bar history would take minutes.
-
-### Library Support
-
-`lightweight-charts-python` supports this natively:
-- `chart.update(series)` — adds one OHLCV bar at a time
-- `chart.show_async()` — runs the chart in an async loop so Python can keep feeding it data
-- `chart.hotkey()` — bind play/pause/step/speed controls
-- Line series have `set()` to refresh indicator data per step
-
-### Implementation Plan
-
-New mode triggered by a `--replay` flag alongside `--vis`. Approximately 200–300 lines in a self-contained new module (e.g. `src/visualization/replay.py`). Requires:
-
-1. Load pre-computed indicator CSV for the ticker/timeframe/ind_conf
-2. Start chart with bar 0 only (`chart.show_async()`)
-3. Hotkey controls: step forward (→), step back (←), play/pause (Space), speed up/down
-4. Per-step: call `chart.update(new_bar)` for OHLCV, then `line.set(slice_df)` for each indicator column up to the current bar
-5. Anchor lines (aVWAP columns) only appear once their anchor index ≤ current bar index
-
-### Example Command (not yet implemented)
+Watch indicators develop dynamically as price action plays out bar by bar. Requires a pre-built indicator buffer (`--ind` first). Implemented in `src/visualization/src/replay/`.
 
 ```bash
-python app.py --vis --ticker AAPL --ind-conf 0 --timeframe daily --replay
+python app.py --replay --ticker AAPL --timeframe daily --ind-conf 0
 ```
+
+### Replay Controls
+
+- `←` / `→` — step backward / forward one bar
+- `Shift+←` / `Shift+→` — jump 20 bars at a time
+- `Home` / `End` — jump to first / last bar
+- `Space` — toggle play / pause
+- `f` — toggle auto-fit (default on; press to free-zoom, press again to snap back)
+- `,` / `.` — slower / faster (step interval ±0.1 s)
+- Type a number + `Enter` — jump to that bar index
+- `Ctrl+C` — exit
+
+### Rendering Approaches
+
+Two strategies are used depending on the indicator:
+
+**Progressive reveal** — for indicators with no lookahead in the CSV (SMA, Supertrend, peaks/valleys aVWAP, BoS/CHoCH aVWAP): slice `prepared_df.iloc[:n+1]` and call `line.set()`. The pre-computed value at each bar is already historically accurate.
+
+**Historical recomputation** — for indicators where the CSV has lookahead baked in:
+
+- **QQEMOD_aVWAP** — uses an Anchor Event Log (`src/visualization/src/replay/event_log.py`). Each anchor is committed when its zone closes (the opposite zone starts), because argmin/argmax within a zone can't be finalised until the zone ends. `max_anchors` trimming is applied rolling bar-by-bar.
+- **price_maxima_minima** — runs `greedy_extrema(data[:n+1])` at every bar. O(N × max_anchors) per step, fast enough for interactive use.
+
+Segment-based indicators (FVG, OB, BoS/CHoCH, Liquidity, divergences) are not supported — they require two-point segments that change shape per step.
