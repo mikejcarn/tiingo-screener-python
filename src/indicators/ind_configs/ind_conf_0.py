@@ -162,7 +162,7 @@ params = {
                 'valleys_avg': False,
                 'peaks_valleys': False,
                 'peaks_valleys_avg': False,
-                'price_maxima_minima': False,
+                'price_maxima_minima': True,
                 'QQEMOD': True,
                 'QQEMOD_avg': False,
                 'OB': False,
@@ -189,7 +189,7 @@ params = {
                     'peak_to_peak':     True,   # dotted red:   peak anchor → next peak anchor
                     'valley_to_valley': True,    # dotted teal:  valley anchor → next valley anchor
                     'max_anchors':      5,    # keep N most recent bear + N most recent bull anchors
-                    'extend_to_end':    True,    # run each aVWAP to the last bar
+                    'extend_to_end':    False,    # run each aVWAP to the last bar
                     'qqe_params': {
                         'rsi_period': 6, 'rsi_period2': 5, 'sf': 5, 'sf2': 5,
                         'qqe_factor': 3.0, 'qqe_factor2': 1.61, 'threshold': 3,
@@ -200,8 +200,8 @@ params = {
                 'price_maxima_minima_params': {
                     'valleys': True,
                     'peaks': True,
-                    'max_anchors': 10,
-                    'min_swing_spacing': 10,
+                    'max_anchors': 1,
+                    'min_swing_spacing': 1,
                 },
                 'OB_params': [ { 'mode': 'none', }, ],
                 'gaps_params': [ {'max_aVWAPs': 5, 'avg_lookback': 8}, ],

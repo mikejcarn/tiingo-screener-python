@@ -126,8 +126,9 @@ python app.py --replay --ticker AAPL --timeframe daily --ind-conf 0
 - `Shift+←` / `Shift+→` — jump 20 bars at a time
 - `Home` / `End` — jump to first / last bar
 - `Space` — toggle play / pause
-- `f` — toggle auto-fit (default on; press to free-zoom, press again to snap back)
-- `,` / `.` — slower / faster (step interval ±0.1 s)
+- `f` / `Backspace` — toggle auto-fit (default on; press to free-zoom, press again to snap back)
+- `↑` / `↓` or `,` / `.` — faster / slower (step interval ±0.1 s; topbar shows multiplier e.g. `1.0x`)
+- `/` — reset to normal speed (1.0x)
 - Type a number + `Enter` — jump to that bar index
 - `Ctrl+C` — exit
 

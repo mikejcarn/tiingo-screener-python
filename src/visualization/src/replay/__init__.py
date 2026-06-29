@@ -5,14 +5,15 @@ Bar-by-bar replay mode.
 
 Controls
 --------
-← / →        step backward / forward one bar
-Shift+← / →  jump 20 bars at a time
-Home / End    jump to bar 0 / last bar
-Space         toggle play / pause
-f             toggle auto-fit (default on; press to free-zoom, press again to snap back)
-, / .         slower / faster (step interval ± 0.1 s)
+← / →            step backward / forward one bar
+Shift+← / →      jump 20 bars at a time
+Home / End        jump to bar 0 / last bar
+Space             toggle play / pause
+f / Backspace     toggle auto-fit (default on; press to free-zoom, press again to snap back)
+↑ / ↓  or  , / . faster / slower (step interval ± 0.1 s; topbar shows multiplier)
+/                reset to normal speed (1.0x)
 Type a number + Enter   jump to that bar index (uses chart search box)
-Ctrl+C        exit
+Ctrl+C            exit
 
 Rendering
 ---------
@@ -73,7 +74,11 @@ _RECOMPUTED_PREFIXES = (
     'aVWAP_QQEMOD_bull_c',
     'aVWAP_price_maxima_minima_valley_',
     'aVWAP_price_maxima_minima_peak_',
+    'aVWAP_valley_q',
+    'aVWAP_peak_q',
 )
+
+_BASE_SPEED = 0.3  # seconds/bar at 1x — matches default state['speed']
 
 
 # ---------------------------------------------------------------------------
@@ -153,8 +158,9 @@ def start_replay(ticker: str, timeframe: str, ind_conf: str):
 
     # Build historical data for indicators that need recomputation.
     # Done before chart creation so slot line counts are known.
-    qqemod_data = _build_qqemod_data(raw_df, ind_conf, timeframe, colors)
-    pmm_data = _build_pmm_data(raw_df, ind_conf, timeframe, colors)
+    qqemod_data       = _build_qqemod_data(raw_df, ind_conf, timeframe, colors)
+    pmm_data          = _build_pmm_data(raw_df, ind_conf, timeframe, colors)
+    anchor_score_data = _build_anchor_score_data(raw_df, ind_conf, timeframe, colors)
 
     chart = Chart(inner_width=1.0, inner_height=1.0, maximize=True)
     chart.name = '0'
@@ -164,6 +170,7 @@ def start_replay(ticker: str, timeframe: str, ind_conf: str):
     chart.topbar.textbox('timeframe', str(tf))
     chart.topbar.textbox('ind_conf', str(ind_conf))
     chart.topbar.textbox('bar', f'0/{n_total - 1}')
+    chart.topbar.textbox('speed', '1.0x')
     chart.topbar.button('auto_fit', 'FIT: ON', align='left', separator=True,
                         func=lambda: _toggle_auto_fit(chart, state))
 
@@ -173,6 +180,8 @@ def start_replay(ticker: str, timeframe: str, ind_conf: str):
         _create_qqemod_slot_lines(chart, qqemod_data, colors)
     if pmm_data is not None:
         _create_pmm_slot_lines(chart, pmm_data, colors)
+    if anchor_score_data is not None:
+        _create_anchor_score_slot_lines(chart, anchor_score_data, colors)
 
     state = {
         'n': 0,
@@ -181,6 +190,7 @@ def start_replay(ticker: str, timeframe: str, ind_conf: str):
         'auto_fit': True,
         'qqemod': qqemod_data,
         'pmm': pmm_data,
+        'anchor_score': anchor_score_data,
     }
 
     chart.hotkey('ctrl', 'c', lambda _=None: sys.exit(1))
@@ -196,10 +206,14 @@ def start_replay(ticker: str, timeframe: str, ind_conf: str):
                  lambda _=None: _jump(chart, prepared_df, registry, state, 0))
     chart.hotkey(None, 'End',
                  lambda _=None: _jump(chart, prepared_df, registry, state, n_total - 1))
-    chart.hotkey(None, ' ', lambda _=None: _toggle_play(state, n_total))
-    chart.hotkey(None, 'f', lambda _=None: _toggle_auto_fit(chart, state))
-    chart.hotkey(None, ',', lambda _=None: _adjust_speed(state, +0.1))
-    chart.hotkey(None, '.', lambda _=None: _adjust_speed(state, -0.1))
+    chart.hotkey(None, ' ',          lambda _=None: _toggle_play(state, n_total))
+    chart.hotkey(None, 'f',          lambda _=None: _toggle_auto_fit(chart, state))
+    chart.hotkey(None, 'Backspace',   lambda _=None: _toggle_auto_fit(chart, state))
+    chart.hotkey(None, ',',          lambda _=None: _adjust_speed(state, chart, +0.1))
+    chart.hotkey(None, '.',          lambda _=None: _adjust_speed(state, chart, -0.1))
+    chart.hotkey(None, 'ArrowUp',    lambda _=None: _adjust_speed(state, chart, -0.1))
+    chart.hotkey(None, 'ArrowDown',  lambda _=None: _adjust_speed(state, chart, +0.1))
+    chart.hotkey(None, '/',          lambda _=None: _reset_speed(state, chart))
 
     chart.events.search += lambda c, value: _on_bar_search(
         chart, prepared_df, registry, state, n_total, value
@@ -379,13 +393,15 @@ def _create_qqemod_slot_lines(chart: Chart, qqemod_data: dict, colors: dict) -> 
             for _ in range(max_anchors)
         ]
 
-    # One extra slot per zone type for the live (not-yet-committed) floating anchor
+    # Live floating anchor — only shown when the matching solid line type is enabled.
+    # bear_dot/bull_dot (dotted handoffs) don't get a live anchor so they can't be
+    # mistaken for committed solid lines from other indicators.
     directions = qqemod_data['directions']
-    if any(d in directions for d in ('bear_dot', 'bear')):
+    if 'bear' in directions:
         slots['_live_bear'] = chart.create_line(
             price_line=False, price_label=False,
             color=colors['teal'], width=2, style='solid')
-    if any(d in directions for d in ('bull_dot', 'bull')):
+    if 'bull' in directions:
         slots['_live_bull'] = chart.create_line(
             price_line=False, price_label=False,
             color=colors['red'], width=2, style='solid')
@@ -437,7 +453,9 @@ def _load_pmm_params(ind_conf: str, timeframe: str) -> Optional[dict]:
         result = load_indicator_config(ind_conf, timeframe)
         if not result:
             return None
-        _, params = result
+        ind_list, params = result
+        if 'aVWAP' not in ind_list:
+            return None
         avwap_p = params.get('aVWAP', {})
         if not avwap_p.get('price_maxima_minima', False):
             return None
@@ -535,17 +553,205 @@ def _render_pmm_slots(pmm: dict, n: int) -> None:
             line.set(_inline_vwap_df(anchors[i], n, cum_tpv, cum_vol, dates) if i < len(anchors) else _empty)
 
 
+# ---------------------------------------------------------------------------
+# aVWAP anchor score historical recomputation
+# ---------------------------------------------------------------------------
+
+def _load_anchor_score_params(ind_conf: str, timeframe: str) -> Optional[dict]:
+    try:
+        from src.indicators.indicators import load_indicator_config
+        result = load_indicator_config(ind_conf, timeframe)
+        if not result:
+            return None
+        ind_list, params = result
+        if 'aVWAP_anchor_score' not in ind_list:
+            return None
+        p = params.get('aVWAP_anchor_score')
+        return p if p else None
+    except Exception as e:
+        print(f"  Warning: could not load anchor score params: {e}")
+        return None
+
+
+def _build_anchor_score_data(raw_df: pd.DataFrame, ind_conf: str, timeframe: str, colors: dict) -> Optional[dict]:
+    params = _load_anchor_score_params(ind_conf, timeframe)
+    if params is None:
+        return None
+
+    include_valleys = bool(params.get('valleys', True))
+    include_peaks   = bool(params.get('peaks', False))
+    if not include_valleys and not include_peaks:
+        return None
+
+    max_anchors = params.get('max_anchors') or 10
+
+    high  = raw_df['high'].values  if 'high'  in raw_df.columns else raw_df['High'].values
+    low   = raw_df['low'].values   if 'low'   in raw_df.columns else raw_df['Low'].values
+    close = raw_df['close'].values if 'close' in raw_df.columns else raw_df['Close'].values
+
+    # ATR is backward-looking — safe to precompute on full array
+    atr_period = int(params.get('atr_period', 14))
+    prev_close = pd.Series(close).shift(1).values
+    tr  = np.maximum(high - low, np.maximum(np.abs(high - prev_close), np.abs(low - prev_close)))
+    atr = pd.Series(tr).rolling(atr_period).mean().values
+
+    cum_tpv, cum_vol = build_cumulative_arrays(raw_df)
+
+    if 'date' in raw_df.columns:
+        dates = raw_df['date'].values
+    elif raw_df.index.name == 'date':
+        dates = raw_df.index.astype(str).values
+    else:
+        dates = np.arange(len(raw_df)).astype(str)
+
+    directions = (['valley'] if include_valleys else []) + (['peak'] if include_peaks else [])
+    print(f"  aVWAP_anchor_score historical mode: max_anchors={max_anchors}, types={directions}")
+
+    return {
+        'low_vals':  low,
+        'high_vals': high,
+        'close_vals': close,
+        'atr':       atr,
+        'cum_tpv':   cum_tpv,
+        'cum_vol':   cum_vol,
+        'dates':     dates,
+        'max_anchors': int(max_anchors),
+        'params':    params,
+        'include_valleys': include_valleys,
+        'include_peaks':   include_peaks,
+        'slots': {},
+    }
+
+
+def _create_anchor_score_slot_lines(chart: Chart, data: dict, colors: dict) -> None:
+    max_anchors = data['max_anchors']
+    slots = {}
+    if data['include_valleys']:
+        slots['valley'] = [
+            chart.create_line(price_line=False, price_label=False,
+                              color=colors['teal_trans_3'], width=2, style='solid')
+            for _ in range(max_anchors)
+        ]
+    if data['include_peaks']:
+        slots['peak'] = [
+            chart.create_line(price_line=False, price_label=False,
+                              color=colors['red_trans_3'], width=2, style='solid')
+            for _ in range(max_anchors)
+        ]
+    data['slots'] = slots
+
+
+def _render_anchor_score_slots(data: dict, n: int) -> None:
+    from scipy.signal import find_peaks
+    from src.indicators.indicators_list.aVWAP_anchor_score import (
+        _isolation_window, _reversal_sharpness, _percentile_rank,
+    )
+
+    params      = data['params']
+    low_vals    = data['low_vals']
+    high_vals   = data['high_vals']
+    close_vals  = data['close_vals']
+    atr         = data['atr']
+    cum_tpv     = data['cum_tpv']
+    cum_vol     = data['cum_vol']
+    dates       = data['dates']
+    max_anchors = data['max_anchors']
+    slots       = data['slots']
+
+    min_spacing  = int(params.get('min_swing_spacing', 5))
+    iso_max      = int(params.get('isolation_max_bars', 200))
+    sharp_before = int(params.get('sharpness_bars_before', 10))
+    sharp_after  = int(params.get('sharpness_bars_after', 10))
+    w_prom       = float(params.get('w_prominence', 1.0))
+    w_iso        = float(params.get('w_isolation', 1.0))
+    w_sharp      = float(params.get('w_sharpness', 1.0))
+    min_score_pct  = params.get('min_score_pct')
+    max_atr_dist   = params.get('max_atr_distance')
+    max_possible   = w_prom + w_iso + w_sharp
+
+    current_close = close_vals[n]
+    current_atr   = atr[n] if not np.isnan(atr[n]) else 0.0
+    proximity_active = (max_atr_dist is not None and current_atr > 0
+                        and not np.isnan(current_close))
+
+    _empty = pd.DataFrame(columns=['time', 'value'])
+
+    def score_candidates(values, mode):
+        if n < min_spacing:
+            return []
+        search = -values[:n + 1] if mode == 'valley' else values[:n + 1]
+        cand_idx, props = find_peaks(search, distance=min_spacing, prominence=(None, None))
+        if len(cand_idx) == 0:
+            return []
+
+        sign = 1 if mode == 'valley' else -1
+        rows = []
+        for idx, prom in zip(cand_idx, props['prominences']):
+            atr_val = atr[idx]
+            if np.isnan(atr_val) or atr_val == 0:
+                continue
+            iso   = _isolation_window(values[:n + 1], idx, iso_max, mode)
+            sharp = _reversal_sharpness(close_vals[:n + 1], idx, atr_val,
+                                        sharp_before, sharp_after, sign)
+            rows.append({'idx': int(idx), 'prom': prom / atr_val,
+                         'iso': iso, 'sharp': sharp})
+        if not rows:
+            return []
+
+        prom_pct  = _percentile_rank(np.array([r['prom']  for r in rows]))
+        iso_pct   = _percentile_rank(np.array([r['iso']   for r in rows]))
+        sharp_pct = _percentile_rank(np.array([r['sharp'] for r in rows]))
+        for i, r in enumerate(rows):
+            r['score'] = w_prom * prom_pct[i] + w_iso * iso_pct[i] + w_sharp * sharp_pct[i]
+
+        rows = sorted(rows, key=lambda r: r['score'], reverse=True)
+
+        if min_score_pct is not None:
+            rows = [r for r in rows if r['score'] >= min_score_pct * max_possible]
+
+        if proximity_active:
+            filtered = []
+            for r in rows:
+                a = r['idx']
+                base_tpv = cum_tpv[a - 1] if a > 0 else 0.0
+                base_vol = cum_vol[a - 1] if a > 0 else 0.0
+                seg_vol  = cum_vol[n] - base_vol
+                if seg_vol <= 0:
+                    continue
+                vwap_now = (cum_tpv[n] - base_tpv) / seg_vol
+                if abs(vwap_now - current_close) / current_atr <= max_atr_dist:
+                    filtered.append(r)
+            rows = filtered
+
+        return rows[:max_anchors]
+
+    for mode, slot_key, values in (
+        ('valley', 'valley', low_vals),
+        ('peak',   'peak',   high_vals),
+    ):
+        if slot_key not in slots:
+            continue
+        anchors = score_candidates(values, mode)
+        for i, line in enumerate(slots[slot_key]):
+            if i < len(anchors):
+                line.set(_inline_vwap_df(anchors[i]['idx'], n, cum_tpv, cum_vol, dates))
+            else:
+                line.set(_empty)
+
+
 def _load_qqemod_params(ind_conf: str, timeframe: str) -> Optional[dict]:
     """
     Load QQEMOD_params from the indicator config for the given timeframe.
-    Returns None if aVWAP is not configured or QQEMOD is not enabled within it.
+    Returns None if aVWAP is not in the active indicator list, or QQEMOD is not enabled within it.
     """
     try:
         from src.indicators.indicators import load_indicator_config
         result = load_indicator_config(ind_conf, timeframe)
         if not result:
             return None
-        _, params = result
+        ind_list, params = result
+        if 'aVWAP' not in ind_list:
+            return None
         avwap_p = params.get('aVWAP', {})
         if not avwap_p.get('QQEMOD', False):
             return None
@@ -642,10 +848,6 @@ def _build_line_registry(chart: Chart, df: pd.DataFrame, colors: dict) -> dict:
         elif col.startswith('aVWAP_valley_'):
             _make(col, colors['teal_trans_3'], _w(cfg), _s(cfg))
 
-        # Anchor score
-        elif col.startswith('aVWAP_valley_q') or col.startswith('aVWAP_peak_q'):
-            _make(col, colors['teal_trans_3'] if 'valley' in col else colors['red_trans_3'],
-                  _w(cfg), _s(cfg))
 
         # BoS / CHoCH aVWAPs
         elif col.startswith('aVWAP_BoS_CHoCH_bear_'):
@@ -749,6 +951,8 @@ def _render(chart: Chart, df: pd.DataFrame, registry: dict, state: dict, n: int)
         _render_qqemod_slots(state['qqemod'], n)
     if state.get('pmm'):
         _render_pmm_slots(state['pmm'], n)
+    if state.get('anchor_score'):
+        _render_anchor_score_slots(state['anchor_score'], n)
 
     if state.get('auto_fit', True):
         chart.fit()
@@ -804,10 +1008,25 @@ def _toggle_play(state, n_total):
     print(f"[Replay] {label}  bar {state['n']}/{n_total - 1}  {state['speed']:.2f}s/bar")
 
 
-def _adjust_speed(state, delta):
+def _adjust_speed(state, chart, delta):
     """Change step interval, clamped to [0.05, 2.0] seconds."""
     state['speed'] = max(0.05, min(state['speed'] + delta, 2.0))
-    print(f"[Replay] Speed: {state['speed']:.2f} s/bar  ({1 / state['speed']:.1f} bars/sec)")
+    multiplier = _BASE_SPEED / state['speed']
+    try:
+        chart.topbar['speed'].set(f'{multiplier:.1f}x')
+    except Exception:
+        pass
+    print(f"[Replay] Speed: {state['speed']:.2f} s/bar  ({multiplier:.1f}x)")
+
+
+def _reset_speed(state, chart):
+    """Reset step interval to default (1.0x)."""
+    state['speed'] = _BASE_SPEED
+    try:
+        chart.topbar['speed'].set('1.0x')
+    except Exception:
+        pass
+    print(f"[Replay] Speed reset to 1.0x")
 
 
 def _play_loop(chart, df, registry, state, n_total):
