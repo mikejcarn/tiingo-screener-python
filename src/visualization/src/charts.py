@@ -42,7 +42,9 @@ def prepare_dataframe(df, show_volume, padding_ratio=0.25):
         'Volume': 'volume'
     })
     timeframe = df.attrs['timeframe']
-    df = df.reset_index()
+    # drop=True for RangeIndex (avoids spurious 'index' column in chart data);
+    # drop=False for DatetimeIndex (surfaces the 'date' column we need below).
+    df = df.reset_index(drop=isinstance(df.index, pd.RangeIndex))
     df['date'] = pd.to_datetime(df['date'])
     
     if padding_ratio > 0 and len(df) > 0:

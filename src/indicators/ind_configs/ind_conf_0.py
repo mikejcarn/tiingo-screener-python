@@ -196,13 +196,13 @@ params = {
                         'bb_length': 50, 'bb_multi': 0.35
                     }
                 },
-                'BoS_CHoCH_params': [ {'mode': 'bullish', 'swing_length': 15, 'max_aVWAPs': 5, 'avg_lookback': 7}, ],
                 'price_maxima_minima_params': {
                     'valleys': True,
                     'peaks': True,
                     'max_anchors': 1,
                     'min_swing_spacing': 1,
                 },
+                'BoS_CHoCH_params': [ {'mode': 'bullish', 'swing_length': 15, 'max_aVWAPs': 5, 'avg_lookback': 7}, ],
                 'OB_params': [ { 'mode': 'none', }, ],
                 'gaps_params': [ {'max_aVWAPs': 5, 'avg_lookback': 8}, ],
             },

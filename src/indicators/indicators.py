@@ -125,7 +125,14 @@ def get_indicators(df, indicator_list, indicator_params=None):
         indicator_values = module.calculate_indicator(result_df, **params)
         
         if isinstance(indicator_values, pd.DataFrame):
-            # Merge DataFrames in one operation
+            # aVWAP (and similar) calls set_index('date') before returning,
+            # leaving a DatetimeIndex that doesn't match result_df's RangeIndex.
+            # When indices differ but row counts match, realign positionally.
+            if not indicator_values.index.equals(result_df.index) and len(indicator_values) == len(result_df):
+                indicator_values = indicator_values.copy()
+                indicator_values.index = result_df.index
+                if 'index' in indicator_values.columns:
+                    indicator_values = indicator_values.drop(columns=['index'])
             result_df = pd.concat([result_df, indicator_values], axis=1)
         elif isinstance(indicator_values, dict):
             # Collect dictionary items for bulk addition
