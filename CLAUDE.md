@@ -114,7 +114,7 @@ Scan entries `d_QQEMOD_aVWAP_bullish` and `d_QQEMOD_aVWAP_bearish` are defined i
 
 ## Bar-by-Bar Replay Mode
 
-Watch indicators develop dynamically as price action plays out bar by bar. Requires a pre-built indicator buffer (`--ind` first). Implemented in `src/visualization/src/replay/`.
+Watch indicators develop dynamically as price action plays out bar by bar. Indicators are computed in memory from the tickers buffer — no `--ind` run required. Implemented in `src/visualization/src/replay/`.
 
 ```bash
 python app.py --replay --ticker AAPL --timeframe daily --ind-conf 0
@@ -126,9 +126,10 @@ python app.py --replay --ticker AAPL --timeframe daily --ind-conf 0
 - `Shift+←` / `Shift+→` — jump 20 bars at a time
 - `Home` / `End` — jump to first / last bar
 - `Space` — toggle play / pause
-- `f` / `Backspace` — toggle auto-fit (default on; press to free-zoom, press again to snap back)
+- `Backspace` — toggle auto-fit (default on; press to free-zoom, press again to snap back)
 - `↑` / `↓` or `,` / `.` — faster / slower (step interval ±0.1 s; topbar shows multiplier e.g. `1.0x`)
 - `/` — reset to normal speed (1.0x)
+- Type a ticker symbol + `Enter` — load any ticker from the tickers buffer
 - Type a number + `Enter` — jump to that bar index
 - `Ctrl+C` — exit
 

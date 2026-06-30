@@ -140,6 +140,7 @@ def _load_for_replay(ticker: str, timeframe: str, ind_conf: str) -> Optional[pd.
 def start_replay(ticker: str, timeframe: str, ind_conf: str):
     """Fetch/load OHLCV, compute indicators in memory, and launch bar-by-bar replay."""
     timeframe = _TIMEFRAME_MAP.get(timeframe, timeframe)
+
     print(f"\nReplay: {ticker} / {timeframe} / ind_conf={ind_conf}")
     print("Controls: ← → step | Shift+←→ jump 20 | Home/End start/end | Space play/pause | , . speed\n")
 
@@ -183,49 +184,44 @@ def start_replay(ticker: str, timeframe: str, ind_conf: str):
     if anchor_score_data is not None:
         _create_anchor_score_slot_lines(chart, anchor_score_data, colors)
 
+    # All mutable replay state lives here so ticker switching can update it in-place.
     state = {
         'n': 0,
         'playing': False,
         'speed': 0.3,
         'auto_fit': True,
+        'prepared_df': prepared_df,
+        'n_total': n_total,
+        'registry': registry,
         'qqemod': qqemod_data,
         'pmm': pmm_data,
         'anchor_score': anchor_score_data,
+        # session config — needed by _on_bar_search for arbitrary ticker loading
+        'ind_conf': ind_conf,
+        'timeframe': timeframe,
+        'colors': colors,
     }
 
     chart.hotkey('ctrl', 'c', lambda _=None: sys.exit(1))
-    chart.hotkey(None, 'ArrowLeft',
-                 lambda _=None: _step(chart, prepared_df, registry, state, -1, n_total))
-    chart.hotkey(None, 'ArrowRight',
-                 lambda _=None: _step(chart, prepared_df, registry, state, +1, n_total))
-    chart.hotkey('shift', 'ArrowLeft',
-                 lambda _=None: _step(chart, prepared_df, registry, state, -20, n_total))
-    chart.hotkey('shift', 'ArrowRight',
-                 lambda _=None: _step(chart, prepared_df, registry, state, +20, n_total))
-    chart.hotkey(None, 'Home',
-                 lambda _=None: _jump(chart, prepared_df, registry, state, 0))
-    chart.hotkey(None, 'End',
-                 lambda _=None: _jump(chart, prepared_df, registry, state, n_total - 1))
-    chart.hotkey(None, ' ',          lambda _=None: _toggle_play(state, n_total))
-    chart.hotkey(None, 'f',          lambda _=None: _toggle_auto_fit(chart, state))
-    chart.hotkey(None, 'Backspace',   lambda _=None: _toggle_auto_fit(chart, state))
+    chart.hotkey(None, 'ArrowLeft',   lambda _=None: _step(chart, state, -1))
+    chart.hotkey(None, 'ArrowRight',  lambda _=None: _step(chart, state, +1))
+    chart.hotkey('shift', 'ArrowLeft',  lambda _=None: _step(chart, state, -20))
+    chart.hotkey('shift', 'ArrowRight', lambda _=None: _step(chart, state, +20))
+    chart.hotkey(None, 'Home', lambda _=None: _jump(chart, state, 0))
+    chart.hotkey(None, 'End',  lambda _=None: _jump(chart, state, state['n_total'] - 1))
+    chart.hotkey(None, ' ',          lambda _=None: _toggle_play(state))
+    chart.hotkey(None, 'Backspace',  lambda _=None: _toggle_auto_fit(chart, state))
     chart.hotkey(None, ',',          lambda _=None: _adjust_speed(state, chart, +0.1))
     chart.hotkey(None, '.',          lambda _=None: _adjust_speed(state, chart, -0.1))
     chart.hotkey(None, 'ArrowUp',    lambda _=None: _adjust_speed(state, chart, -0.1))
     chart.hotkey(None, 'ArrowDown',  lambda _=None: _adjust_speed(state, chart, +0.1))
     chart.hotkey(None, '/',          lambda _=None: _reset_speed(state, chart))
 
-    chart.events.search += lambda c, value: _on_bar_search(
-        chart, prepared_df, registry, state, n_total, value
-    )
+    chart.events.search += lambda c, value: _on_bar_search(chart, state, value)
 
     _render(chart, prepared_df, registry, state, state['n'])
 
-    threading.Thread(
-        target=_play_loop,
-        args=(chart, prepared_df, registry, state, n_total),
-        daemon=True,
-    ).start()
+    threading.Thread(target=_play_loop, args=(chart, state), daemon=True).start()
 
     chart.show(block=True)
 
@@ -925,6 +921,10 @@ def _build_line_registry(chart: Chart, df: pd.DataFrame, colors: dict) -> dict:
 
 
 # ---------------------------------------------------------------------------
+# Ticker switching
+# ---------------------------------------------------------------------------
+
+# ---------------------------------------------------------------------------
 # Render / step / play
 # ---------------------------------------------------------------------------
 
@@ -963,31 +963,108 @@ def _render(chart: Chart, df: pd.DataFrame, registry: dict, state: dict, n: int)
         pass
 
 
-def _step(chart, df, registry, state, delta, n_total):
+def _step(chart, state, delta):
     """Step backward (delta < 0) or forward (delta > 0) by |delta| bars."""
+    n_total = state['n_total']
     target = max(0, min(state['n'] + delta, n_total - 1))
     if target != state['n']:
         state['n'] = target
-        _render(chart, df, registry, state, target)
+        _render(chart, state['prepared_df'], state['registry'], state, target)
 
 
-def _jump(chart, df, registry, state, target):
+def _jump(chart, state, target):
     """Jump directly to a specific bar index."""
-    target = max(0, min(target, len(df) - 1))
+    target = max(0, min(target, state['n_total'] - 1))
     state['n'] = target
-    _render(chart, df, registry, state, target)
+    _render(chart, state['prepared_df'], state['registry'], state, target)
 
 
-def _on_bar_search(chart, df, registry, state, n_total, value):
-    """Called when the user types in the chart search box. Jumps to a bar number."""
-    value = value.strip()
+def _on_bar_search(chart, state, value):
+    """
+    Called when the user types in the chart search box.
+    - Number  → jump to that bar index
+    - Letters → load that ticker from the tickers buffer
+    """
+    value = value.strip().upper()
+    if not value:
+        return
+
+    # Try bar-number jump first
     try:
         target = int(value)
-    except ValueError:
-        print(f"[Replay] Type a bar number (0–{n_total - 1}) to jump — got '{value}'")
+        _jump(chart, state, target)
+        print(f"[Replay] Jumped to bar {state['n']}/{state['n_total'] - 1}")
         return
-    _jump(chart, df, registry, state, target)
-    print(f"[Replay] Jumped to bar {state['n']}/{n_total - 1}")
+    except ValueError:
+        pass
+
+    # Otherwise treat as a ticker symbol — load it directly
+    ind_conf  = state.get('ind_conf', '0')
+    timeframe = state.get('timeframe', 'daily')
+    colors    = state.get('colors', get_color_palette())
+    _load_ticker_by_name(chart, state, value, ind_conf, timeframe, colors)
+
+
+def _load_ticker_by_name(chart: Chart, state: dict, ticker: str,
+                         ind_conf: str, timeframe: str, colors: dict) -> None:
+    """Load an arbitrary ticker from the tickers buffer and restart replay at bar 0."""
+    state['playing'] = False
+    print(f"\n[Replay] Loading {ticker} ...")
+
+    try:
+        raw_df = _load_for_replay(ticker, timeframe, ind_conf)
+    except Exception as e:
+        print(f"  Could not load {ticker}: {e}")
+        return
+
+    if raw_df is None or raw_df.empty:
+        print(f"  No data for {ticker} — not found in tickers buffer")
+        return
+
+    try:
+        prepared_df, _ = prepare_dataframe(raw_df, show_volume=False, padding_ratio=0)
+        n_total = len(prepared_df)
+        if n_total == 0:
+            return
+
+        _empty = pd.DataFrame(columns=['time', 'value'])
+        for line in state['registry'].values():
+            try:
+                line.set(_empty)
+            except Exception:
+                pass
+
+        new_registry      = _build_line_registry(chart, prepared_df, colors)
+        new_qqemod        = _build_qqemod_data(raw_df, ind_conf, timeframe, colors)
+        new_pmm           = _build_pmm_data(raw_df, ind_conf, timeframe, colors)
+        new_anchor_score  = _build_anchor_score_data(raw_df, ind_conf, timeframe, colors)
+
+        if new_qqemod is not None and state.get('qqemod') and state['qqemod'].get('slots'):
+            new_qqemod['slots'] = state['qqemod']['slots']
+        if new_pmm is not None and state.get('pmm') and state['pmm'].get('slots'):
+            new_pmm['slots'] = state['pmm']['slots']
+        if new_anchor_score is not None and state.get('anchor_score') and state['anchor_score'].get('slots'):
+            new_anchor_score['slots'] = state['anchor_score']['slots']
+
+        state['prepared_df']  = prepared_df
+        state['n_total']      = n_total
+        state['registry']     = new_registry
+        state['qqemod']       = new_qqemod
+        state['pmm']          = new_pmm
+        state['anchor_score'] = new_anchor_score
+        state['n']            = 0
+
+        try:
+            chart.topbar['ticker'].set(ticker)
+            chart.topbar['bar'].set(f'0/{n_total - 1}')
+        except Exception:
+            pass
+
+        _render(chart, prepared_df, new_registry, state, 0)
+        print(f"[Replay] {ticker}  ({n_total} bars)")
+
+    except Exception as e:
+        print(f"  Error loading {ticker}: {e}")
 
 
 def _toggle_auto_fit(chart, state):
@@ -1001,11 +1078,11 @@ def _toggle_auto_fit(chart, state):
         chart.fit()
 
 
-def _toggle_play(state, n_total):
+def _toggle_play(state):
     """Toggle play / pause."""
     state['playing'] = not state['playing']
     label = 'Playing' if state['playing'] else 'Paused'
-    print(f"[Replay] {label}  bar {state['n']}/{n_total - 1}  {state['speed']:.2f}s/bar")
+    print(f"[Replay] {label}  bar {state['n']}/{state['n_total'] - 1}  {state['speed']:.2f}s/bar")
 
 
 def _adjust_speed(state, chart, delta):
@@ -1029,17 +1106,18 @@ def _reset_speed(state, chart):
     print(f"[Replay] Speed reset to 1.0x")
 
 
-def _play_loop(chart, df, registry, state, n_total):
+def _play_loop(chart, state):
     """Background thread: advance one bar per interval while playing."""
     while True:
         if state['playing']:
             n = state['n']
+            n_total = state['n_total']
             if n >= n_total - 1:
                 state['playing'] = False
                 print("[Replay] Reached end of data — paused")
             else:
                 state['n'] = n + 1
-                _render(chart, df, registry, state, n + 1)
+                _render(chart, state['prepared_df'], state['registry'], state, n + 1)
                 time.sleep(state['speed'])
         else:
             time.sleep(0.05)
