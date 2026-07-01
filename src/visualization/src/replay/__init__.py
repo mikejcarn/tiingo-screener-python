@@ -198,7 +198,7 @@ def start_replay(ticker: str, timeframe: str, ind_conf: str):
 
     # Track 4: segment indicators
     bos_choch_data = _build_bos_choch_data(chart, raw_df, colors)
-    fvg_data       = _build_fvg_data(chart, raw_df, colors)
+    fvg_data       = _build_fvg_data(chart, raw_df, ind_conf, timeframe, colors)
     ob_data        = _build_ob_data(chart, raw_df, colors)
     liquidity_data = _build_liquidity_data(chart, raw_df, colors)
 
@@ -462,6 +462,22 @@ def _inline_vwap_df(anchor: int, replay_bar: int,
     with np.errstate(divide='ignore', invalid='ignore'):
         values = np.where(seg_vol > 0, seg_tpv / seg_vol, np.nan)
     return pd.DataFrame({'time': dates[anchor: replay_bar + 1], 'value': values})
+
+
+def _load_fvg_params(ind_conf: str, timeframe: str) -> Optional[dict]:
+    """Load FVG params from ind_conf if FVG is enabled for this timeframe."""
+    try:
+        from src.indicators.indicators import load_indicator_config
+        result = load_indicator_config(ind_conf, timeframe)
+        if not result:
+            return None
+        ind_list, params = result
+        if 'FVG' not in ind_list:
+            return None
+        return params.get('FVG', {}) or {}
+    except Exception as e:
+        print(f"  Warning: could not load FVG params: {e}")
+        return None
 
 
 def _load_pmm_params(ind_conf: str, timeframe: str) -> Optional[dict]:
@@ -1013,43 +1029,102 @@ def _build_bos_choch_data(chart, raw_df, colors):
     return {'events': events, 'slots': slots, 'dates': dates}
 
 
-def _build_fvg_data(chart, raw_df, colors):
-    """Extract FVG events and pre-create slot Lines. Returns None if not present."""
-    required = ['FVG', 'FVG_High', 'FVG_Low', 'FVG_Mitigated_Index']
-    if any(c not in raw_df.columns for c in required):
+def _build_fvg_data(chart, raw_df, ind_conf: str, timeframe: str, colors):
+    """Extract ALL FVG events for in-time replay.
+
+    Calls smc.fvg() directly rather than reading from the pre-computed indicator
+    columns, because the FVG indicator pre-filters to max_mitigated + max_unmitigated
+    events using the full-dataset perspective — which means early replay bars would
+    only see FVGs that happened to survive that global filter.
+
+    Reads max_mitigated from ind_conf: if 0, mitigated FVGs are hidden once their
+    mitigation bar is passed in replay (they still appear while active).
+    Reads max_unmitigated from ind_conf: caps total visible FVGs at any replay bar
+    to the N most recently formed (displacement-bar approach, zero per-step cost).
+    """
+    fvg_params      = _load_fvg_params(ind_conf, timeframe)
+    max_mitigated   = fvg_params.get('max_mitigated',   10) if fvg_params is not None else 10
+    max_unmitigated = fvg_params.get('max_unmitigated', None) if fvg_params is not None else None
+    from smartmoneyconcepts import smc as _smc
+
+    # Accept both 'open' and 'Open' column naming
+    col_lower = {c.lower(): c for c in raw_df.columns}
+    needed = ['open', 'high', 'low', 'close', 'volume']
+    if not all(k in col_lower for k in needed):
         return None
 
-    dates    = raw_df['date'].values if 'date' in raw_df.columns else raw_df.index.astype(str).values
-    n_bars   = len(raw_df)
-    fvg_vals = raw_df['FVG'].values
-    fvg_high = raw_df['FVG_High'].values
-    fvg_low  = raw_df['FVG_Low'].values
-    mit_idxs = raw_df['FVG_Mitigated_Index'].values
+    ohlcv = raw_df[[col_lower[k] for k in needed]].copy()
+    ohlcv.columns = needed
+
+    join_consecutive = fvg_params.get('join_consecutive', False) if fvg_params is not None else False
+    try:
+        result = _smc.fvg(ohlcv, join_consecutive=join_consecutive)
+    except Exception:
+        return None
+
+    dates  = raw_df['date'].values if 'date' in raw_df.columns else raw_df.index.astype(str).values
+    n_bars = len(raw_df)
+    n_res  = len(result)
+
+    fvg_col = result['FVG'].values           if 'FVG'            in result.columns else None
+    top_col = result['Top'].values           if 'Top'            in result.columns else None
+    bot_col = result['Bottom'].values        if 'Bottom'         in result.columns else None
+    mit_col = result['MitigatedIndex'].values if 'MitigatedIndex' in result.columns else None
+
+    if fvg_col is None or top_col is None or bot_col is None:
+        return None
 
     events = {'bull': [], 'bear': []}
-    for i in range(n_bars):
-        v = fvg_vals[i]
-        if v == 0:
+    for i in range(min(n_bars, n_res)):
+        v = fvg_col[i]
+        if v == 0 or pd.isna(v):
             continue
-        price = fvg_high[i] if v > 0 else fvg_low[i]
+        price = top_col[i] if v > 0 else bot_col[i]
         if pd.isna(price):
             continue
-        mi  = mit_idxs[i]
-        end = int(mi) if not pd.isna(mi) and mi > 0 else n_bars - 1
+        mi  = mit_col[i] if mit_col is not None else None
+        end = int(mi) if mi is not None and not pd.isna(mi) and mi > 0 else n_bars - 1
         end = min(end, n_bars - 1)
         events['bull' if v > 0 else 'bear'].append(
-            {'start_bar': i, 'end_bar': end, 'price': float(price)})
+            {'start_bar': i, 'end_bar': end, 'price': float(price),
+             'is_mitigated': end < n_bars - 1})
 
-    def _lines(color, count):
+    if not any(events.values()):
+        return None
+
+    # Precompute displacement bars for max_unmitigated cap (permanently-open FVGs).
+    if max_unmitigated is not None:
+        perm_unmitigated = sorted(
+            [ev for ev in (events['bull'] + events['bear']) if not ev['is_mitigated']],
+            key=lambda e: e['start_bar']
+        )
+        for i, ev in enumerate(perm_unmitigated):
+            if i + max_unmitigated < len(perm_unmitigated):
+                ev['displaced_at'] = perm_unmitigated[i + max_unmitigated]['start_bar']
+
+    # Precompute displacement bars for max_mitigated cap (mitigated FVGs, when > 0).
+    # max_mitigated=0 hides via the render check; any positive value caps the count here.
+    if max_mitigated is not None and max_mitigated > 0:
+        mitigated_evs = sorted(
+            [ev for ev in (events['bull'] + events['bear']) if ev['is_mitigated']],
+            key=lambda e: e['start_bar']
+        )
+        for i, ev in enumerate(mitigated_evs):
+            if i + max_mitigated < len(mitigated_evs):
+                ev['displaced_at'] = mitigated_evs[i + max_mitigated]['start_bar']
+
+    # One slot per event — no fixed cap, so all FVGs stay visible as bars advance
+    def _lines(event_list, color):
         return [chart.create_line(price_line=False, price_label=False,
                                   color=color, width=1, style='dashed')
-                for _ in range(count)]
+                for _ in event_list]
 
     slots = {
-        'bull': _lines(colors['teal_trans_3'], 13),
-        'bear': _lines(colors['red_trans_3'],  13),
+        'bull': _lines(events['bull'], colors['teal_trans_3']),
+        'bear': _lines(events['bear'], colors['red_trans_3']),
     }
-    return {'events': events, 'slots': slots, 'dates': dates}
+    return {'events': events, 'slots': slots, 'dates': dates, 'lazy': True,
+            'max_mitigated': max_mitigated}
 
 
 def _build_ob_data(chart, raw_df, colors):
@@ -1125,6 +1200,7 @@ def _render_segment_slots(seg_data, n):
     dates = seg_data['dates']
 
     def _update_pool(event_list, slot_list):
+        """Fixed-pool path: map the most recent active events to slots."""
         active = [e for e in event_list if e['start_bar'] <= n]
         active = active[-len(slot_list):]
         for i, slot in enumerate(slot_list):
@@ -1144,15 +1220,53 @@ def _render_segment_slots(seg_data, n):
                 except Exception:
                     pass
 
+    max_mitigated = seg_data.get('max_mitigated')
+
+    def _update_pool_lazy(event_list, slot_list):
+        """1-per-event path: skip slots whose state hasn't changed since last render."""
+        for ev, slot in zip(event_list, slot_list):
+            if ev['start_bar'] > n:
+                key = 'empty'
+            elif n >= ev.get('displaced_at', float('inf')):
+                key = 'hidden'        # pushed off by newer FVGs — hide permanently
+            elif max_mitigated == 0 and ev.get('is_mitigated') and ev['end_bar'] < n:
+                key = 'hidden'        # mitigated and past — hide permanently
+            elif ev['end_bar'] < n:
+                key = ev['end_bar']   # finalized — same value every future step
+            else:
+                key = n               # growing — changes every step
+
+            if ev.get('_last_render') == key:
+                continue              # nothing changed, skip the .set() call
+
+            if key in ('empty', 'hidden'):
+                try:
+                    slot.set(_EMPTY_SEG)
+                except Exception:
+                    pass
+            else:
+                end_bar = min(ev['end_bar'], n)
+                try:
+                    slot.set(pd.DataFrame({
+                        'time':  [str(dates[ev['start_bar']]), str(dates[end_bar])],
+                        'value': [ev['price'], ev['price']],
+                    }))
+                except Exception:
+                    pass
+
+            ev['_last_render'] = key
+
+    lazy   = seg_data.get('lazy', False)
     events = seg_data['events']
     slots  = seg_data['slots']
+    fn     = _update_pool_lazy if lazy else _update_pool
 
     if isinstance(events, dict):
         for key, ev_list in events.items():
             if key in slots:
-                _update_pool(ev_list, slots[key])
+                fn(ev_list, slots[key])
     else:
-        _update_pool(events, slots)
+        fn(events, slots)
 
 
 # ---------------------------------------------------------------------------
@@ -1280,7 +1394,7 @@ def _load_ticker_by_name(chart: Chart, state: dict, ticker: str,
         new_pmm           = _build_pmm_data(raw_df, ind_conf, timeframe, colors)
         new_anchor_score  = _build_anchor_score_data(raw_df, ind_conf, timeframe, colors)
         new_bos_choch     = _build_bos_choch_data(chart, raw_df, colors)
-        new_fvg           = _build_fvg_data(chart, raw_df, colors)
+        new_fvg           = _build_fvg_data(chart, raw_df, ind_conf, timeframe, colors)
         new_ob            = _build_ob_data(chart, raw_df, colors)
         new_liquidity     = _build_liquidity_data(chart, raw_df, colors)
 
@@ -1292,8 +1406,15 @@ def _load_ticker_by_name(chart: Chart, state: dict, ticker: str,
             new_anchor_score['slots'] = state['anchor_score']['slots']
         if new_bos_choch is not None and state.get('bos_choch') and state['bos_choch'].get('slots'):
             new_bos_choch['slots'] = state['bos_choch']['slots']
-        if new_fvg is not None and state.get('fvg') and state['fvg'].get('slots'):
-            new_fvg['slots'] = state['fvg']['slots']
+        # FVG slots are 1-per-event so counts differ between tickers — clear old, always use new
+        old_fvg = state.get('fvg')
+        if old_fvg and old_fvg.get('slots'):
+            for sl in old_fvg['slots'].values():
+                for line in sl:
+                    try:
+                        line.set(_EMPTY_SEG)
+                    except Exception:
+                        pass
         if new_ob is not None and state.get('ob') and state['ob'].get('slots'):
             new_ob['slots'] = state['ob']['slots']
         if new_liquidity is not None and state.get('liquidity') and state['liquidity'].get('slots'):

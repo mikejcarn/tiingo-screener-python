@@ -37,8 +37,8 @@ indicators = {  # List of available indicator configurations
         # 'banker_RSI',
         # 'SMA',
         # 'liquidity',
-        'BoS_CHoCH',
-        # 'FVG',
+        # 'BoS_CHoCH',
+        'FVG',
         # 'OB',
         # 'POC',
         # 'divergence_OBV',
@@ -259,9 +259,9 @@ params = {
             },
             'OB': {'periods': 20},
             'FVG': {
-                'max_mitigated': 10,
-                'max_unmitigated': 10,
-                'join_consecutive': False
+                'max_mitigated': 5,
+                'max_unmitigated': 2,
+                'join_consecutive': False,
             },
             'RSI': {'periods': 14},
             'BoS_CHoCH': {'swing_lengths': [5], 'show_choch': True, 'show_bos': True },
