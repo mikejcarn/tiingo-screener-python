@@ -30,18 +30,15 @@ indicators = {  # List of available indicator configurations
 
     'daily': [
         # 'aVWAP',
-        # 'candle_colors',
+        'candle_colors',
         # 'QQEMOD',
         # 'aVWAP_anchor_score',
-        # 'aVWAP_pinch',
         # 'banker_RSI',
         # 'SMA',
         # 'liquidity',
         # 'BoS_CHoCH',
         # 'FVG',
         'OB',
-        # 'POC',
-        # 'divergence_OBV',
     ],
 
     '1hour': [
@@ -233,8 +230,13 @@ params = {
                 'keep_scores': False,
                 'max_atr_distance': None,
             },
-            'liquidity': {'swing_length': 20, 'range_percent': 0.1},
-            'POC': {'num_bins': 200, 'num_bars': 200},
+            'liquidity': {
+                'swing_length': 20,
+                'range_percent': 0.1,
+                'max_swept': 0,
+                'max_unswept': None,
+                'extend_lines': True,
+            },
             'candle_colors': {
                 'indicator_color': 'QQEMOD',
                 'custom_params': {
@@ -261,42 +263,23 @@ params = {
                 'periods': 3,
                 'max_mitigated': None,
                 'max_unmitigated': None,
-                'identification_delay': True,
             },
             'FVG': {
                 'max_mitigated': 20,
                 'max_unmitigated': 10,
                 'join_consecutive': False,
             },
-            'RSI': {'periods': 14},
             'BoS_CHoCH': {'swing_lengths': [5], 'show_choch': True, 'show_bos': True },
-            'StDev': {
-                'centreline': 'peaks_valleys_avg',
-                'peaks_valleys_params': {'periods': 20, 'max_aVWAPs': None},
-                'std_lookback': 20, 'avg_lookback': 20
-            },
             'QQEMOD': {
                 'rsi_period': 6, 'rsi_period2': 5, 'sf': 5, 'sf2': 5,
                 'qqe_factor': 3.0, 'qqe_factor2': 1.61, 'threshold': 3,
                 'bb_length': 50, 'bb_multi': 0.35
             },
             'SMA': {'periods': [50, 200]},
-            'WAE': {
-                'fast_period': 20, 'slow_period': 40, 
-                'atr_period': 20, 'explosion_multiplier': 2.0
-            },
-            'supertrend': {'periods': 14, 'multiplier': 3},
             'TTM_squeeze': {
                 'bb_length': 18, 'bb_std_dev': 1.9,
                 'kc_length': 18, 'kc_mult': 1.7, 'use_true_range': True
             },
-            'divergence_OBV': {'period': 50, 'lookback': 50},
-            'divergence_Volume': {'period': 50, 'lookback': 50},
-            'divergence_Fisher': {'period': 50, 'lookback': 50},
-            'divergence_Vortex': {'period': 50, 'lookback': 50},
-            'engulfing_candle': {'mode': 'both', 
-                                 'engulfing_periods': 3, 
-                                 'close_threshold': 0.25}
         },
 
         # '4hour': {

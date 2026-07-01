@@ -305,27 +305,43 @@ def _BoS_CHoCH_visualization(subchart, df):
 def _liquidity_visualization(subchart, df):
     df = _ensure_time_col(df)
 
-    if all(col in df.columns for col in ['Liquidity', 'Liquidity_Level']):
-        last_valid_idx = df[['open', 'high', 'low', 'close']].last_valid_index()
-        if last_valid_idx is None:
-            return
+    if not all(col in df.columns for col in ['Liquidity', 'Liquidity_Level']):
+        return
 
-        chart_df = df[df.index <= last_valid_idx][['time']].copy()
-        liquidity_events = df[df['Liquidity'] != 0]
+    last_valid_idx = df[['open', 'high', 'low', 'close']].last_valid_index()
+    if last_valid_idx is None:
+        return
 
-        for idx in liquidity_events.index:
-            level = df.loc[idx, 'Liquidity_Level']
+    has_swept = 'Liquidity_Swept' in df.columns
+    liquidity_events = df[df['Liquidity'] != 0]
 
-            if pd.notna(level) and level != 0:
-                level_df = chart_df.copy()
-                level_df['value'] = level
-                subchart.create_line(
-                    price_line=False,
-                    price_label=False,
-                    color=colors['orange_liquidity'],
-                    width=1,
-                    style='solid'
-                ).set(level_df)
+    for idx in liquidity_events.index:
+        level = df.loc[idx, 'Liquidity_Level']
+        if pd.isna(level) or level == 0:
+            continue
+
+        start_time = df.loc[idx, 'time']
+        end_time   = df.loc[last_valid_idx, 'time']
+
+        if has_swept:
+            sw = df.loc[idx, 'Liquidity_Swept']
+            if not pd.isna(sw) and sw > 0:
+                sw_bar = int(sw)
+                if sw_bar < len(df):
+                    sw_time = df.iloc[sw_bar]['time']
+                    if sw_time <= end_time:
+                        end_time = sw_time
+
+        subchart.create_line(
+            price_line=False,
+            price_label=False,
+            color=colors['orange_liquidity'],
+            width=1,
+            style='solid'
+        ).set(pd.DataFrame({
+            'time':  [start_time, end_time],
+            'value': [level, level],
+        }))
 
 
 # def _liquidity_visualization(subchart, df):

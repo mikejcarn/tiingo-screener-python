@@ -200,7 +200,7 @@ def start_replay(ticker: str, timeframe: str, ind_conf: str):
     bos_choch_data = _build_bos_choch_data(chart, raw_df, colors)
     fvg_data       = _build_fvg_data(chart, raw_df, ind_conf, timeframe, colors)
     ob_data        = _build_ob_data(chart, raw_df, ind_conf, timeframe, colors)
-    liquidity_data = _build_liquidity_data(chart, raw_df, colors)
+    liquidity_data = _build_liquidity_data(chart, raw_df, ind_conf, timeframe, colors)
 
     # All mutable replay state lives here so ticker switching can update it in-place.
     state = {
@@ -495,6 +495,22 @@ def _load_ob_params(ind_conf: str, timeframe: str) -> Optional[dict]:
         return params.get('OB', {}) or {}
     except Exception as e:
         print(f"  Warning: could not load OB params: {e}")
+        return None
+
+
+def _load_liquidity_params(ind_conf: str, timeframe: str) -> Optional[dict]:
+    """Load liquidity params from ind_conf if liquidity is enabled for this timeframe."""
+    try:
+        from src.indicators.indicators import load_indicator_config
+        result = load_indicator_config(ind_conf, timeframe)
+        if not result:
+            return None
+        ind_list, params = result
+        if 'liquidity' not in ind_list:
+            return None
+        return params.get('liquidity', {}) or {}
+    except Exception as e:
+        print(f"  Warning: could not load liquidity params: {e}")
         return None
 
 
@@ -1159,10 +1175,9 @@ def _build_ob_data(chart, raw_df, ind_conf: str, timeframe: str, colors):
     ob_params = _load_ob_params(ind_conf, timeframe)
     if ob_params is None:
         return None  # OB not enabled in this ind_conf/timeframe
-    periods               = ob_params.get('periods',               20)
-    max_mitigated         = ob_params.get('max_mitigated',         10)
-    max_unmitigated       = ob_params.get('max_unmitigated',       None)
-    identification_delay  = ob_params.get('identification_delay',  False)
+    periods         = ob_params.get('periods',         20)
+    max_mitigated   = ob_params.get('max_mitigated',   10)
+    max_unmitigated = ob_params.get('max_unmitigated', None)
     from smartmoneyconcepts import smc as _smc
 
     col_lower = {c.lower(): c for c in raw_df.columns}
@@ -1209,12 +1224,11 @@ def _build_ob_data(chart, raw_df, ind_conf: str, timeframe: str, colors):
     if not any(events.values()):
         return None
 
-    # Compute visible_from for each event when identification_delay is enabled.
-    # An OB candle at obIndex is only identifiable in real time once:
-    #   1. Price closes through the relevant swing level  (close_idx)
-    #   2. The swing itself has been confirmed            (sh_bar + periods)
+    # An OB at bar i is only identifiable once:
+    #   1. The swing defining it has been confirmed  (sh_bar + periods)
+    #   2. Price has closed through the swing level  (close_idx)
     # visible_from = max(close_idx, sh_bar + periods)
-    if identification_delay and 'HighLow' in swing_hl.columns:
+    if 'HighLow' in swing_hl.columns:
         hl_vals    = swing_hl['HighLow'].values
         sh_indices = np.where(hl_vals == 1)[0]
         sl_indices = np.where(hl_vals == -1)[0]
@@ -1275,30 +1289,101 @@ def _build_ob_data(chart, raw_df, ind_conf: str, timeframe: str, colors):
             'max_mitigated': max_mitigated}
 
 
-def _build_liquidity_data(chart, raw_df, colors):
-    """Extract Liquidity events and pre-create slot Lines. Returns None if not present."""
-    if not all(c in raw_df.columns for c in ['Liquidity', 'Liquidity_Level']):
+def _build_liquidity_data(chart, raw_df, ind_conf: str, timeframe: str, colors):
+    """Build liquidity events via direct smc call. Returns None if not enabled."""
+    liq_params = _load_liquidity_params(ind_conf, timeframe)
+    if liq_params is None:
+        return None
+    swing_length  = liq_params.get('swing_length',  25)
+    range_percent = liq_params.get('range_percent', 0.1)
+    max_swept     = liq_params.get('max_swept',     10)
+    max_unswept   = liq_params.get('max_unswept',   None)
+    extend_lines  = liq_params.get('extend_lines',  False)
+
+    from smartmoneyconcepts import smc as _smc
+
+    col_lower = {c.lower(): c for c in raw_df.columns}
+    needed = ['open', 'high', 'low', 'close', 'volume']
+    if not all(k in col_lower for k in needed):
         return None
 
-    dates    = raw_df['date'].values if 'date' in raw_df.columns else raw_df.index.astype(str).values
-    n_bars   = len(raw_df)
-    liq_vals = raw_df['Liquidity'].values
-    liq_lvls = raw_df['Liquidity_Level'].values
+    ohlcv = raw_df[[col_lower[k] for k in needed]].copy()
+    ohlcv.columns = needed
 
-    events = []
-    for i in range(n_bars):
-        if liq_vals[i] == 0:
+    try:
+        swing_hl = _smc.swing_highs_lows(ohlcv, swing_length=swing_length)
+        result   = _smc.liquidity(ohlcv, swing_hl, range_percent=range_percent)
+    except Exception:
+        return None
+
+    dates  = raw_df['date'].values if 'date' in raw_df.columns else raw_df.index.astype(str).values
+    n_bars = len(raw_df)
+    n_res  = len(result)
+
+    liq_col   = result['Liquidity'].values if 'Liquidity' in result.columns else None
+    level_col = result['Level'].values     if 'Level'     in result.columns else None
+    end_col   = result['End'].values       if 'End'       in result.columns else None
+    swept_col = result['Swept'].values     if 'Swept'     in result.columns else None
+
+    if liq_col is None or level_col is None:
+        return None
+
+    events = {'bull': [], 'bear': []}
+    for i in range(min(n_bars, n_res)):
+        v = liq_col[i]
+        if v == 0 or pd.isna(v):
             continue
-        price = liq_lvls[i]
+        price = level_col[i]
         if pd.isna(price) or price == 0:
             continue
-        # Liquidity has no mitigation index — line extends to current bar
-        events.append({'start_bar': i, 'end_bar': n_bars - 1, 'price': float(price)})
+        sw  = swept_col[i] if swept_col is not None else None
+        end = int(sw) if sw is not None and not pd.isna(sw) and sw > 0 else n_bars - 1
+        end = min(end, n_bars - 1)
+        group_end = int(end_col[i]) if end_col is not None and not pd.isna(end_col[i]) else i
 
-    slots = [chart.create_line(price_line=False, price_label=False,
-                               color=colors['orange_liquidity'], width=1, style='solid')
-             for _ in range(25)]
-    return {'events': events, 'slots': slots, 'dates': dates}
+        ev = {'start_bar': i, 'end_bar': end, 'price': float(price),
+              'is_mitigated': end < n_bars - 1, 'group_end': group_end}
+        events['bull' if v > 0 else 'bear'].append(ev)
+
+    if not any(events.values()):
+        return None
+
+    # Visible only after the last swing in the cluster is confirmed (swing_length bars past group_end)
+    for ev_list in events.values():
+        for ev in ev_list:
+            ev['visible_from'] = ev['group_end'] + swing_length
+
+    # Displacement for permanently-unswept pool
+    if max_unswept is not None:
+        perm_unswept = sorted(
+            [ev for ev in (events['bull'] + events['bear']) if not ev['is_mitigated']],
+            key=lambda e: e['start_bar']
+        )
+        for i, ev in enumerate(perm_unswept):
+            if i + max_unswept < len(perm_unswept):
+                ev['displaced_at'] = perm_unswept[i + max_unswept]['start_bar']
+
+    # Displacement for swept pool (when > 0)
+    if max_swept is not None and max_swept > 0:
+        swept_evs = sorted(
+            [ev for ev in (events['bull'] + events['bear']) if ev['is_mitigated']],
+            key=lambda e: e['start_bar']
+        )
+        for i, ev in enumerate(swept_evs):
+            if i + max_swept < len(swept_evs):
+                ev['displaced_at'] = swept_evs[i + max_swept]['start_bar']
+
+    def _lines(event_list, color):
+        return [chart.create_line(price_line=False, price_label=False,
+                                  color=color, width=1, style='solid')
+                for _ in event_list]
+
+    slots = {
+        'bull': _lines(events['bull'], colors['orange_liquidity']),
+        'bear': _lines(events['bear'], colors['orange_liquidity']),
+    }
+    return {'events': events, 'slots': slots, 'dates': dates, 'lazy': True,
+            'max_mitigated': max_swept, 'extend_lines': extend_lines}
 
 
 def _render_segment_slots(seg_data, n):
@@ -1329,6 +1414,7 @@ def _render_segment_slots(seg_data, n):
                     pass
 
     max_mitigated = seg_data.get('max_mitigated')
+    extend_lines  = seg_data.get('extend_lines', False)
 
     def _update_pool_lazy(event_list, slot_list):
         """1-per-event path: skip slots whose state hasn't changed since last render."""
@@ -1336,16 +1422,16 @@ def _render_segment_slots(seg_data, n):
             if ev.get('visible_from', ev['start_bar']) > n:
                 key = 'empty'
             elif n >= ev.get('displaced_at', float('inf')):
-                key = 'hidden'        # pushed off by newer FVGs — hide permanently
+                key = 'hidden'
             elif max_mitigated == 0 and ev.get('is_mitigated') and ev['end_bar'] < n:
-                key = 'hidden'        # mitigated and past — hide permanently
-            elif ev['end_bar'] < n:
-                key = ev['end_bar']   # finalized — same value every future step
+                key = 'hidden'
+            elif extend_lines or ev['end_bar'] >= n:
+                key = n               # growing — always extends to current bar
             else:
-                key = n               # growing — changes every step
+                key = ev['end_bar']   # finalized — same value every future step
 
             if ev.get('_last_render') == key:
-                continue              # nothing changed, skip the .set() call
+                continue
 
             if key in ('empty', 'hidden'):
                 try:
@@ -1353,7 +1439,7 @@ def _render_segment_slots(seg_data, n):
                 except Exception:
                     pass
             else:
-                end_bar = min(ev['end_bar'], n)
+                end_bar = n if extend_lines else min(ev['end_bar'], n)
                 try:
                     slot.set(pd.DataFrame({
                         'time':  [str(dates[ev['start_bar']]), str(dates[end_bar])],
@@ -1504,7 +1590,7 @@ def _load_ticker_by_name(chart: Chart, state: dict, ticker: str,
         new_bos_choch     = _build_bos_choch_data(chart, raw_df, colors)
         new_fvg           = _build_fvg_data(chart, raw_df, ind_conf, timeframe, colors)
         new_ob            = _build_ob_data(chart, raw_df, ind_conf, timeframe, colors)
-        new_liquidity     = _build_liquidity_data(chart, raw_df, colors)
+        new_liquidity     = _build_liquidity_data(chart, raw_df, ind_conf, timeframe, colors)
 
         if new_qqemod is not None and state.get('qqemod') and state['qqemod'].get('slots'):
             new_qqemod['slots'] = state['qqemod']['slots']
@@ -1532,8 +1618,17 @@ def _load_ticker_by_name(chart: Chart, state: dict, ticker: str,
                         line.set(_EMPTY_SEG)
                     except Exception:
                         pass
-        if new_liquidity is not None and state.get('liquidity') and state['liquidity'].get('slots'):
-            new_liquidity['slots'] = state['liquidity']['slots']
+        # Liquidity slots are 1-per-event so counts differ between tickers — clear old, always use new
+        old_liquidity = state.get('liquidity')
+        if old_liquidity and old_liquidity.get('slots'):
+            old_slots = old_liquidity['slots']
+            slot_iters = old_slots.values() if isinstance(old_slots, dict) else [old_slots]
+            for sl in slot_iters:
+                for line in sl:
+                    try:
+                        line.set(_EMPTY_SEG)
+                    except Exception:
+                        pass
 
         state['prepared_df']  = prepared_df
         state['n_total']      = n_total
