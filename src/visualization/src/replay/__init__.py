@@ -78,7 +78,19 @@ _RECOMPUTED_PREFIXES = (
     'aVWAP_peak_q',
 )
 
+# Segment-based indicator columns — handled by Track 4; excluded from progressive reveal
+_SEGMENT_COLS = frozenset({
+    'Liquidity', 'Liquidity_Level',
+    'FVG', 'FVG_High', 'FVG_Low', 'FVG_Mitigated_Index',
+    'OB', 'OB_High', 'OB_Low', 'OB_Mitigated_Index',
+})
+# BoS/CHoCH columns use numeric suffixes (e.g. BoS_25, CHoCH_25) — matched by regex
+_BOS_CHOCH_COL_RE = re.compile(
+    r'^(BoS|CHoCH|BoS_CHoCH_Price|BoS_CHoCH_Break_Index)_(\d+)$'
+)
+
 _BASE_SPEED = 0.3  # seconds/bar at 1x — matches default state['speed']
+_EMPTY_SEG = pd.DataFrame(columns=['time', 'value'])
 
 
 # ---------------------------------------------------------------------------
@@ -184,6 +196,12 @@ def start_replay(ticker: str, timeframe: str, ind_conf: str):
     if anchor_score_data is not None:
         _create_anchor_score_slot_lines(chart, anchor_score_data, colors)
 
+    # Track 4: segment indicators
+    bos_choch_data = _build_bos_choch_data(chart, raw_df, colors)
+    fvg_data       = _build_fvg_data(chart, raw_df, colors)
+    ob_data        = _build_ob_data(chart, raw_df, colors)
+    liquidity_data = _build_liquidity_data(chart, raw_df, colors)
+
     # All mutable replay state lives here so ticker switching can update it in-place.
     state = {
         'n': 0,
@@ -196,6 +214,10 @@ def start_replay(ticker: str, timeframe: str, ind_conf: str):
         'qqemod': qqemod_data,
         'pmm': pmm_data,
         'anchor_score': anchor_score_data,
+        'bos_choch': bos_choch_data,
+        'fvg':       fvg_data,
+        'ob':        ob_data,
+        'liquidity': liquidity_data,
         # session config — needed by _on_bar_search for arbitrary ticker loading
         'ind_conf': ind_conf,
         'timeframe': timeframe,
@@ -822,8 +844,10 @@ def _build_line_registry(chart: Chart, df: pd.DataFrame, colors: dict) -> dict:
         if col in _OHLCV_COLS:
             continue
 
-        # Skip columns recomputed historically — handled separately
-        if any(col.startswith(p) for p in _RECOMPUTED_PREFIXES):
+        # Skip columns recomputed historically or handled by Track 4
+        if (any(col.startswith(p) for p in _RECOMPUTED_PREFIXES)
+                or col in _SEGMENT_COLS
+                or _BOS_CHOCH_COL_RE.match(col)):
             continue
 
         cfg = _cfg_idx(col)
@@ -915,9 +939,220 @@ def _build_line_registry(chart: Chart, df: pd.DataFrame, colors: dict) -> dict:
         )
 
     n_indicator_cols = sum(1 for c in df.columns if c not in _OHLCV_COLS
-                           and not any(c.startswith(p) for p in _RECOMPUTED_PREFIXES))
+                           and not any(c.startswith(p) for p in _RECOMPUTED_PREFIXES)
+                           and c not in _SEGMENT_COLS
+                           and not _BOS_CHOCH_COL_RE.match(c))
     print(f"  Track 1 registry: {len(registry)} lines for {n_indicator_cols} indicator columns")
     return registry
+
+
+# ---------------------------------------------------------------------------
+# Segment indicator data (Track 4: BoS/CHoCH, FVG, OB, Liquidity)
+# ---------------------------------------------------------------------------
+
+def _build_bos_choch_data(chart, raw_df, colors):
+    """Extract BoS/CHoCH events across all swing lengths and pre-create slot Lines.
+    Returns None if no BoS_N columns are present."""
+    swing_lengths = sorted(
+        int(m.group(2))
+        for col in raw_df.columns
+        for m in [_BOS_CHOCH_COL_RE.match(col)]
+        if m and m.group(1) == 'BoS'
+    )
+    if not swing_lengths:
+        return None
+
+    dates  = raw_df['date'].values if 'date' in raw_df.columns else raw_df.index.astype(str).values
+    n_bars = len(raw_df)
+    events = {'bos_bull': [], 'bos_bear': [], 'choch_bull': [], 'choch_bear': []}
+
+    for sl in swing_lengths:
+        bos_col   = f'BoS_{sl}'
+        choch_col = f'CHoCH_{sl}'
+        price_col = f'BoS_CHoCH_Price_{sl}'
+        break_col = f'BoS_CHoCH_Break_Index_{sl}'
+        if any(c not in raw_df.columns for c in [bos_col, choch_col, price_col, break_col]):
+            continue
+
+        bos_vals   = raw_df[bos_col].values
+        choch_vals = raw_df[choch_col].values
+        prices     = raw_df[price_col].values
+        break_idxs = raw_df[break_col].values
+
+        for i in range(n_bars):
+            b, c = bos_vals[i], choch_vals[i]
+            if b == 0 and c == 0:
+                continue
+            price = prices[i]
+            if pd.isna(price):
+                continue
+            bi  = break_idxs[i]
+            end = int(bi) if not pd.isna(bi) and bi > 0 else n_bars - 1
+            end = min(end, n_bars - 1)
+            ev  = {'start_bar': i, 'end_bar': end, 'price': float(price)}
+            if b != 0:
+                events['bos_bull' if b > 0 else 'bos_bear'].append(ev)
+            else:
+                events['choch_bull' if c > 0 else 'choch_bear'].append(ev)
+
+    # Sort by start_bar so the "last N" slot selection picks the most recent
+    for key in events:
+        events[key].sort(key=lambda e: e['start_bar'])
+
+    def _lines(color, count):
+        return [chart.create_line(price_line=False, price_label=False,
+                                  color=color, width=1, style='solid')
+                for _ in range(count)]
+
+    slots = {
+        'bos_bull':   _lines(colors['teal_trans_2'], 10),
+        'bos_bear':   _lines(colors['red_trans_2'],  10),
+        'choch_bull': _lines(colors['aqua'],          6),
+        'choch_bear': _lines(colors['red_dark'],      6),
+    }
+    return {'events': events, 'slots': slots, 'dates': dates}
+
+
+def _build_fvg_data(chart, raw_df, colors):
+    """Extract FVG events and pre-create slot Lines. Returns None if not present."""
+    required = ['FVG', 'FVG_High', 'FVG_Low', 'FVG_Mitigated_Index']
+    if any(c not in raw_df.columns for c in required):
+        return None
+
+    dates    = raw_df['date'].values if 'date' in raw_df.columns else raw_df.index.astype(str).values
+    n_bars   = len(raw_df)
+    fvg_vals = raw_df['FVG'].values
+    fvg_high = raw_df['FVG_High'].values
+    fvg_low  = raw_df['FVG_Low'].values
+    mit_idxs = raw_df['FVG_Mitigated_Index'].values
+
+    events = {'bull': [], 'bear': []}
+    for i in range(n_bars):
+        v = fvg_vals[i]
+        if v == 0:
+            continue
+        price = fvg_high[i] if v > 0 else fvg_low[i]
+        if pd.isna(price):
+            continue
+        mi  = mit_idxs[i]
+        end = int(mi) if not pd.isna(mi) and mi > 0 else n_bars - 1
+        end = min(end, n_bars - 1)
+        events['bull' if v > 0 else 'bear'].append(
+            {'start_bar': i, 'end_bar': end, 'price': float(price)})
+
+    def _lines(color, count):
+        return [chart.create_line(price_line=False, price_label=False,
+                                  color=color, width=1, style='dashed')
+                for _ in range(count)]
+
+    slots = {
+        'bull': _lines(colors['teal_trans_3'], 13),
+        'bear': _lines(colors['red_trans_3'],  13),
+    }
+    return {'events': events, 'slots': slots, 'dates': dates}
+
+
+def _build_ob_data(chart, raw_df, colors):
+    """Extract OB events and pre-create slot Lines. Returns None if not present."""
+    required = ['OB', 'OB_High', 'OB_Low']
+    if any(c not in raw_df.columns for c in required):
+        return None
+
+    dates   = raw_df['date'].values if 'date' in raw_df.columns else raw_df.index.astype(str).values
+    n_bars  = len(raw_df)
+    ob_vals = raw_df['OB'].values
+    ob_high = raw_df['OB_High'].values
+    ob_low  = raw_df['OB_Low'].values
+    has_mit = 'OB_Mitigated_Index' in raw_df.columns
+    mit_idxs = raw_df['OB_Mitigated_Index'].values if has_mit else None
+
+    events = {'bull': [], 'bear': []}
+    for i in range(n_bars):
+        v = ob_vals[i]
+        if v == 0:
+            continue
+        price = (ob_high[i] + ob_low[i]) / 2.0
+        if pd.isna(price):
+            continue
+        mi  = mit_idxs[i] if mit_idxs is not None else None
+        end = int(mi) if mi is not None and not pd.isna(mi) and mi > 0 else n_bars - 1
+        end = min(end, n_bars - 1)
+        events['bull' if v > 0 else 'bear'].append(
+            {'start_bar': i, 'end_bar': end, 'price': float(price)})
+
+    def _lines(color, count):
+        return [chart.create_line(price_line=False, price_label=False,
+                                  color=color, width=10, style='solid')
+                for _ in range(count)]
+
+    slots = {
+        'bull': _lines(colors['teal_OB'], 8),
+        'bear': _lines(colors['red_OB'],  8),
+    }
+    return {'events': events, 'slots': slots, 'dates': dates}
+
+
+def _build_liquidity_data(chart, raw_df, colors):
+    """Extract Liquidity events and pre-create slot Lines. Returns None if not present."""
+    if not all(c in raw_df.columns for c in ['Liquidity', 'Liquidity_Level']):
+        return None
+
+    dates    = raw_df['date'].values if 'date' in raw_df.columns else raw_df.index.astype(str).values
+    n_bars   = len(raw_df)
+    liq_vals = raw_df['Liquidity'].values
+    liq_lvls = raw_df['Liquidity_Level'].values
+
+    events = []
+    for i in range(n_bars):
+        if liq_vals[i] == 0:
+            continue
+        price = liq_lvls[i]
+        if pd.isna(price) or price == 0:
+            continue
+        # Liquidity has no mitigation index — line extends to current bar
+        events.append({'start_bar': i, 'end_bar': n_bars - 1, 'price': float(price)})
+
+    slots = [chart.create_line(price_line=False, price_label=False,
+                               color=colors['orange_liquidity'], width=1, style='solid')
+             for _ in range(25)]
+    return {'events': events, 'slots': slots, 'dates': dates}
+
+
+def _render_segment_slots(seg_data, n):
+    """Update all slots for one segment indicator at bar n."""
+    if seg_data is None:
+        return
+    dates = seg_data['dates']
+
+    def _update_pool(event_list, slot_list):
+        active = [e for e in event_list if e['start_bar'] <= n]
+        active = active[-len(slot_list):]
+        for i, slot in enumerate(slot_list):
+            if i < len(active):
+                ev      = active[i]
+                end_bar = min(ev['end_bar'], n)
+                try:
+                    slot.set(pd.DataFrame({
+                        'time':  [str(dates[ev['start_bar']]), str(dates[end_bar])],
+                        'value': [ev['price'], ev['price']],
+                    }))
+                except Exception:
+                    pass
+            else:
+                try:
+                    slot.set(_EMPTY_SEG)
+                except Exception:
+                    pass
+
+    events = seg_data['events']
+    slots  = seg_data['slots']
+
+    if isinstance(events, dict):
+        for key, ev_list in events.items():
+            if key in slots:
+                _update_pool(ev_list, slots[key])
+    else:
+        _update_pool(events, slots)
 
 
 # ---------------------------------------------------------------------------
@@ -953,6 +1188,12 @@ def _render(chart: Chart, df: pd.DataFrame, registry: dict, state: dict, n: int)
         _render_pmm_slots(state['pmm'], n)
     if state.get('anchor_score'):
         _render_anchor_score_slots(state['anchor_score'], n)
+
+    # Segment indicators (Track 4)
+    _render_segment_slots(state.get('bos_choch'), n)
+    _render_segment_slots(state.get('fvg'), n)
+    _render_segment_slots(state.get('ob'), n)
+    _render_segment_slots(state.get('liquidity'), n)
 
     if state.get('auto_fit', True):
         chart.fit()
@@ -1038,6 +1279,10 @@ def _load_ticker_by_name(chart: Chart, state: dict, ticker: str,
         new_qqemod        = _build_qqemod_data(raw_df, ind_conf, timeframe, colors)
         new_pmm           = _build_pmm_data(raw_df, ind_conf, timeframe, colors)
         new_anchor_score  = _build_anchor_score_data(raw_df, ind_conf, timeframe, colors)
+        new_bos_choch     = _build_bos_choch_data(chart, raw_df, colors)
+        new_fvg           = _build_fvg_data(chart, raw_df, colors)
+        new_ob            = _build_ob_data(chart, raw_df, colors)
+        new_liquidity     = _build_liquidity_data(chart, raw_df, colors)
 
         if new_qqemod is not None and state.get('qqemod') and state['qqemod'].get('slots'):
             new_qqemod['slots'] = state['qqemod']['slots']
@@ -1045,6 +1290,14 @@ def _load_ticker_by_name(chart: Chart, state: dict, ticker: str,
             new_pmm['slots'] = state['pmm']['slots']
         if new_anchor_score is not None and state.get('anchor_score') and state['anchor_score'].get('slots'):
             new_anchor_score['slots'] = state['anchor_score']['slots']
+        if new_bos_choch is not None and state.get('bos_choch') and state['bos_choch'].get('slots'):
+            new_bos_choch['slots'] = state['bos_choch']['slots']
+        if new_fvg is not None and state.get('fvg') and state['fvg'].get('slots'):
+            new_fvg['slots'] = state['fvg']['slots']
+        if new_ob is not None and state.get('ob') and state['ob'].get('slots'):
+            new_ob['slots'] = state['ob']['slots']
+        if new_liquidity is not None and state.get('liquidity') and state['liquidity'].get('slots'):
+            new_liquidity['slots'] = state['liquidity']['slots']
 
         state['prepared_df']  = prepared_df
         state['n_total']      = n_total
@@ -1052,6 +1305,10 @@ def _load_ticker_by_name(chart: Chart, state: dict, ticker: str,
         state['qqemod']       = new_qqemod
         state['pmm']          = new_pmm
         state['anchor_score'] = new_anchor_score
+        state['bos_choch']    = new_bos_choch
+        state['fvg']          = new_fvg
+        state['ob']           = new_ob
+        state['liquidity']    = new_liquidity
         state['n']            = 0
 
         try:

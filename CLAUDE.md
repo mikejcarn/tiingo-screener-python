@@ -144,4 +144,4 @@ Two strategies are used depending on the indicator:
 - **QQEMOD_aVWAP** — uses an Anchor Event Log (`src/visualization/src/replay/event_log.py`). Each anchor is committed when its zone closes (the opposite zone starts), because argmin/argmax within a zone can't be finalised until the zone ends. `max_anchors` trimming is applied rolling bar-by-bar.
 - **price_maxima_minima** — runs `greedy_extrema(data[:n+1])` at every bar. O(N × max_anchors) per step, fast enough for interactive use.
 
-Segment-based indicators (FVG, OB, BoS/CHoCH, Liquidity, divergences) are not supported — they require two-point segments that change shape per step.
+Segment-based indicators (FVG, OB, BoS/CHoCH, Liquidity) use Track 4: events are extracted from the CSV at load time, then at each bar n each segment's right endpoint is capped at `min(endpoint_bar, n)` so future breaks/mitigations are not revealed early. Divergences are not supported (non-horizontal two-point segments).

@@ -29,14 +29,17 @@ indicators = {  # List of available indicator configurations
     ],
 
     'daily': [
-        'aVWAP',
-        'candle_colors',
+        # 'aVWAP',
+        # 'candle_colors',
         # 'QQEMOD',
         # 'aVWAP_anchor_score',
         # 'aVWAP_pinch',
         # 'banker_RSI',
         # 'SMA',
         # 'liquidity',
+        'BoS_CHoCH',
+        # 'FVG',
+        # 'OB',
         # 'POC',
         # 'divergence_OBV',
     ],
@@ -261,7 +264,7 @@ params = {
                 'join_consecutive': False
             },
             'RSI': {'periods': 14},
-            'BoS_CHoCH': {'swing_length': 10},
+            'BoS_CHoCH': {'swing_lengths': [5], 'show_choch': True, 'show_bos': True },
             'StDev': {
                 'centreline': 'peaks_valleys_avg',
                 'peaks_valleys_params': {'periods': 20, 'max_aVWAPs': None},

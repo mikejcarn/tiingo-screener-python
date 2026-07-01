@@ -196,63 +196,67 @@ def _OB_visualization(subchart, df):
 
 
 def _BoS_CHoCH_visualization(subchart, df):
+    import re
     df = _ensure_time_col(df)
-    
-    # Get the last valid data point (not the padded future dates)
+
     ohlc_cols_variants = [
         ['close', 'high', 'low', 'open'],
         ['Close', 'High', 'Low', 'Open'],
     ]
     ohlc_cols = next((v for v in ohlc_cols_variants if all(c in df.columns for c in v)), None)
-    
     if ohlc_cols is None:
         return
-        
+
     last_valid_idx = df[ohlc_cols].last_valid_index()
     if last_valid_idx is None:
         return
-        
     last_valid_time = df.loc[last_valid_idx, 'time']
 
-    required_cols = ['BoS', 'CHoCH', 'BoS_CHoCH_Price', 'BoS_CHoCH_Break_Index']
-    if any(col not in df.columns for col in required_cols):
+    # Discover all swing lengths present (columns named BoS_N where N is an integer)
+    swing_lengths = sorted(
+        int(m.group(1))
+        for col in df.columns
+        for m in [re.match(r'^BoS_(\d+)$', col)]
+        if m
+    )
+    if not swing_lengths:
         return
 
-    df2 = df.dropna(subset=required_cols)
-    events = df2[(df2['BoS'] != 0) | (df2['CHoCH'] != 0)].index[-25:]
+    for sl in swing_lengths:
+        bos_col   = f'BoS_{sl}'
+        choch_col = f'CHoCH_{sl}'
+        price_col = f'BoS_CHoCH_Price_{sl}'
+        break_col = f'BoS_CHoCH_Break_Index_{sl}'
+        if any(c not in df.columns for c in [bos_col, choch_col, price_col, break_col]):
+            continue
 
-    for idx in events:
-        start_time = df2.loc[idx, 'time']
-        price = df2.loc[idx, 'BoS_CHoCH_Price']
+        df2 = df.dropna(subset=[bos_col, choch_col, price_col, break_col])
+        events = df2[(df2[bos_col] != 0) | (df2[choch_col] != 0)].index[-25:]
 
-        end_time = last_valid_time  # Use last valid time instead of df2.iloc[-1]
-        try:
-            break_idx = int(df2.loc[idx, 'BoS_CHoCH_Break_Index'])
-            # Ensure break_idx is within bounds and not beyond last valid data
-            if 0 < break_idx < len(df2) and break_idx <= last_valid_idx:
-                end_time = df2.loc[break_idx, 'time']
-        except Exception:
-            pass
+        for idx in events:
+            start_time = df2.loc[idx, 'time']
+            price      = df2.loc[idx, price_col]
 
-        if df2.loc[idx, 'BoS'] != 0:
-            color = colors['teal_trans_3'] if df2.loc[idx, 'BoS'] > 0 else colors['red_trans_3']
-            style = 'solid'
-            width = 1
-        else:
-            color = colors['aqua'] if df2.loc[idx, 'CHoCH'] > 0 else colors['red_dark']
-            style = 'solid'
-            width = 1
+            end_time = last_valid_time
+            try:
+                break_idx = int(df2.loc[idx, break_col])
+                if 0 < break_idx < len(df2) and break_idx <= last_valid_idx:
+                    end_time = df2.loc[break_idx, 'time']
+            except Exception:
+                pass
 
-        subchart.create_line(
-            price_line=False,
-            price_label=False,
-            color=color,
-            width=width,
-            style=style
-        ).set(pd.DataFrame({
-            'time': [start_time, end_time],
-            'value': [price, price]
-        }))
+            if df2.loc[idx, bos_col] != 0:
+                color = colors['teal_trans_2'] if df2.loc[idx, bos_col] > 0 else colors['red_trans_2']
+            else:
+                color = colors['aqua'] if df2.loc[idx, choch_col] > 0 else colors['red_dark']
+
+            subchart.create_line(
+                price_line=False, price_label=False,
+                color=color, width=1, style='solid',
+            ).set(pd.DataFrame({
+                'time':  [start_time, end_time],
+                'value': [price, price],
+            }))
 
 
 # def _BoS_CHoCH_visualization(subchart, df):
