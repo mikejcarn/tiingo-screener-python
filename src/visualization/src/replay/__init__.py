@@ -184,7 +184,7 @@ def start_replay(ticker: str, timeframe: str, ind_conf: str):
     chart.topbar.textbox('ind_conf', str(ind_conf))
     chart.topbar.textbox('bar', f'0/{n_total - 1}')
     chart.topbar.textbox('speed', '1.0x')
-    chart.topbar.button('auto_fit', 'FIT: ON', align='left', separator=True,
+    chart.topbar.button('auto_fit', 'FIT: OFF', align='left', separator=True,
                         func=lambda: _toggle_auto_fit(chart, state))
 
     registry = _build_line_registry(chart, prepared_df, colors)
@@ -199,7 +199,7 @@ def start_replay(ticker: str, timeframe: str, ind_conf: str):
     # Track 4: segment indicators
     bos_choch_data = _build_bos_choch_data(chart, raw_df, colors)
     fvg_data       = _build_fvg_data(chart, raw_df, ind_conf, timeframe, colors)
-    ob_data        = _build_ob_data(chart, raw_df, colors)
+    ob_data        = _build_ob_data(chart, raw_df, ind_conf, timeframe, colors)
     liquidity_data = _build_liquidity_data(chart, raw_df, colors)
 
     # All mutable replay state lives here so ticker switching can update it in-place.
@@ -207,7 +207,7 @@ def start_replay(ticker: str, timeframe: str, ind_conf: str):
         'n': 0,
         'playing': False,
         'speed': 0.3,
-        'auto_fit': True,
+        'auto_fit': False,
         'prepared_df': prepared_df,
         'n_total': n_total,
         'registry': registry,
@@ -231,6 +231,8 @@ def start_replay(ticker: str, timeframe: str, ind_conf: str):
     chart.hotkey('shift', 'ArrowRight', lambda _=None: _step(chart, state, +20))
     chart.hotkey(None, 'Home', lambda _=None: _jump(chart, state, 0))
     chart.hotkey(None, 'End',  lambda _=None: _jump(chart, state, state['n_total'] - 1))
+    chart.hotkey(None, '-',    lambda _=None: _jump(chart, state, 0))
+    chart.hotkey(None, '=',    lambda _=None: _jump(chart, state, state['n_total'] - 1))
     chart.hotkey(None, ' ',          lambda _=None: _toggle_play(state))
     chart.hotkey(None, 'Backspace',  lambda _=None: _toggle_auto_fit(chart, state))
     chart.hotkey(None, ',',          lambda _=None: _adjust_speed(state, chart, +0.1))
@@ -477,6 +479,22 @@ def _load_fvg_params(ind_conf: str, timeframe: str) -> Optional[dict]:
         return params.get('FVG', {}) or {}
     except Exception as e:
         print(f"  Warning: could not load FVG params: {e}")
+        return None
+
+
+def _load_ob_params(ind_conf: str, timeframe: str) -> Optional[dict]:
+    """Load OB params from ind_conf if OB is enabled for this timeframe."""
+    try:
+        from src.indicators.indicators import load_indicator_config
+        result = load_indicator_config(ind_conf, timeframe)
+        if not result:
+            return None
+        ind_list, params = result
+        if 'OB' not in ind_list:
+            return None
+        return params.get('OB', {}) or {}
+    except Exception as e:
+        print(f"  Warning: could not load OB params: {e}")
         return None
 
 
@@ -1042,9 +1060,11 @@ def _build_fvg_data(chart, raw_df, ind_conf: str, timeframe: str, colors):
     Reads max_unmitigated from ind_conf: caps total visible FVGs at any replay bar
     to the N most recently formed (displacement-bar approach, zero per-step cost).
     """
-    fvg_params      = _load_fvg_params(ind_conf, timeframe)
-    max_mitigated   = fvg_params.get('max_mitigated',   10) if fvg_params is not None else 10
-    max_unmitigated = fvg_params.get('max_unmitigated', None) if fvg_params is not None else None
+    fvg_params = _load_fvg_params(ind_conf, timeframe)
+    if fvg_params is None:
+        return None  # FVG not enabled in this ind_conf/timeframe
+    max_mitigated   = fvg_params.get('max_mitigated',   10)
+    max_unmitigated = fvg_params.get('max_unmitigated', None)
     from smartmoneyconcepts import smc as _smc
 
     # Accept both 'open' and 'Open' column naming
@@ -1127,44 +1147,132 @@ def _build_fvg_data(chart, raw_df, ind_conf: str, timeframe: str, colors):
             'max_mitigated': max_mitigated}
 
 
-def _build_ob_data(chart, raw_df, colors):
-    """Extract OB events and pre-create slot Lines. Returns None if not present."""
-    required = ['OB', 'OB_High', 'OB_Low']
-    if any(c not in raw_df.columns for c in required):
+def _build_ob_data(chart, raw_df, ind_conf: str, timeframe: str, colors):
+    """Extract OB events via direct smc call (same approach as _build_fvg_data).
+
+    Calls smc.ob() directly rather than reading pre-computed indicator columns,
+    for the same reason as FVG: calculate_ob pre-filters to max_mitigated +
+    max_unmitigated using a full-dataset perspective, and smc.ob() deletes
+    fully-reset OBs (ob[idx]=0), making them invisible in replay even before
+    they were touched.
+    """
+    ob_params = _load_ob_params(ind_conf, timeframe)
+    if ob_params is None:
+        return None  # OB not enabled in this ind_conf/timeframe
+    periods               = ob_params.get('periods',               20)
+    max_mitigated         = ob_params.get('max_mitigated',         10)
+    max_unmitigated       = ob_params.get('max_unmitigated',       None)
+    identification_delay  = ob_params.get('identification_delay',  False)
+    from smartmoneyconcepts import smc as _smc
+
+    col_lower = {c.lower(): c for c in raw_df.columns}
+    needed = ['open', 'high', 'low', 'close', 'volume']
+    if not all(k in col_lower for k in needed):
         return None
 
-    dates   = raw_df['date'].values if 'date' in raw_df.columns else raw_df.index.astype(str).values
-    n_bars  = len(raw_df)
-    ob_vals = raw_df['OB'].values
-    ob_high = raw_df['OB_High'].values
-    ob_low  = raw_df['OB_Low'].values
-    has_mit = 'OB_Mitigated_Index' in raw_df.columns
-    mit_idxs = raw_df['OB_Mitigated_Index'].values if has_mit else None
+    ohlcv = raw_df[[col_lower[k] for k in needed]].copy()
+    ohlcv.columns = needed
+
+    try:
+        swing_hl = _smc.swing_highs_lows(ohlcv, swing_length=periods)
+        result   = _smc.ob(ohlcv, swing_hl, close_mitigation=False)
+    except Exception:
+        return None
+
+    dates  = raw_df['date'].values if 'date' in raw_df.columns else raw_df.index.astype(str).values
+    n_bars = len(raw_df)
+    n_res  = len(result)
+
+    ob_col  = result['OB'].values             if 'OB'             in result.columns else None
+    top_col = result['Top'].values            if 'Top'            in result.columns else None
+    bot_col = result['Bottom'].values         if 'Bottom'         in result.columns else None
+    mit_col = result['MitigatedIndex'].values if 'MitigatedIndex' in result.columns else None
+
+    if ob_col is None or top_col is None or bot_col is None:
+        return None
 
     events = {'bull': [], 'bear': []}
-    for i in range(n_bars):
-        v = ob_vals[i]
-        if v == 0:
+    for i in range(min(n_bars, n_res)):
+        v = ob_col[i]
+        if v == 0 or pd.isna(v):
             continue
-        price = (ob_high[i] + ob_low[i]) / 2.0
+        price = (top_col[i] + bot_col[i]) / 2.0
         if pd.isna(price):
             continue
-        mi  = mit_idxs[i] if mit_idxs is not None else None
+        mi  = mit_col[i] if mit_col is not None else None
         end = int(mi) if mi is not None and not pd.isna(mi) and mi > 0 else n_bars - 1
         end = min(end, n_bars - 1)
         events['bull' if v > 0 else 'bear'].append(
-            {'start_bar': i, 'end_bar': end, 'price': float(price)})
+            {'start_bar': i, 'end_bar': end, 'price': float(price),
+             'is_mitigated': end < n_bars - 1})
 
-    def _lines(color, count):
+    if not any(events.values()):
+        return None
+
+    # Compute visible_from for each event when identification_delay is enabled.
+    # An OB candle at obIndex is only identifiable in real time once:
+    #   1. Price closes through the relevant swing level  (close_idx)
+    #   2. The swing itself has been confirmed            (sh_bar + periods)
+    # visible_from = max(close_idx, sh_bar + periods)
+    if identification_delay and 'HighLow' in swing_hl.columns:
+        hl_vals    = swing_hl['HighLow'].values
+        sh_indices = np.where(hl_vals == 1)[0]
+        sl_indices = np.where(hl_vals == -1)[0]
+        high_arr   = ohlcv['high'].values
+        low_arr    = ohlcv['low'].values
+        close_arr  = ohlcv['close'].values
+
+        for direction, ev_list in events.items():
+            is_bull     = (direction == 'bull')
+            ref_indices = sh_indices if is_bull else sl_indices
+            level_arr   = high_arr   if is_bull else low_arr
+
+            for ev in ev_list:
+                ob_idx = ev['start_bar']
+                pos    = np.searchsorted(ref_indices, ob_idx, side='left') - 1
+                if pos < 0:
+                    continue
+                sh_bar   = int(ref_indices[pos])
+                sh_level = float(level_arr[sh_bar])
+                close_idx = n_bars - 1
+                for j in range(sh_bar + 1, n_bars):
+                    if (is_bull and close_arr[j] > sh_level) or \
+                       (not is_bull and close_arr[j] < sh_level):
+                        close_idx = j
+                        break
+                ev['visible_from'] = max(close_idx, sh_bar + periods)
+
+    # Displacement for permanently-unmitigated pool.
+    if max_unmitigated is not None:
+        perm_unmitigated = sorted(
+            [ev for ev in (events['bull'] + events['bear']) if not ev['is_mitigated']],
+            key=lambda e: e['start_bar']
+        )
+        for i, ev in enumerate(perm_unmitigated):
+            if i + max_unmitigated < len(perm_unmitigated):
+                ev['displaced_at'] = perm_unmitigated[i + max_unmitigated]['start_bar']
+
+    # Displacement for mitigated pool (when > 0).
+    if max_mitigated is not None and max_mitigated > 0:
+        mitigated_evs = sorted(
+            [ev for ev in (events['bull'] + events['bear']) if ev['is_mitigated']],
+            key=lambda e: e['start_bar']
+        )
+        for i, ev in enumerate(mitigated_evs):
+            if i + max_mitigated < len(mitigated_evs):
+                ev['displaced_at'] = mitigated_evs[i + max_mitigated]['start_bar']
+
+    def _lines(event_list, color):
         return [chart.create_line(price_line=False, price_label=False,
                                   color=color, width=10, style='solid')
-                for _ in range(count)]
+                for _ in event_list]
 
     slots = {
-        'bull': _lines(colors['teal_OB'], 8),
-        'bear': _lines(colors['red_OB'],  8),
+        'bull': _lines(events['bull'], colors['teal_OB']),
+        'bear': _lines(events['bear'], colors['red_OB']),
     }
-    return {'events': events, 'slots': slots, 'dates': dates}
+    return {'events': events, 'slots': slots, 'dates': dates, 'lazy': True,
+            'max_mitigated': max_mitigated}
 
 
 def _build_liquidity_data(chart, raw_df, colors):
@@ -1225,7 +1333,7 @@ def _render_segment_slots(seg_data, n):
     def _update_pool_lazy(event_list, slot_list):
         """1-per-event path: skip slots whose state hasn't changed since last render."""
         for ev, slot in zip(event_list, slot_list):
-            if ev['start_bar'] > n:
+            if ev.get('visible_from', ev['start_bar']) > n:
                 key = 'empty'
             elif n >= ev.get('displaced_at', float('inf')):
                 key = 'hidden'        # pushed off by newer FVGs — hide permanently
@@ -1309,7 +1417,7 @@ def _render(chart: Chart, df: pd.DataFrame, registry: dict, state: dict, n: int)
     _render_segment_slots(state.get('ob'), n)
     _render_segment_slots(state.get('liquidity'), n)
 
-    if state.get('auto_fit', True):
+    if state.get('auto_fit', False):
         chart.fit()
 
     try:
@@ -1395,7 +1503,7 @@ def _load_ticker_by_name(chart: Chart, state: dict, ticker: str,
         new_anchor_score  = _build_anchor_score_data(raw_df, ind_conf, timeframe, colors)
         new_bos_choch     = _build_bos_choch_data(chart, raw_df, colors)
         new_fvg           = _build_fvg_data(chart, raw_df, ind_conf, timeframe, colors)
-        new_ob            = _build_ob_data(chart, raw_df, colors)
+        new_ob            = _build_ob_data(chart, raw_df, ind_conf, timeframe, colors)
         new_liquidity     = _build_liquidity_data(chart, raw_df, colors)
 
         if new_qqemod is not None and state.get('qqemod') and state['qqemod'].get('slots'):
@@ -1415,8 +1523,15 @@ def _load_ticker_by_name(chart: Chart, state: dict, ticker: str,
                         line.set(_EMPTY_SEG)
                     except Exception:
                         pass
-        if new_ob is not None and state.get('ob') and state['ob'].get('slots'):
-            new_ob['slots'] = state['ob']['slots']
+        # OB slots are 1-per-event so counts differ between tickers — clear old, always use new
+        old_ob = state.get('ob')
+        if old_ob and old_ob.get('slots'):
+            for sl in old_ob['slots'].values():
+                for line in sl:
+                    try:
+                        line.set(_EMPTY_SEG)
+                    except Exception:
+                        pass
         if new_liquidity is not None and state.get('liquidity') and state['liquidity'].get('slots'):
             new_liquidity['slots'] = state['liquidity']['slots']
 
