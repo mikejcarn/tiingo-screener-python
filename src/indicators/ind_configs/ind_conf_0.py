@@ -202,13 +202,16 @@ params = {
                 'OB_params': [
                     {
                         'mode': 'combined',       # 'combined'/'bullish'/'bearish'/'none'
-                        'periods': 10,            # swing lookback for OB detection
+                        'periods': 5,            # swing lookback for OB detection
                         'max_aVWAPs': None,       # cap on aVWAPs per side (None = no cap)
-                        'max_mitigated': None,    # keep last N mitigated OB aVWAPs (None = no cap)
-                        'max_unmitigated': None,  # keep last N unmitigated OB aVWAPs (None = no cap)
-                        'extend_to_end': True,    # extend mitigated aVWAPs to current bar
+                        'max_mitigated_aVWAPs': None,    # keep last N mitigated OB aVWAPs (None = no cap)
+                        'max_unmitigated_aVWAPs': None,  # keep last N unmitigated OB aVWAPs (None = no cap)
+                        'extend_to_end': False,    # extend mitigated aVWAPs to current bar
                         'faded': True,            # render the post-mitigation extension at low opacity
-                        'show_OB': True,          # retain OB/OB_High/OB_Low columns in output
+                        'show_OB': True,               # also render horizontal OB boxes
+                        'OB_max_mitigated': None, # cap OB boxes independently (None = no cap)
+                        'OB_max_unmitigated': 1,
+                        'OB_max_per_side': True,  # True = cap applies per bull/bear side; False = combined pool
                     },
                 ],
                 'gaps_params': [ {'max_aVWAPs': 5, 'avg_lookback': 8}, ],

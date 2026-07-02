@@ -501,7 +501,12 @@ def _load_ob_params(ind_conf: str, timeframe: str) -> Optional[dict]:
                 ob_configs = [ob_configs]
             for cfg in ob_configs:
                 if cfg.get('show_OB', False):
-                    return {'periods': cfg.get('periods', 25)}
+                    return {
+                        'periods':         cfg.get('periods', 25),
+                        'max_mitigated':   cfg.get('OB_max_mitigated',   None),
+                        'max_unmitigated': cfg.get('OB_max_unmitigated', None),
+                        'per_side':        cfg.get('OB_max_per_side',    True),
+                    }
         return None
     except Exception as e:
         print(f"  Warning: could not load OB params: {e}")
@@ -1192,6 +1197,7 @@ def _build_ob_data(chart, raw_df, ind_conf: str, timeframe: str, colors):
     periods         = ob_params.get('periods',         20)
     max_mitigated   = ob_params.get('max_mitigated',   10)
     max_unmitigated = ob_params.get('max_unmitigated', None)
+    per_side        = ob_params.get('per_side',        True)
     from smartmoneyconcepts import smc as _smc
 
     col_lower = {c.lower(): c for c in raw_df.columns}
@@ -1270,25 +1276,25 @@ def _build_ob_data(chart, raw_df, ind_conf: str, timeframe: str, colors):
                         break
                 ev['visible_from'] = max(close_idx, sh_bar + periods)
 
-    # Displacement for permanently-unmitigated pool.
-    if max_unmitigated is not None:
-        perm_unmitigated = sorted(
-            [ev for ev in (events['bull'] + events['bear']) if not ev['is_mitigated']],
-            key=lambda e: e['start_bar']
-        )
-        for i, ev in enumerate(perm_unmitigated):
-            if i + max_unmitigated < len(perm_unmitigated):
-                ev['displaced_at'] = perm_unmitigated[i + max_unmitigated]['start_bar']
+    def _displace(ev_list, cap):
+        evs = sorted(ev_list, key=lambda e: e['start_bar'])
+        for i, ev in enumerate(evs):
+            if i + cap < len(evs):
+                ev['displaced_at'] = evs[i + cap]['start_bar']
 
-    # Displacement for mitigated pool (when > 0).
+    if max_unmitigated is not None:
+        if per_side:
+            _displace([ev for ev in events['bull'] if not ev['is_mitigated']], max_unmitigated)
+            _displace([ev for ev in events['bear'] if not ev['is_mitigated']], max_unmitigated)
+        else:
+            _displace([ev for ev in (events['bull'] + events['bear']) if not ev['is_mitigated']], max_unmitigated)
+
     if max_mitigated is not None and max_mitigated > 0:
-        mitigated_evs = sorted(
-            [ev for ev in (events['bull'] + events['bear']) if ev['is_mitigated']],
-            key=lambda e: e['start_bar']
-        )
-        for i, ev in enumerate(mitigated_evs):
-            if i + max_mitigated < len(mitigated_evs):
-                ev['displaced_at'] = mitigated_evs[i + max_mitigated]['start_bar']
+        if per_side:
+            _displace([ev for ev in events['bull'] if ev['is_mitigated']], max_mitigated)
+            _displace([ev for ev in events['bear'] if ev['is_mitigated']], max_mitigated)
+        else:
+            _displace([ev for ev in (events['bull'] + events['bear']) if ev['is_mitigated']], max_mitigated)
 
     def _lines(event_list, color):
         return [chart.create_line(price_line=False, price_label=False,

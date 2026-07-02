@@ -127,24 +127,31 @@ def calculate_avwap_channel(
 
             # If show_OB, also expose as unsuffixed columns for _OB_visualization
             if cfg.get('show_OB', False):
-                max_mit   = cfg.get('max_mitigated',   None)
-                max_unmit = cfg.get('max_unmitigated', None)
+                max_mit   = cfg.get('OB_max_mitigated',   None)
+                max_unmit = cfg.get('OB_max_unmitigated', None)
                 ob_filtered = tmp.copy()
                 if max_mit is not None or max_unmit is not None:
-                    ob_indices = ob_filtered[ob_filtered['OB'] != 0].index[::-1]
-                    mitigated, unmitigated = [], []
-                    for idx in ob_indices:
-                        try:
-                            mit_idx = int(ob_filtered.loc[idx, 'OB_Mitigated_Index'])
-                        except (ValueError, TypeError):
-                            mit_idx = 0
-                        if 0 < mit_idx < len(ob_filtered):
-                            mitigated.append(idx)
-                        else:
-                            unmitigated.append(idx)
-                    show = set()
-                    show.update(mitigated[:max_mit] if max_mit is not None else mitigated)
-                    show.update(unmitigated[:max_unmit] if max_unmit is not None else unmitigated)
+                    per_side = cfg.get('OB_max_per_side', True)
+                    def _cap_indices(indices):
+                        mit_list, unmit_list = [], []
+                        for idx in indices:
+                            try:
+                                mit_idx = int(ob_filtered.loc[idx, 'OB_Mitigated_Index'])
+                            except (ValueError, TypeError):
+                                mit_idx = 0
+                            if 0 < mit_idx < len(ob_filtered):
+                                mit_list.append(idx)
+                            else:
+                                unmit_list.append(idx)
+                        kept = set()
+                        kept.update(mit_list[:max_mit] if max_mit is not None else mit_list)
+                        kept.update(unmit_list[:max_unmit] if max_unmit is not None else unmit_list)
+                        return kept
+                    if per_side:
+                        show = (_cap_indices(ob_filtered[ob_filtered['OB'] == 1].index[::-1]) |
+                                _cap_indices(ob_filtered[ob_filtered['OB'] == -1].index[::-1]))
+                    else:
+                        show = _cap_indices(ob_filtered[ob_filtered['OB'] != 0].index[::-1])
                     mask = ob_filtered.index.isin(show)
                     ob_filtered.loc[~mask, ['OB', 'OB_High', 'OB_Low', 'OB_Mitigated_Index']] = 0
                 for src, dst in [('OB', 'OB'), ('OB_High', 'OB_High'),
@@ -516,8 +523,8 @@ def calculate_avwap_channel(
        
         for config_idx, config in enumerate(OB_configs):
             max_aVWAPs      = config.get('max_aVWAPs',      None)
-            max_mitigated   = config.get('max_mitigated',   None)
-            max_unmitigated = config.get('max_unmitigated', None)
+            max_mitigated   = config.get('max_mitigated_aVWAPs',   None)
+            max_unmitigated = config.get('max_unmitigated_aVWAPs', None)
             mode = config.get('mode', 'combined').lower()
             
             # Map synonyms to canonical values
