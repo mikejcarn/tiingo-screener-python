@@ -927,9 +927,9 @@ def _build_line_registry(chart: Chart, df: pd.DataFrame, colors: dict) -> dict:
 
         # OB aVWAPs
         elif col.startswith('aVWAP_OB_bull_'):
-            _make(col, colors['aqua'], _w(cfg), _s(cfg))
+            _make(col, colors['teal_OB'], _w(cfg), _s(cfg))
         elif col.startswith('aVWAP_OB_bear_'):
-            _make(col, colors['red_dark'], _w(cfg), _s(cfg))
+            _make(col, colors['red_OB'], _w(cfg), _s(cfg))
 
         # Gaps
         elif col.startswith('Gap_Up_aVWAP_'):

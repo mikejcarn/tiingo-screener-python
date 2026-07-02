@@ -654,7 +654,7 @@ def _aVWAP_visualization(subchart, df):
     # -------------------------
     # OB aVWAPs - with tiered styling and limit option
     # -------------------------
-    LIMIT_OB_ANCHORS_PER_CFG = True
+    LIMIT_OB_ANCHORS_PER_CFG = False
     OB_ANCHORS_PER_CFG = 3
 
     # Bullish OB aVWAPs
@@ -666,7 +666,7 @@ def _aVWAP_visualization(subchart, df):
         cfg = _cfg_idx(col)
         width = 2 if cfg == 0 else 1
         style = 'solid' if cfg == 0 else 'dotted'
-        color = colors['aqua']
+        color = colors['teal_OB']
 
         subchart.create_line(
             price_line=False,
@@ -685,7 +685,7 @@ def _aVWAP_visualization(subchart, df):
         cfg = _cfg_idx(col)
         width = 2 if cfg == 0 else 1
         style = 'solid' if cfg == 0 else 'dotted'
-        color = colors['red_dark']
+        color = colors['red_OB']
 
         subchart.create_line(
             price_line=False,

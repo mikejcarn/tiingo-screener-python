@@ -105,11 +105,16 @@ def calculate_avwap_channel(
         """For each OB config, compute OB columns and attach them as OB_c{i}, etc."""
         out = df_in.copy()
 
+        # Strip to OHLCV so pre-existing OB/OB_High/etc. columns don't cause
+        # duplicate columns when calculate_ob runs and pd.concat merges results.
+        base_cols = ['open', 'high', 'low', 'close', 'volume', 'Open', 'High', 'Low', 'Close', 'Volume', 'date']
+        clean_df = out[[c for c in base_cols if c in out.columns]].copy()
+
         for i, cfg in enumerate(ob_configs):
             periods = cfg.get('periods', 25)
 
-            # Compute OB for this config
-            tmp = get_indicators(out.copy(), ['OB'], {'OB': {'periods': periods}})
+            # Compute OB for this config on clean OHLCV only
+            tmp = get_indicators(clean_df.copy(), ['OB'], {'OB': {'periods': periods}})
 
             # Attach config-specific columns if present
             if 'OB' in tmp.columns:

@@ -29,7 +29,7 @@ indicators = {  # List of available indicator configurations
     ],
 
     'daily': [
-        # 'aVWAP',
+        'aVWAP',
         'candle_colors',
         # 'QQEMOD',
         # 'aVWAP_anchor_score',
@@ -162,10 +162,10 @@ params = {
                 'valleys_avg': False,
                 'peaks_valleys': False,
                 'peaks_valleys_avg': False,
-                'price_maxima_minima': True,
-                'QQEMOD': True,
+                'price_maxima_minima': False,
+                'QQEMOD': False,
                 'QQEMOD_avg': False,
-                'OB': False,
+                'OB': True,
                 'OB_avg': False,
                 'gaps': False,
                 'gaps_avg': False,
@@ -203,7 +203,14 @@ params = {
                     'min_swing_spacing': 1,
                 },
                 'BoS_CHoCH_params': [ {'mode': 'bullish', 'swing_length': 15, 'max_aVWAPs': 5, 'avg_lookback': 7}, ],
-                'OB_params': [ { 'mode': 'none', }, ],
+                'OB_params': [
+                    {
+                        'mode': 'combined',       # 'combined'/'bullish'/'bearish'/'none'
+                        'periods': 10,            # swing lookback for OB detection
+                        'max_aVWAPs': None,       # cap on aVWAPs per side (None = no cap)
+                        'max_atr_distance': None, # hide aVWAPs > N ATRs from close (None = no filter)
+                    },
+                ],
                 'gaps_params': [ {'max_aVWAPs': 5, 'avg_lookback': 8}, ],
             },
             'aVWAP_pinch': {
@@ -260,7 +267,7 @@ params = {
                 }
             },
             'OB': {
-                'periods': 3,
+                'periods': 10,
                 'max_mitigated': None,
                 'max_unmitigated': None,
             },
@@ -424,13 +431,11 @@ params = {
                     }
                 },
                 'OB_params': [
-                    # {
-                    #     'mode': 'none',
-                    # },
                     {
-                        'mode': 'valleys',
-                        'periods': 50,
-                        'max_aVWAPs': None,
+                        'mode': 'combined',       # 'combined'/'bullish'/'bearish'/'none'
+                        'periods': 50,            # swing lookback for OB detection
+                        'max_aVWAPs': None,       # cap on aVWAPs per side (None = no cap)
+                        'max_atr_distance': None, # hide aVWAPs > N ATRs from close (None = no filter)
                     },
                 ],
                 'gaps_params': [ {'max_aVWAPs': 5, 'avg_lookback': 8}, ],
@@ -540,7 +545,14 @@ params = {
                         'bb_length': 50, 'bb_multi': 0.35
                     }
                 },
-                'OB_params': [ { 'mode': 'none', }, ],
+                'OB_params': [
+                    {
+                        'mode': 'none',           # 'combined'/'bullish'/'bearish'/'none'
+                        'periods': 20,            # swing lookback for OB detection
+                        'max_aVWAPs': None,       # cap on aVWAPs per side (None = no cap)
+                        'max_atr_distance': None, # hide aVWAPs > N ATRs from close (None = no filter)
+                    },
+                ],
                 'gaps_params': [ {'max_aVWAPs': 5, 'avg_lookback': 8}, ],
                 'BoS_CHoCH_params': [ {'swing_length': 15, 'max_aVWAPs': 4, 'avg_lookback': 7}, ],
             },
@@ -619,12 +631,14 @@ params = {
                 'peaks_valleys_params': {'periods': 30, 'max_aVWAPs': 1},
                 'OB': True,
                 'OB_avg': False,
-                'OB_params': {
-                              'periods': 20, 
-                              'max_aVWAPs': None,
-                              'include_bullish': True,
-                              'include_bearish': True
-                             },
+                'OB_params': [
+                    {
+                        'mode': 'combined',       # 'combined'/'bullish'/'bearish'/'none'
+                        'periods': 20,            # swing lookback for OB detection
+                        'max_aVWAPs': None,       # cap on aVWAPs per side (None = no cap)
+                        'max_atr_distance': None, # hide aVWAPs > N ATRs from close (None = no filter)
+                    },
+                ],
                 'gaps': False,
                 'gaps_avg': False,
                 'gaps_params': {'max_aVWAPs': 20},
@@ -692,12 +706,14 @@ params = {
                 'peaks_valleys_params': {'periods': 30, 'max_aVWAPs': 1},
                 'OB': False,
                 'OB_avg': False,
-                'OB_params': {
-                              'periods': 10,
-                              'max_aVWAPs': None,
-                              'include_bullish': True,
-                              'include_bearish': True
-                             },
+                'OB_params': [
+                    {
+                        'mode': 'combined',       # 'combined'/'bullish'/'bearish'/'none'
+                        'periods': 10,            # swing lookback for OB detection
+                        'max_aVWAPs': None,       # cap on aVWAPs per side (None = no cap)
+                        'max_atr_distance': None, # hide aVWAPs > N ATRs from close (None = no filter)
+                    },
+                ],
                 'gaps': False,
                 'gaps_avg': False,
                 'gaps_params': {'max_aVWAPs': 20},
