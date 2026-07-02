@@ -483,16 +483,26 @@ def _load_fvg_params(ind_conf: str, timeframe: str) -> Optional[dict]:
 
 
 def _load_ob_params(ind_conf: str, timeframe: str) -> Optional[dict]:
-    """Load OB params from ind_conf if OB is enabled for this timeframe."""
+    """Load OB params from ind_conf if OB is enabled for this timeframe.
+    Also returns params if aVWAP has show_OB: True in any OB_params config."""
     try:
         from src.indicators.indicators import load_indicator_config
         result = load_indicator_config(ind_conf, timeframe)
         if not result:
             return None
         ind_list, params = result
-        if 'OB' not in ind_list:
-            return None
-        return params.get('OB', {}) or {}
+        if 'OB' in ind_list:
+            return params.get('OB', {}) or {}
+        # Fall back to aVWAP OB_params if show_OB is enabled there
+        avwap_params = params.get('aVWAP', {})
+        if 'aVWAP' in ind_list and avwap_params:
+            ob_configs = avwap_params.get('OB_params', [])
+            if isinstance(ob_configs, dict):
+                ob_configs = [ob_configs]
+            for cfg in ob_configs:
+                if cfg.get('show_OB', False):
+                    return {'periods': cfg.get('periods', 25)}
+        return None
     except Exception as e:
         print(f"  Warning: could not load OB params: {e}")
         return None
