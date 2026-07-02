@@ -38,7 +38,7 @@ indicators = {  # List of available indicator configurations
         # 'liquidity',
         # 'BoS_CHoCH',
         # 'FVG',
-        'OB',
+        # 'OB',
     ],
 
     '1hour': [
@@ -116,7 +116,6 @@ params = {
                 'gaps_params': {'max_aVWAPs': 8},
                 'All_avg': False,
                 'avg_lookback': 10,
-                'keep_OB_column': False,
                 'aVWAP_channel': False,
             },
             'OB': {'periods': 8},
@@ -162,7 +161,7 @@ params = {
                 'valleys_avg': False,
                 'peaks_valleys': False,
                 'peaks_valleys_avg': False,
-                'price_maxima_minima': False,
+                'price_maxima_minima': True,
                 'QQEMOD': False,
                 'QQEMOD_avg': False,
                 'OB': True,
@@ -172,13 +171,10 @@ params = {
                 'BoS_CHoCH': False,
                 'BoS_CHoCH_avg': False,
                 'All_avg': False,
-                'keep_OB_column': False,
                 'aVWAP_channel': False,
                 'peaks_params': [
-                    { 'periods': 20, 'max_aVWAPs': None, 'avg_lookback': 100, 'max_atr_distance': None },
                 ],
                 'valleys_params': [
-                    { 'periods': 20, 'max_aVWAPs': None, 'avg_lookback': 100, 'max_atr_distance': None },
                 ],
                 'peaks_valleys_params': [
                     { 'periods': 20, 'max_aVWAPs': None, 'avg_lookback': 20, },
@@ -208,7 +204,11 @@ params = {
                         'mode': 'combined',       # 'combined'/'bullish'/'bearish'/'none'
                         'periods': 10,            # swing lookback for OB detection
                         'max_aVWAPs': None,       # cap on aVWAPs per side (None = no cap)
-                        'max_atr_distance': None, # hide aVWAPs > N ATRs from close (None = no filter)
+                        'max_mitigated': None,    # keep last N mitigated OB aVWAPs (None = no cap)
+                        'max_unmitigated': None,  # keep last N unmitigated OB aVWAPs (None = no cap)
+                        'extend_to_end': True,    # extend mitigated aVWAPs to current bar
+                        'faded': True,            # render the post-mitigation extension at low opacity
+                        'show_OB': True,          # retain OB/OB_High/OB_Low columns in output
                     },
                 ],
                 'gaps_params': [ {'max_aVWAPs': 5, 'avg_lookback': 8}, ],
@@ -235,7 +235,6 @@ params = {
                 'w_isolation': 1.0,
                 'w_sharpness': 0.5,
                 'keep_scores': False,
-                'max_atr_distance': None,
             },
             'liquidity': {
                 'swing_length': 20,
@@ -324,7 +323,6 @@ params = {
         #         'gaps_params': {'max_aVWAPs': 10},
         #         'All_avg': False,
         #         'avg_lookback': 20,
-        #         'keep_OB_column': False,
         #         'aVWAP_channel': False,
         #     },
         #     'OB': {'periods': 30},
@@ -395,7 +393,6 @@ params = {
                 'BoS_CHoCH': False,
                 'BoS_CHoCH_avg': False,
                 'All_avg': False,
-                'keep_OB_column': False,
                 'aVWAP_channel': False,
                 'peaks_params': [
                     {
@@ -435,7 +432,6 @@ params = {
                         'mode': 'combined',       # 'combined'/'bullish'/'bearish'/'none'
                         'periods': 50,            # swing lookback for OB detection
                         'max_aVWAPs': None,       # cap on aVWAPs per side (None = no cap)
-                        'max_atr_distance': None, # hide aVWAPs > N ATRs from close (None = no filter)
                     },
                 ],
                 'gaps_params': [ {'max_aVWAPs': 5, 'avg_lookback': 8}, ],
@@ -521,7 +517,6 @@ params = {
                 'BoS_CHoCH': False,
                 'BoS_CHoCH_avg': False,
                 'All_avg': False,
-                'keep_OB_column': False,
                 'aVWAP_channel': False,
                 'peaks_params': [ 
                     { 'periods': 1, 'max_aVWAPs': None, 'avg_lookback': 100, }, 
@@ -550,7 +545,6 @@ params = {
                         'mode': 'none',           # 'combined'/'bullish'/'bearish'/'none'
                         'periods': 20,            # swing lookback for OB detection
                         'max_aVWAPs': None,       # cap on aVWAPs per side (None = no cap)
-                        'max_atr_distance': None, # hide aVWAPs > N ATRs from close (None = no filter)
                     },
                 ],
                 'gaps_params': [ {'max_aVWAPs': 5, 'avg_lookback': 8}, ],
@@ -570,7 +564,6 @@ params = {
                 'w_isolation': 3.0,
                 'w_sharpness': 0.3,
                 'keep_scores': False,
-                'max_atr_distance': 5.0
             },
             'OB': {'periods': 20},
             'FVG': {
@@ -636,7 +629,6 @@ params = {
                         'mode': 'combined',       # 'combined'/'bullish'/'bearish'/'none'
                         'periods': 20,            # swing lookback for OB detection
                         'max_aVWAPs': None,       # cap on aVWAPs per side (None = no cap)
-                        'max_atr_distance': None, # hide aVWAPs > N ATRs from close (None = no filter)
                     },
                 ],
                 'gaps': False,
@@ -644,7 +636,6 @@ params = {
                 'gaps_params': {'max_aVWAPs': 20},
                 'All_avg': False,
                 'avg_lookback': 20,
-                'keep_OB_column': False,
                 'aVWAP_channel': False,
             },
             'OB': {'periods': 20},
@@ -711,7 +702,6 @@ params = {
                         'mode': 'combined',       # 'combined'/'bullish'/'bearish'/'none'
                         'periods': 10,            # swing lookback for OB detection
                         'max_aVWAPs': None,       # cap on aVWAPs per side (None = no cap)
-                        'max_atr_distance': None, # hide aVWAPs > N ATRs from close (None = no filter)
                     },
                 ],
                 'gaps': False,
@@ -719,7 +709,6 @@ params = {
                 'gaps_params': {'max_aVWAPs': 20},
                 'All_avg': False,
                 'avg_lookback': 20,
-                'keep_OB_column': False,
                 'aVWAP_channel': False,
             },
             'OB': {'periods': 30},

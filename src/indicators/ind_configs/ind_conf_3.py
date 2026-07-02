@@ -103,7 +103,6 @@ params = {
                 'BoS_CHoCH_params': {'swing_length': 8, 'max_aVWAPs': None},
                 'All_avg': False,
                 'avg_lookback': 10,
-                'keep_OB_column': False,
                 'aVWAP_channel': False,
             },
             'OB': {'periods': 8},
@@ -170,7 +169,6 @@ params = {
                 'BoS_CHoCH_params': {'swing_length': 20, 'max_aVWAPs': None},
                 'All_avg': False,
                 'avg_lookback': 20,
-                'keep_OB_column': False,
                 'aVWAP_channel': False,
             },
             'FVG': {
@@ -236,7 +234,6 @@ params = {
                 'BoS_CHoCH_params': {'swing_length': 10, 'max_aVWAPs': None},
                 'All_avg': False,
                 'avg_lookback': 20,
-                'keep_OB_column': False,
                 'aVWAP_channel': False,
             },
             'FVG': {
@@ -302,7 +299,6 @@ params = {
                 'BoS_CHoCH_params': {'swing_length': 30, 'max_aVWAPs': None},
                 'All_avg': False,
                 'avg_lookback': 25,
-                'keep_OB_column': False,
                 'aVWAP_channel': False,
             },
             'FVG': {
@@ -368,7 +364,6 @@ params = {
                 'BoS_CHoCH_params': {'swing_length': 30, 'max_aVWAPs': None},
                 'All_avg': False,
                 'avg_lookback': 30,
-                'keep_OB_column': False,
                 'aVWAP_channel': False,
             },
             'FVG': {

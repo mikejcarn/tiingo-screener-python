@@ -40,7 +40,6 @@ def calculate_avwap_channel(
     price_maxima_minima_params=None,
 
     avg_lookback=25,
-    keep_OB_column=False,
     aVWAP_channel=False
 ):
     """
@@ -125,6 +124,33 @@ def calculate_avwap_channel(
                 out[f'OB_Low_c{i}'] = tmp['OB_Low']
             if 'OB_Mitigated_Index' in tmp.columns:
                 out[f'OB_Mitigated_Index_c{i}'] = tmp['OB_Mitigated_Index']
+
+            # If show_OB, also expose as unsuffixed columns for _OB_visualization
+            if cfg.get('show_OB', False):
+                max_mit   = cfg.get('max_mitigated',   None)
+                max_unmit = cfg.get('max_unmitigated', None)
+                ob_filtered = tmp.copy()
+                if max_mit is not None or max_unmit is not None:
+                    ob_indices = ob_filtered[ob_filtered['OB'] != 0].index[::-1]
+                    mitigated, unmitigated = [], []
+                    for idx in ob_indices:
+                        try:
+                            mit_idx = int(ob_filtered.loc[idx, 'OB_Mitigated_Index'])
+                        except (ValueError, TypeError):
+                            mit_idx = 0
+                        if 0 < mit_idx < len(ob_filtered):
+                            mitigated.append(idx)
+                        else:
+                            unmitigated.append(idx)
+                    show = set()
+                    show.update(mitigated[:max_mit] if max_mit is not None else mitigated)
+                    show.update(unmitigated[:max_unmit] if max_unmit is not None else unmitigated)
+                    mask = ob_filtered.index.isin(show)
+                    ob_filtered.loc[~mask, ['OB', 'OB_High', 'OB_Low', 'OB_Mitigated_Index']] = 0
+                for src, dst in [('OB', 'OB'), ('OB_High', 'OB_High'),
+                                  ('OB_Low', 'OB_Low'), ('OB_Mitigated_Index', 'OB_Mitigated_Index')]:
+                    if src in ob_filtered.columns:
+                        out[dst] = ob_filtered[src]
 
         return out
 
@@ -286,16 +312,6 @@ def calculate_avwap_channel(
     _current_close = float(_close[-1]) if not np.isnan(_close[-1]) else None
     _current_atr   = float(_atr_series[-1]) if not np.isnan(_atr_series[-1]) else None
 
-    def _apply_atr_filter(avwap_dict, max_atr_dist):
-        """Remove aVWAPs whose current value is more than max_atr_dist ATRs from close."""
-        if max_atr_dist is None or _current_close is None or _current_atr is None or _current_atr == 0:
-            return avwap_dict
-        return {
-            col: series for col, series in avwap_dict.items()
-            if pd.notna(series.iloc[-1]) and
-               abs(float(series.iloc[-1]) - _current_close) / _current_atr <= max_atr_dist
-        }
-
     def process_anchors(indices, prefix, max_count=None):
         """Process anchors and return dictionary of aVWAP series"""
         if not indices:
@@ -318,7 +334,6 @@ def calculate_avwap_channel(
         for config_idx, config in enumerate(peaks_configs):
             periods = config.get('periods', 25)
             max_aVWAPs = config.get('max_aVWAPs', None)
-            max_atr_distance = config.get('max_atr_distance', None)
 
             # Create a fresh DataFrame for this config
             base_cols = ['Open', 'High', 'Low', 'Close', 'Volume']
@@ -343,7 +358,6 @@ def calculate_avwap_channel(
 
             # Calculate aVWAPs for this config
             config_peaks = process_anchors(peaks_indices, f'aVWAP_peak_c{config_idx}', max_aVWAPs)
-            config_peaks = _apply_atr_filter(config_peaks, max_atr_distance)
 
             if peaks_avg:
                 peaks_only_aVWAPs.update(config_peaks)
@@ -361,7 +375,6 @@ def calculate_avwap_channel(
         for config_idx, config in enumerate(valleys_configs):
             periods = config.get('periods', 25)
             max_aVWAPs = config.get('max_aVWAPs', None)
-            max_atr_distance = config.get('max_atr_distance', None)
 
             # Create a fresh DataFrame for this config
             base_cols = ['Open', 'High', 'Low', 'Close', 'Volume']
@@ -386,7 +399,6 @@ def calculate_avwap_channel(
 
             # Calculate aVWAPs for this config
             config_valleys = process_anchors(valleys_indices, f'aVWAP_valley_c{config_idx}', max_aVWAPs)
-            config_valleys = _apply_atr_filter(config_valleys, max_atr_distance)
 
             if valleys_avg:
                 valleys_only_aVWAPs.update(config_valleys)
@@ -423,7 +435,6 @@ def calculate_avwap_channel(
         for config_idx, config in enumerate(peaks_valleys_configs):
             periods = config.get('periods', 25)
             max_aVWAPs = config.get('max_aVWAPs', None)
-            max_atr_distance = config.get('max_atr_distance', None)
 
             # Create a completely fresh DataFrame for each config
             base_cols = ['Open', 'High', 'Low', 'Close', 'Volume']
@@ -453,8 +464,6 @@ def calculate_avwap_channel(
             # Process peaks and valleys for this combined config
             config_peaks = process_anchors(peaks_indices, f'aVWAP_peak_c{len(peaks_configs)+config_idx}', max_aVWAPs)
             config_valleys = process_anchors(valleys_indices, f'aVWAP_valley_c{len(valleys_configs)+config_idx}', max_aVWAPs)
-            config_peaks = _apply_atr_filter(config_peaks, max_atr_distance)
-            config_valleys = _apply_atr_filter(config_valleys, max_atr_distance)
 
             # Store for combined averages
             if peaks_valleys_avg:
@@ -506,7 +515,9 @@ def calculate_avwap_channel(
         seen_OB_bear_indices = set()
        
         for config_idx, config in enumerate(OB_configs):
-            max_aVWAPs = config.get('max_aVWAPs', None)
+            max_aVWAPs      = config.get('max_aVWAPs',      None)
+            max_mitigated   = config.get('max_mitigated',   None)
+            max_unmitigated = config.get('max_unmitigated', None)
             mode = config.get('mode', 'combined').lower()
             
             # Map synonyms to canonical values
@@ -549,13 +560,67 @@ def calculate_avwap_channel(
                         OB_bear_indices = [i for i in all_bear if i not in seen_OB_bear_indices]
                         seen_OB_bear_indices.update(OB_bear_indices)
           
+            # Apply max_mitigated / max_unmitigated caps to each side independently
+            mit_col_name = f'OB_Mitigated_Index_c{config_idx}'
+            if max_mitigated is not None or max_unmitigated is not None:
+                def _cap_ob_pool(indices):
+                    sorted_desc = sorted(indices, reverse=True)
+                    if mit_col_name not in df.columns:
+                        return sorted_desc[:max_unmitigated] if max_unmitigated is not None else sorted_desc
+                    mitigated, unmitigated = [], []
+                    for idx in sorted_desc:
+                        try:
+                            mit_val = int(df.loc[idx, mit_col_name]) if idx in df.index else 0
+                        except (ValueError, TypeError):
+                            mit_val = 0
+                        if 0 < mit_val < len(df):
+                            mitigated.append(idx)
+                        else:
+                            unmitigated.append(idx)
+                    show = []
+                    show.extend(mitigated[:max_mitigated] if max_mitigated is not None else mitigated)
+                    show.extend(unmitigated[:max_unmitigated] if max_unmitigated is not None else unmitigated)
+                    return show
+                OB_bull_indices = _cap_ob_pool(OB_bull_indices)
+                OB_bear_indices = _cap_ob_pool(OB_bear_indices)
+
             config_OB_bull = process_anchors(OB_bull_indices, f'aVWAP_OB_bull_c{config_idx}', max_aVWAPs)
             config_OB_bear = process_anchors(OB_bear_indices, f'aVWAP_OB_bear_c{config_idx}', max_aVWAPs)
-          
+
+            # Handle mitigated OB aVWAPs: truncate and/or add faded ghost extension
+            extend_to_end = config.get('extend_to_end', False)
+            faded         = config.get('faded',         False)
+            if mit_col_name in df.columns and (not extend_to_end or faded):
+                for side_dict, ghost_prefix in (
+                    (config_OB_bull, f'aVWAP_OB_bull_ghost_c{config_idx}'),
+                    (config_OB_bear, f'aVWAP_OB_bear_ghost_c{config_idx}'),
+                ):
+                    ghost_additions = {}
+                    for avwap_col in list(side_dict.keys()):
+                        try:
+                            anchor_bar = int(avwap_col.split('_')[-1])
+                        except ValueError:
+                            continue
+                        if anchor_bar not in df.index:
+                            continue
+                        try:
+                            mit_val = int(df.loc[anchor_bar, mit_col_name])
+                        except (ValueError, TypeError):
+                            mit_val = 0
+                        if 0 < mit_val < len(df):
+                            s = side_dict[avwap_col].copy()
+                            if extend_to_end and faded:
+                                ghost = s.copy()
+                                ghost[ghost.index < mit_val] = float('nan')
+                                ghost_additions[f'{ghost_prefix}_{anchor_bar}'] = ghost
+                            s[s.index > mit_val] = float('nan')
+                            side_dict[avwap_col] = s
+                    side_dict.update(ghost_additions)
+
             if OB_avg:
                 OB_aVWAPs.update(config_OB_bull)
                 OB_aVWAPs.update(config_OB_bear)
-          
+
             if OB:
                 all_individual_aVWAPs.update(config_OB_bull)
                 all_individual_aVWAPs.update(config_OB_bear)
@@ -928,7 +993,8 @@ def calculate_avwap_channel(
         cols_to_drop.extend(['Valleys', 'Peaks'])
     if not gaps:
         cols_to_drop.extend(['Gap_Up', 'Gap_Down'])
-    if not keep_OB_column:
+    show_OB = any(cfg.get('show_OB', False) for cfg in OB_configs)
+    if not show_OB:
         cols_to_drop.extend(['OB', 'OB_High', 'OB_Low', 'OB_Mitigated_Index'])
         for i in range(len(OB_configs)):
             cols_to_drop.extend([

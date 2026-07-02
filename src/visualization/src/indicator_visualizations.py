@@ -658,7 +658,7 @@ def _aVWAP_visualization(subchart, df):
     OB_ANCHORS_PER_CFG = 3
 
     # Bullish OB aVWAPs
-    OB_bull_cols = [col for col in df.columns if col.startswith('aVWAP_OB_bull_')]
+    OB_bull_cols = [col for col in df.columns if col.startswith('aVWAP_OB_bull_') and '_ghost_' not in col]
     if LIMIT_OB_ANCHORS_PER_CFG:
         OB_bull_cols = _select_recent_by_cfg(OB_bull_cols, per_cfg=OB_ANCHORS_PER_CFG)
 
@@ -677,7 +677,7 @@ def _aVWAP_visualization(subchart, df):
         ).set(_line_set_df(df, col))
 
     # Bearish OB aVWAPs
-    OB_bear_cols = [col for col in df.columns if col.startswith('aVWAP_OB_bear_')]
+    OB_bear_cols = [col for col in df.columns if col.startswith('aVWAP_OB_bear_') and '_ghost_' not in col]
     if LIMIT_OB_ANCHORS_PER_CFG:
         OB_bear_cols = _select_recent_by_cfg(OB_bear_cols, per_cfg=OB_ANCHORS_PER_CFG)
 
@@ -694,6 +694,14 @@ def _aVWAP_visualization(subchart, df):
             width=width,
             style=style
         ).set(_line_set_df(df, col))
+
+    # Ghost (faded post-mitigation) OB aVWAPs
+    for col in [c for c in df.columns if c.startswith('aVWAP_OB_bull_ghost_')]:
+        subchart.create_line(price_line=False, price_label=False,
+                             color=colors['teal_OB_ghost'], width=2, style='solid').set(_line_set_df(df, col))
+    for col in [c for c in df.columns if c.startswith('aVWAP_OB_bear_ghost_')]:
+        subchart.create_line(price_line=False, price_label=False,
+                             color=colors['red_OB_ghost'], width=2, style='solid').set(_line_set_df(df, col))
 
     # -------------------------
     # Price maxima/minima valley aVWAPs
