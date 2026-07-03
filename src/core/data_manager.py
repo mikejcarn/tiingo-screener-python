@@ -94,9 +94,11 @@ class DataManager:
             conf_dir = self.indicators_conf_dir(ind_conf)
             if conf_dir.exists():
                 self.clear_buffer(conf_dir)
+                conf_dir.rmdir() if not any(conf_dir.iterdir()) else None
         else:
             for conf_dir in self.indicators_dir.glob("ind_conf_*/"):
                 self.clear_buffer(conf_dir)
+                conf_dir.rmdir() if not any(conf_dir.iterdir()) else None
 
     def clear_all_buffers(self) -> None:
         """Clear all working directories while preserving versions"""
