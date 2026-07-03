@@ -205,7 +205,7 @@ params = {
                         'periods': 5,            # swing lookback for OB detection
                         'max_aVWAPs': None,       # cap on aVWAPs per side (None = no cap)
                         'max_mitigated_aVWAPs': None,    # keep last N mitigated OB aVWAPs (None = no cap)
-                        'max_unmitigated_aVWAPs': None,  # keep last N unmitigated OB aVWAPs (None = no cap)
+                        'max_unmitigated_aVWAPs': 6,  # keep last N unmitigated OB aVWAPs (None = no cap)
                         'extend_to_end': False,    # extend mitigated aVWAPs to current bar
                         'faded': True,            # render the post-mitigation extension at low opacity
                         'show_OB': True,               # also render horizontal OB boxes

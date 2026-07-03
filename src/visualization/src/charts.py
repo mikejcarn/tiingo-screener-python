@@ -9,6 +9,40 @@ from src.visualization.src.color_palette import get_color_palette
 from src.visualization.src.indicator_visualizations import add_visualizations
 from src.core.globals import INDICATORS_DIR, SCREENSHOTS_DIR
 
+def _clear_chart_lines(chart):
+    """Delete all line series from a chart safely.
+
+    The library's line.delete() uses legend.div.removeChild() which throws if the
+    legend was reset between the Python call and the async JS execution. This helper
+    uses parentNode.removeChild() (removes from whatever parent currently owns the
+    row) and wraps everything in try/catch to prevent crashes.
+    """
+    lines = list(chart.lines())
+    for line in lines:
+        try:
+            chart._lines.remove(line)
+        except ValueError:
+            pass
+    if not lines:
+        return
+    parts = []
+    for line in lines:
+        parts.append(f'''(function() {{
+            try {{
+                var li = {chart.id}.legend._lines.find(function(l) {{ return l.series == {line.id}.series; }});
+                if (li) {{
+                    {chart.id}.legend._lines = {chart.id}.legend._lines.filter(function(l) {{ return l != li; }});
+                    if (li.row && li.row.parentNode) li.row.parentNode.removeChild(li.row);
+                }}
+                if (typeof {line.id} !== 'undefined') {{
+                    {chart.id}.chart.removeSeries({line.id}.series);
+                    delete {line.id};
+                }}
+            }} catch(e) {{}}
+        }})();''')
+    chart.run_script('\n'.join(parts))
+
+
 def _get_indicators_search_dirs(ind_conf):
     """Return list of dirs to search for indicator CSVs.
     If ind_conf is set, returns [ind_conf_N/]. Otherwise returns all ind_conf_*/ subdirs."""
@@ -233,7 +267,7 @@ def _load_ticker_csv(charts, key, show_volume=False, show_banker_RSI=False):
         })
         df.attrs = {'timeframe': timeframe, 'ticker': next_ticker}
 
-        for line in chart.lines(): line.set(pd.DataFrame())
+        _clear_chart_lines(chart)
         chart.clear_markers()
         prepared_df, _ = prepare_dataframe(df, show_volume)
         configure_base_chart(prepared_df, chart, show_volume, show_banker_RSI)
@@ -307,8 +341,7 @@ def _on_search(chart, input_ticker):
             df = df.rename(columns={'Open':'open','Close':'close','Low':'low','High':'high'}).copy()
             df.attrs['timeframe'] = current_timeframe
             
-            lines = chart.lines()
-            for line in lines: line.hide_data()
+            _clear_chart_lines(chart)
             chart.clear_markers()
             configure_base_chart(df, chart)
             add_ui_elements(chart, [chart], input_ticker, current_timeframe)
@@ -353,8 +386,7 @@ def _load_timeframe_csv(charts, key, show_volume=False, show_banker_RSI=False):
     df = pd.read_csv(selected_file).rename(columns={'Open':'open','Close':'close','Low':'low','High':'high'}).copy()
     df.attrs['timeframe'] = next_timeframe
 
-    lines = chart.lines()
-    for line in lines: line.set(pd.DataFrame())
+    _clear_chart_lines(chart)
     chart.clear_markers()
     configure_base_chart(df, chart, show_volume, show_banker_RSI)
     add_ui_elements(chart, [chart], ticker, next_timeframe, show_volume, show_banker_RSI, ind_conf=ind_conf)
