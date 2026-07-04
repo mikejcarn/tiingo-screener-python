@@ -162,7 +162,7 @@ params = {
                 'peaks_valleys': False,
                 'peaks_valleys_avg': False,
                 'price_maxima_minima': True,
-                'QQEMOD': False,
+                'QQEMOD': True,
                 'QQEMOD_avg': False,
                 'OB': True,
                 'OB_avg': False,
@@ -182,10 +182,10 @@ params = {
                 'QQEMOD_params': {
                     'peak_to_valley':   False,   # solid red:    peak anchor → next teal candle
                     'valley_to_peak':   False,   # solid teal:   valley anchor → next red candle
-                    'peak_to_peak':     True,   # dotted red:   peak anchor → next peak anchor
+                    'peak_to_peak':     True,    # dotted red:   peak anchor → next peak anchor
                     'valley_to_valley': True,    # dotted teal:  valley anchor → next valley anchor
-                    'max_anchors':      5,    # keep N most recent bear + N most recent bull anchors
-                    'extend_to_end':    False,    # run each aVWAP to the last bar
+                    'max_anchors':      5,       # keep N most recent bear + N most recent bull anchors
+                    'extend_to_end':    False,   # run each aVWAP to the last bar
                     'qqe_params': {
                         'rsi_period': 6, 'rsi_period2': 5, 'sf': 5, 'sf2': 5,
                         'qqe_factor': 3.0, 'qqe_factor2': 1.61, 'threshold': 3,
@@ -205,7 +205,7 @@ params = {
                         'periods': 5,            # swing lookback for OB detection
                         'max_aVWAPs': None,       # cap on aVWAPs per side (None = no cap)
                         'max_mitigated_aVWAPs': None,    # keep last N mitigated OB aVWAPs (None = no cap)
-                        'max_unmitigated_aVWAPs': 6,  # keep last N unmitigated OB aVWAPs (None = no cap)
+                        'max_unmitigated_aVWAPs': None,  # keep last N unmitigated OB aVWAPs (None = no cap)
                         'extend_to_end': False,    # extend mitigated aVWAPs to current bar
                         'faded': True,            # render the post-mitigation extension at low opacity
                         'show_OB': True,               # also render horizontal OB boxes

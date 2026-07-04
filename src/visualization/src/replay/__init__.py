@@ -183,6 +183,7 @@ def start_replay(ticker: str, timeframe: str, ind_conf: str):
     chart.topbar.textbox('timeframe', str(tf))
     chart.topbar.textbox('ind_conf', str(ind_conf))
     chart.topbar.textbox('bar', f'0/{n_total - 1}')
+    chart.topbar.textbox('hover_bar', '—')
     chart.topbar.textbox('speed', '1.0x')
     chart.topbar.button('auto_fit', 'FIT: OFF', align='left', separator=True,
                         func=lambda: _toggle_auto_fit(chart, state))
@@ -240,8 +241,22 @@ def start_replay(ticker: str, timeframe: str, ind_conf: str):
     chart.hotkey(None, 'ArrowUp',    lambda _=None: _adjust_speed(state, chart, -0.1))
     chart.hotkey(None, 'ArrowDown',  lambda _=None: _adjust_speed(state, chart, +0.1))
     chart.hotkey(None, '/',          lambda _=None: _reset_speed(state, chart))
+    # Pass the hovered index from JS→Python directly so we don't rely on .value
+    # (which only reflects the Python-side initial value, not JS DOM updates).
+    chart.win.handlers['jump_to_hover'] = lambda idx, *_: _jump_to_hover(chart, state, idx)
+    chart.run_script(
+        "document.addEventListener('keydown', function(e) {"
+        "  if (e.key === '`' && window._replayHoverIdx !== null && window._replayHoverIdx !== undefined) {"
+        "    e.preventDefault();"
+        "    window.callbackFunction('jump_to_hover_~_' + window._replayHoverIdx);"
+        "  }"
+        "});"
+    )
 
     chart.events.search += lambda c, value: _on_bar_search(chart, state, value)
+
+    _inject_hover_map(chart, prepared_df)
+    _setup_hover_crosshair(chart)
 
     _render(chart, prepared_df, registry, state, state['n'])
 
@@ -1548,6 +1563,55 @@ def _jump(chart, state, target):
     _render(chart, state['prepared_df'], state['registry'], state, target)
 
 
+def _jump_to_hover(chart, state, idx_str):
+    """Jump to the bar index passed from the JS hover handler."""
+    try:
+        _jump(chart, state, int(idx_str))
+    except (ValueError, TypeError):
+        pass
+
+
+def _inject_hover_map(chart, prepared_df):
+    """Push a date→bar-index mapping to JS so the crosshair handler can look up bar indices."""
+    import json
+    date_map = {str(d)[:19]: i for i, d in enumerate(prepared_df['date'])}
+    chart.run_script(f'window._replayHoverMap = {json.dumps(date_map)};')
+
+
+def _setup_hover_crosshair(chart):
+    """Subscribe once to crosshair move; JS updates the hover_bar topbar textbox directly."""
+    widget_id = chart.topbar['hover_bar'].id
+    chart.run_script(f'''
+        (function() {{
+            function _timeToKey(t) {{
+                if (!t) return null;
+                if (typeof t === 'object')
+                    return t.year + '-' + String(t.month).padStart(2,'0') + '-' + String(t.day).padStart(2,'0');
+                if (typeof t === 'number') {{
+                    var d = new Date(t * 1000);
+                    return d.getUTCFullYear() + '-' + String(d.getUTCMonth()+1).padStart(2,'0')
+                           + '-' + String(d.getUTCDate()).padStart(2,'0')
+                           + ' ' + String(d.getUTCHours()).padStart(2,'0')
+                           + ':' + String(d.getUTCMinutes()).padStart(2,'0')
+                           + ':' + String(d.getUTCSeconds()).padStart(2,'0');
+                }}
+                return String(t).slice(0, 19);
+            }}
+            window._replayHoverIdx = null;
+            window._replayHoverHandler = function(param) {{
+                var el = {widget_id};
+                if (!el) return;
+                if (!param || !param.time) {{ el.innerText = '-'; window._replayHoverIdx = null; return; }}
+                var key = _timeToKey(param.time);
+                var idx = window._replayHoverMap ? window._replayHoverMap[key] : undefined;
+                window._replayHoverIdx = idx !== undefined ? idx : null;
+                el.innerText = idx !== undefined ? idx : '-';
+            }};
+            {chart.id}.chart.subscribeCrosshairMove(window._replayHoverHandler);
+        }})();
+    ''')
+
+
 def _on_bar_search(chart, state, value):
     """
     Called when the user types in the chart search box.
@@ -1668,6 +1732,7 @@ def _load_ticker_by_name(chart: Chart, state: dict, ticker: str,
         except Exception:
             pass
 
+        _inject_hover_map(chart, prepared_df)
         _render(chart, prepared_df, new_registry, state, 0)
         print(f"[Replay] {ticker}  ({n_total} bars)")
 
