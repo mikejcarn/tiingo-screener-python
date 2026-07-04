@@ -29,12 +29,12 @@ indicators = {  # List of available indicator configurations
     ],
 
     'daily': [
-        'aVWAP',
+        # 'aVWAP',
         'candle_colors',
         # 'QQEMOD',
         # 'aVWAP_anchor_score',
         # 'banker_RSI',
-        # 'SMA',
+        'SMA',
         # 'liquidity',
         # 'BoS_CHoCH',
         # 'FVG',
@@ -240,7 +240,7 @@ params = {
                 'keep_scores': False,
             },
             'liquidity': {
-                'swing_length': 20,
+                'swing_length': 10,
                 'range_percent': 0.1,
                 'max_swept': 0,
                 'max_unswept': None,

@@ -172,7 +172,7 @@ def start_replay(ticker: str, timeframe: str, ind_conf: str, export_html: bool =
     if export_html:
         from src.visualization.src.replay.export_html import export_replay_html
         from src.core.globals import SCREENSHOTS_DIR
-        export_replay_html(prepared_df, colors, ticker, timeframe, ind_conf, SCREENSHOTS_DIR)
+        export_replay_html(prepared_df, colors, ticker, timeframe, ind_conf, SCREENSHOTS_DIR, raw_df=raw_df)
         return
 
     # Build historical data for indicators that need recomputation.
