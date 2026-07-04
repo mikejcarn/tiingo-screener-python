@@ -149,7 +149,7 @@ def _load_for_replay(ticker: str, timeframe: str, ind_conf: str) -> Optional[pd.
 # Public entry point
 # ---------------------------------------------------------------------------
 
-def start_replay(ticker: str, timeframe: str, ind_conf: str):
+def start_replay(ticker: str, timeframe: str, ind_conf: str, export_html: bool = False):
     """Fetch/load OHLCV, compute indicators in memory, and launch bar-by-bar replay."""
     timeframe = _TIMEFRAME_MAP.get(timeframe, timeframe)
 
@@ -168,6 +168,12 @@ def start_replay(ticker: str, timeframe: str, ind_conf: str):
         return
 
     colors = get_color_palette()
+
+    if export_html:
+        from src.visualization.src.replay.export_html import export_replay_html
+        from src.core.globals import SCREENSHOTS_DIR
+        export_replay_html(prepared_df, colors, ticker, timeframe, ind_conf, SCREENSHOTS_DIR)
+        return
 
     # Build historical data for indicators that need recomputation.
     # Done before chart creation so slot line counts are known.

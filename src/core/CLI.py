@@ -20,6 +20,8 @@ def init_cli(vis, fetch, ind, scan, full_run):
     parser.add_argument('--scan-file', type=str, default=None, help='Specify scan file')
     parser.add_argument('--replay', action='store_true',
                         help='Bar-by-bar replay from indicator buffer (requires --ticker, --timeframe, --ind-conf)')
+    parser.add_argument('--export-html', action='store_true',
+                        help='Export replay as a self-contained interactive HTML file (use with --replay)')
 
     # Data processing
     parser.add_argument('--tickers', action='store_true', help='Fetch ticker data')
@@ -90,7 +92,7 @@ def init_cli(vis, fetch, ind, scan, full_run):
         ticker_val = tickers[0] if tickers else 'BTCUSD'
         tf_val = timeframes[0] if timeframes else 'd'
         ic_val = args.ind_conf or '2'
-        start_replay(ticker_val, tf_val, ic_val)
+        start_replay(ticker_val, tf_val, ic_val, export_html=args.export_html)
 
     elif args.tickers:
         fetch(timeframes=timeframes, end_date=end_dates[0] if end_dates else None)
@@ -198,6 +200,7 @@ def show_help() -> None:
       --ticker                Ticker to replay ("BTCUSD")
       --timeframe             Timeframe ("d", "w", "4h", "h", "5min")
       --ind-conf              Indicator config buffer to read ("2")
+      --export-html           Export replay as a self-contained interactive HTML file
                               Controls: ← → step | Shift+←→ jump 20 | Home/End start/end | Space play/pause | , . speed
 
   EXAMPLES:
