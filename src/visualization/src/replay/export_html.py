@@ -826,24 +826,24 @@ def build_html(prepared_df, col_styles, ticker, timeframe, ind_conf,
 <title>{title}</title>
 <style>
   *, *::before, *::after {{ box-sizing: border-box; margin: 0; padding: 0; }}
-  body {{ background: #131722; color: #d1d4dc; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', monospace; user-select: none; }}
+  body {{ background: #000000; color: #cccccc; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', monospace; user-select: none; }}
   #chart {{ width: 100vw; height: calc(100vh - 52px); }}
   #controls {{
     height: 52px; display: flex; align-items: center; gap: 10px;
-    padding: 0 14px; background: #1e222d; border-top: 1px solid #2a2e39;
+    padding: 0 14px; background: #000000; border-top: 1px solid #222222;
   }}
   button {{
-    background: #2a2e39; color: #d1d4dc; border: 1px solid #363c4e;
+    background: #111111; color: #cccccc; border: 1px solid #333333;
     padding: 5px 11px; cursor: pointer; border-radius: 3px; font-size: 13px;
   }}
-  button:hover {{ background: #363c4e; }}
+  button:hover {{ background: #222222; }}
   button.active {{ background: #2962ff; border-color: #2962ff; color: #fff; }}
   #slider {{ flex: 1; min-width: 0; accent-color: #2962ff; cursor: pointer; }}
-  #bar-info {{ font-size: 12px; color: #787b86; min-width: 90px; white-space: nowrap; }}
-  .sep {{ width: 1px; height: 24px; background: #363c4e; }}
-  label {{ font-size: 12px; color: #787b86; display: flex; align-items: center; gap: 5px; white-space: nowrap; }}
+  #bar-info {{ font-size: 12px; color: #666666; min-width: 90px; white-space: nowrap; }}
+  .sep {{ width: 1px; height: 24px; background: #222222; }}
+  label {{ font-size: 12px; color: #666666; display: flex; align-items: center; gap: 5px; white-space: nowrap; }}
   input[type=number] {{
-    width: 46px; background: #2a2e39; color: #d1d4dc; border: 1px solid #363c4e;
+    width: 46px; background: #111111; color: #cccccc; border: 1px solid #333333;
     padding: 4px 6px; border-radius: 3px; font-size: 12px; text-align: center;
   }}
   input[type=number]::-webkit-inner-spin-button {{ opacity: 1; }}
@@ -861,7 +861,7 @@ def build_html(prepared_df, col_styles, ticker, timeframe, ind_conf,
   <input type="range" id="slider" min="0" max="{n_bars - 1}" value="0">
   <span id="bar-info">0 / {n_bars - 1}</span>
   <div class="sep"></div>
-  <label>fps <input type="number" id="fps-input" value="12" min="1" max="60"></label>
+  <label>fps <input type="number" id="fps-input" value="8" min="1" max="60"></label>
 </div>
 
 <script>
@@ -889,11 +889,11 @@ def build_html(prepared_df, col_styles, ticker, timeframe, ind_conf,
   const chart = LightweightCharts.createChart(container, {{
     width:  container.clientWidth,
     height: container.clientHeight,
-    layout: {{ background: {{ color: '#131722' }}, textColor: '#d1d4dc' }},
-    grid:   {{ vertLines: {{ color: '#1e222d' }}, horzLines: {{ color: '#1e222d' }} }},
+    layout: {{ background: {{ color: '#000000' }}, textColor: '#cccccc' }},
+    grid:   {{ vertLines: {{ color: '#0d0d0d' }}, horzLines: {{ color: '#0d0d0d' }} }},
     crosshair: {{ mode: LightweightCharts.CrosshairMode.Normal }},
-    rightPriceScale: {{ borderColor: '#2a2e39' }},
-    timeScale: {{ borderColor: '#2a2e39', timeVisible: true, secondsVisible: false }},
+    rightPriceScale: {{ borderColor: '#1a1a1a' }},
+    timeScale: {{ borderColor: '#1a1a1a', timeVisible: true, secondsVisible: false }},
   }});
 
   const candleSeries = chart.addCandlestickSeries({{
@@ -1233,7 +1233,7 @@ def build_html(prepared_df, col_styles, ticker, timeframe, ind_conf,
 
   function tick(ts) {{
     if (!playing) return;
-    const fps = Math.max(1, parseInt(document.getElementById('fps-input').value) || 12);
+    const fps = Math.max(1, parseInt(document.getElementById('fps-input').value) || 8);
     const interval = 1000 / fps;
     if (ts - lastTime >= interval) {{
       lastTime = ts;
@@ -1285,7 +1285,119 @@ def build_html(prepared_df, col_styles, ticker, timeframe, ind_conf,
 # Entry point
 # ---------------------------------------------------------------------------
 
-def export_replay_html(prepared_df, colors, ticker, timeframe, ind_conf, output_dir, raw_df=None):
+def generate_browser_index(output_dir: Path, timeframe: str, ind_conf: str) -> Path:
+    """Generate index.html in output_dir — a cycling iframe browser for all exported replays."""
+    files = sorted(f.name for f in Path(output_dir).glob("*.html") if f.name != "index.html")
+    if not files:
+        return None
+
+    sep = f"_{timeframe}_"
+    labels = [f[:f.index(sep)] if sep in f else f.split("_")[0] for f in files]
+
+    files_js  = json.dumps(files)
+    labels_js = json.dumps(labels)
+
+    html = f"""<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Replay Browser — {timeframe} / ind_conf_{ind_conf}</title>
+<style>
+  *, *::before, *::after {{ box-sizing: border-box; margin: 0; padding: 0; }}
+  body {{ background: #000; color: #ccc; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', monospace; overflow: hidden; }}
+  #nav {{
+    height: 44px; display: flex; align-items: center; gap: 10px;
+    padding: 0 14px; background: #000; border-bottom: 1px solid #222;
+  }}
+  button {{
+    background: #111; color: #ccc; border: 1px solid #333;
+    padding: 5px 12px; cursor: pointer; border-radius: 3px; font-size: 13px;
+  }}
+  button:hover {{ background: #222; }}
+  #ticker-label {{ color: #fff; font-weight: bold; font-size: 14px; min-width: 80px; }}
+  #count {{ color: #555; font-size: 12px; }}
+  .sep {{ width: 1px; height: 24px; background: #222; flex-shrink: 0; }}
+  #search {{
+    background: #111; color: #ccc; border: 1px solid #333;
+    padding: 4px 8px; border-radius: 3px; font-size: 12px; width: 150px;
+  }}
+  #search:focus {{ outline: none; border-color: #555; }}
+  #hint {{ font-size: 11px; color: #383838; margin-left: auto; white-space: nowrap; }}
+  #frame {{ display: block; width: 100vw; height: calc(100vh - 44px); border: none; }}
+</style>
+</head>
+<body>
+
+<div id="nav">
+  <button id="btn-prev">&#9664;</button>
+  <span id="ticker-label">—</span>
+  <span id="count"></span>
+  <button id="btn-next">&#9654;</button>
+  <div class="sep"></div>
+  <input id="search" type="text" placeholder="jump to ticker…" autocomplete="off" spellcheck="false">
+  <span id="hint">[ &nbsp; ] &nbsp; cycle &nbsp;·&nbsp; / &nbsp; search &nbsp;·&nbsp; {timeframe} &nbsp;·&nbsp; conf {ind_conf}</span>
+</div>
+
+<iframe id="frame" src="" frameborder="0" allowfullscreen></iframe>
+
+<script>
+(function() {{
+  const FILES  = {files_js};
+  const LABELS = {labels_js};
+  let idx = 0;
+
+  function go(n) {{
+    idx = ((n % FILES.length) + FILES.length) % FILES.length;
+    document.getElementById('frame').src = FILES[idx];
+    document.getElementById('ticker-label').textContent = LABELS[idx];
+    document.getElementById('count').textContent = (idx + 1) + ' / ' + FILES.length;
+    document.getElementById('search').value = '';
+  }}
+
+  document.getElementById('btn-prev').addEventListener('click', () => go(idx - 1));
+  document.getElementById('btn-next').addEventListener('click', () => go(idx + 1));
+
+  document.addEventListener('keydown', function(e) {{
+    if (document.activeElement === document.getElementById('search')) return;
+    if (e.key === '[')  {{ e.preventDefault(); go(idx - 1); }}
+    if (e.key === ']')  {{ e.preventDefault(); go(idx + 1); }}
+    if (e.key === '/')  {{ e.preventDefault(); document.getElementById('search').focus(); }}
+  }});
+
+  const searchEl = document.getElementById('search');
+  searchEl.addEventListener('keydown', function(e) {{
+    if (e.key === 'Enter') {{
+      const q = this.value.trim().toUpperCase();
+      const i = LABELS.findIndex(l => l === q);
+      if (i >= 0) {{ go(i); this.blur(); }}
+      else {{ this.style.color = '#f66'; setTimeout(() => this.style.color = '', 600); }}
+    }}
+    if (e.key === 'Escape') {{ this.value = ''; this.blur(); }}
+  }});
+
+  // live filter: show first match as user types
+  searchEl.addEventListener('input', function() {{
+    const q = this.value.trim().toUpperCase();
+    if (!q) return;
+    const i = LABELS.findIndex(l => l.startsWith(q));
+    if (i >= 0) {{
+      document.getElementById('ticker-label').textContent = LABELS[i] + '…';
+      document.getElementById('count').textContent = '';
+    }}
+  }});
+
+  go(0);
+}})();
+</script>
+</body>
+</html>
+"""
+    out = Path(output_dir) / "index.html"
+    out.write_text(html, encoding="utf-8")
+    return out
+
+
+def export_replay_html(prepared_df, colors, ticker, timeframe, ind_conf, output_dir, raw_df=None, out_path=None):
     # smc-based extractors (FVG, OB, Liquidity) need a volume column that
     # prepare_dataframe drops when show_volume=False.  Use raw_df when available.
     ohlcv_df    = raw_df if raw_df is not None else prepared_df
@@ -1311,8 +1423,11 @@ def export_replay_html(prepared_df, colors, ticker, timeframe, ind_conf, output_
                       bos_data=bos_data, liq_data=liq_data, pmm_data=pmm_data,
                       colors=colors)
 
-    ts  = datetime.now().strftime('%d%m%y_%H%M%S')
-    out = Path(output_dir) / f"{ticker}_{timeframe}_{ts}_replay.html"
+    if out_path is not None:
+        out = Path(out_path)
+    else:
+        ts  = datetime.now().strftime('%d%m%y_%H%M%S')
+        out = Path(output_dir) / f"{ticker}_{timeframe}_{ts}_replay.html"
     out.write_text(html, encoding='utf-8')
     print(f"[Export] Saved {out}  ({len(html) // 1024} KB,  {len(prepared_df)} bars,  "
           f"{len(col_styles)} T1 lines,  OB:{n_ob}  QQEMOD:{n_qq}  FVG:{n_fvg}  "

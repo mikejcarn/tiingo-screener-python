@@ -18,7 +18,7 @@ indicators = {  # List of available indicator configurations
         # 'WAE',
         # 'supertrend',
         # 'TTM_squeeze',
-        # 'divergence_Vortex', 'divergence_Fisher', 'divergence_OBV', 'divergence_Volume'
+        # 'divergence_Vortex', 'divergence_Fisher', 'divergence_OBV'
     ],
 
     'weekly': [
@@ -29,12 +29,12 @@ indicators = {  # List of available indicator configurations
     ],
 
     'daily': [
-        # 'aVWAP',
+        'aVWAP',
         'candle_colors',
         # 'QQEMOD',
         # 'aVWAP_anchor_score',
         # 'banker_RSI',
-        'SMA',
+        # 'SMA',
         # 'liquidity',
         # 'BoS_CHoCH',
         # 'FVG',

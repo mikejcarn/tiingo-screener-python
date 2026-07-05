@@ -22,6 +22,8 @@ def init_cli(vis, fetch, ind, scan, full_run):
                         help='Bar-by-bar replay from indicator buffer (requires --ticker, --timeframe, --ind-conf)')
     parser.add_argument('--export-html', action='store_true',
                         help='Export replay as a self-contained interactive HTML file (use with --replay)')
+    parser.add_argument('--browse', action='store_true',
+                        help='Open the cycling browser for exported HTML replays (requires --timeframe and --ind-conf)')
 
     # Data processing
     parser.add_argument('--tickers', action='store_true', help='Fetch ticker data')
@@ -70,6 +72,10 @@ def init_cli(vis, fetch, ind, scan, full_run):
     parser.add_argument('--list-screenshots', action='store_true', help='List screenshots')
     parser.add_argument('--clear-screenshots', action='store_true', help='Clear screenshots')
 
+    # HTML exports
+    parser.add_argument('--list-exports', action='store_true', help='List exported HTML replay files')
+    parser.add_argument('--clear-exports', action='store_true', help='Clear exported HTML replay files')
+
     args = parser.parse_args()
 
     # Parse timeframe(s) - shared between vis, fetch, and ind
@@ -93,6 +99,52 @@ def init_cli(vis, fetch, ind, scan, full_run):
         tf_val = timeframes[0] if timeframes else 'd'
         ic_val = args.ind_conf or '2'
         start_replay(ticker_val, tf_val, ic_val, export_html=args.export_html)
+
+    elif args.export_html:
+        from src.visualization.src.replay import batch_export_html
+        tf_val = timeframes[0] if timeframes else 'daily'
+        ic_val = args.ind_conf or '0'
+        batch_export_html(tf_val, ic_val)
+
+    elif args.browse:
+        import http.server
+        import threading
+        import subprocess
+        import time
+        from pathlib import Path
+        from src.core.globals import HTML_EXPORTS_DIR
+        from src.visualization.src.replay.export_html import generate_browser_index
+        tf_val = timeframes[0] if timeframes else 'daily'
+        ic_val = args.ind_conf or '0'
+        _TIMEFRAME_MAP = {'d': 'daily', 'w': 'weekly', '4h': '4hour', 'h': '1hour', '5min': '5min'}
+        tf_full = _TIMEFRAME_MAP.get(tf_val, tf_val)
+        output_dir = Path(HTML_EXPORTS_DIR) / f"ind_conf_{ic_val}" / tf_full
+        if not output_dir.exists():
+            print(f"No exports found at {output_dir}")
+            print(f"Run: python app.py --export-html --timeframe {tf_val} --ind-conf {ic_val}")
+        else:
+            generate_browser_index(output_dir, tf_full, ic_val)
+            class _Handler(http.server.SimpleHTTPRequestHandler):
+                def __init__(self, *a, **kw):
+                    super().__init__(*a, directory=str(output_dir), **kw)
+                def log_message(self, *a):
+                    pass
+            port = 8765
+            try:
+                server = http.server.HTTPServer(('localhost', port), _Handler)
+            except OSError:
+                port = 8766
+                server = http.server.HTTPServer(('localhost', port), _Handler)
+            threading.Thread(target=server.serve_forever, daemon=True).start()
+            url = f'http://localhost:{port}/index.html'
+            print(f"Replay browser: {url}  (Ctrl+C to stop)")
+            subprocess.Popen(['xdg-open', url])
+            try:
+                while True:
+                    time.sleep(1)
+            except KeyboardInterrupt:
+                server.shutdown()
+                print("\nServer stopped.")
 
     elif args.tickers:
         fetch(timeframes=timeframes, end_date=end_dates[0] if end_dates else None)
@@ -164,10 +216,18 @@ def init_cli(vis, fetch, ind, scan, full_run):
         dm.delete_all_versions(dm.tickers_dir)
 
     # Screenshot commands
-    elif args.clear_screenshots: 
+    elif args.clear_screenshots:
         dm.clear_buffer(dm.screenshots_dir)
-    elif args.list_screenshots: 
+    elif args.list_screenshots:
         dm.list_screenshots()
+
+    # HTML export commands
+    elif args.list_exports:
+        tf_val = timeframes[0] if timeframes else None
+        dm.list_exports(timeframe=tf_val, ind_conf=args.ind_conf)
+    elif args.clear_exports:
+        tf_val = timeframes[0] if timeframes else None
+        dm.clear_exports(timeframe=tf_val, ind_conf=args.ind_conf)
    
     else: 
         show_help()
@@ -200,8 +260,17 @@ def show_help() -> None:
       --ticker                Ticker to replay ("BTCUSD")
       --timeframe             Timeframe ("d", "w", "4h", "h", "5min")
       --ind-conf              Indicator config buffer to read ("2")
-      --export-html           Export replay as a self-contained interactive HTML file
+      --export-html           Export single ticker as a self-contained HTML replay file
                               Controls: ← → step | Shift+←→ jump 20 | Home/End start/end | Space play/pause | , . speed
+  --export-html               Batch export all tickers in buffer to HTML replay files
+      --timeframe             Timeframe to export (default: daily)
+      --ind-conf              Indicator config to use (default: 0)
+                              Output: docs/exports/ind_conf_{N}/{timeframe}/{TICKER}.html
+                              Also generates index.html cycling browser in the same dir
+  --browse                    Open the cycling browser for a batch of exported HTML replays
+      --timeframe             Timeframe (default: daily)
+      --ind-conf              Indicator config (default: 0)
+                              Regenerates index.html and opens it in the system browser
 
   EXAMPLES:
     Fetch:
@@ -251,4 +320,10 @@ def show_help() -> None:
   --clear-scans               Clear scan buffer
   --clear-ind-scans           Clear indicator + scans buffers
   --clear-screenshots         Clear screenshots buffer
+  --list-exports              List exported HTML replay files
+      --timeframe             Filter by timeframe
+      --ind-conf              Filter by ind_conf
+  --clear-exports             Delete exported HTML replay files
+      --timeframe             Scope to a specific timeframe
+      --ind-conf              Scope to a specific ind_conf
 """)

@@ -149,6 +149,72 @@ def _load_for_replay(ticker: str, timeframe: str, ind_conf: str) -> Optional[pd.
 # Public entry point
 # ---------------------------------------------------------------------------
 
+def batch_export_html(timeframe: str, ind_conf: str) -> None:
+    """Export all tickers in the tickers buffer to self-contained HTML replay files.
+
+    Output: docs/exports/ind_conf_{N}/{timeframe}/{TICKER}_{timeframe}_ind{N}.html
+    Files are named without a timestamp so re-runs overwrite cleanly.
+    """
+    from pathlib import Path
+    from src.core.globals import TICKERS_DIR, HTML_EXPORTS_DIR
+    from src.visualization.src.charts import prepare_dataframe
+    from src.visualization.src.replay.export_html import export_replay_html
+
+    tf = _TIMEFRAME_MAP.get(timeframe, timeframe)
+    output_dir = Path(HTML_EXPORTS_DIR) / f"ind_conf_{ind_conf}" / tf
+    output_dir.mkdir(parents=True, exist_ok=True)
+
+    # Collect most-recent CSV per ticker for this timeframe
+    ticker_map = {}
+    for f in sorted(Path(TICKERS_DIR).glob(f"*_{tf}_*.csv")):
+        sep = f"_{tf}_"
+        stem = f.stem
+        if sep in stem:
+            ticker_map[stem[: stem.index(sep)]] = f
+
+    if not ticker_map:
+        print(f"No tickers found in buffer for timeframe '{tf}'")
+        return
+
+    colors = get_color_palette()
+    print(f"\n=== BATCH HTML EXPORT ===")
+    print(f"Timeframe: {tf}  |  ind_conf: {ind_conf}  |  {len(ticker_map)} tickers")
+    print(f"Output: {output_dir}\n")
+
+    ok, failed = 0, []
+    total = len(ticker_map)
+    for i, ticker in enumerate(sorted(ticker_map), 1):
+        print(f"[{i}/{total}] {ticker} ...", end=" ", flush=True)
+        try:
+            raw_df = _load_for_replay(ticker, tf, ind_conf)
+            if raw_df is None or raw_df.empty:
+                print("skip (no data)")
+                failed.append(ticker)
+                continue
+            prepared_df, _ = prepare_dataframe(raw_df, show_volume=False, padding_ratio=0)
+            if prepared_df.empty:
+                print("skip (empty)")
+                failed.append(ticker)
+                continue
+            out_path = output_dir / f"{ticker}_{tf}_ind{ind_conf}.html"
+            export_replay_html(prepared_df, colors, ticker, tf, ind_conf,
+                               output_dir, raw_df=raw_df, out_path=out_path)
+            ok += 1
+            print("ok")
+        except Exception as e:
+            print(f"error: {e}")
+            failed.append(ticker)
+
+    print(f"\n✅ {ok}/{total} exported → {output_dir}")
+    if failed:
+        print(f"   Skipped ({len(failed)}): {', '.join(failed)}")
+
+    from src.visualization.src.replay.export_html import generate_browser_index
+    index_path = generate_browser_index(output_dir, tf, ind_conf)
+    if index_path:
+        print(f"   Browser index: {index_path}")
+
+
 def start_replay(ticker: str, timeframe: str, ind_conf: str, export_html: bool = False):
     """Fetch/load OHLCV, compute indicators in memory, and launch bar-by-bar replay."""
     timeframe = _TIMEFRAME_MAP.get(timeframe, timeframe)

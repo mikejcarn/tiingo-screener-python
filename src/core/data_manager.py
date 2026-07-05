@@ -6,7 +6,8 @@ from src.core.globals import (
                              INDICATORS_DIR,
                              SCANNER_DIR,
                              TICKERS_DIR,
-                             SCREENSHOTS_DIR
+                             SCREENSHOTS_DIR,
+                             HTML_EXPORTS_DIR,
                             )
 
 class DataManager:
@@ -17,6 +18,7 @@ class DataManager:
         self.scanner_dir     = Path(core['SCANNER_DIR'])
         self.tickers_dir     = Path(core['TICKERS_DIR'])
         self.screenshots_dir = Path(core['SCREENSHOTS_DIR'])
+        self.html_exports_dir = Path(core['HTML_EXPORTS_DIR'])
 
     # Core File Operations --------------------------------
 
@@ -278,10 +280,71 @@ class DataManager:
         print(f"\n  Directory: {self.screenshots_dir}")
         print()
 
+    def list_exports(self, timeframe=None, ind_conf=None, limit: int = 20) -> None:
+        """List exported HTML replay files, optionally filtered by timeframe and ind_conf."""
+        if not self.html_exports_dir.exists():
+            print(f"\n  No exports found at {self.html_exports_dir}")
+            return
+
+        # Collect matching conf/timeframe subdirs
+        conf_dirs = sorted(self.html_exports_dir.glob("ind_conf_*/"))
+        if ind_conf is not None:
+            conf_dirs = [d for d in conf_dirs if d.name == f"ind_conf_{ind_conf}"]
+
+        total_files = 0
+        shown = 0
+        print()
+        for conf_dir in conf_dirs:
+            tf_dirs = sorted(conf_dir.glob("*/"))
+            if timeframe is not None:
+                tf_dirs = [d for d in tf_dirs if d.name == timeframe]
+            for tf_dir in tf_dirs:
+                files = sorted(f for f in tf_dir.glob("*.html") if f.name != "index.html")
+                total_files += len(files)
+                print(f"  [{conf_dir.name} / {tf_dir.name}]  {len(files)} file(s)")
+                for f in files[:limit - shown]:
+                    size_kb = f.stat().st_size // 1024
+                    print(f"    {f.stem}  ({size_kb} KB)")
+                    shown += 1
+                if len(files) > limit:
+                    print(f"    ... and {len(files) - limit} more")
+        print(f"\n  Total: {total_files} HTML export(s)  —  {self.html_exports_dir}\n")
+
+    def clear_exports(self, timeframe=None, ind_conf=None) -> None:
+        """Delete exported HTML files. Optionally scoped to a timeframe and/or ind_conf."""
+        if not self.html_exports_dir.exists():
+            print(f"\n  No exports found at {self.html_exports_dir}")
+            return
+
+        import shutil as _shutil
+        conf_dirs = sorted(self.html_exports_dir.glob("ind_conf_*/"))
+        if ind_conf is not None:
+            conf_dirs = [d for d in conf_dirs if d.name == f"ind_conf_{ind_conf}"]
+
+        removed = 0
+        for conf_dir in conf_dirs:
+            tf_dirs = sorted(conf_dir.glob("*/"))
+            if timeframe is not None:
+                tf_dirs = [d for d in tf_dirs if d.name == timeframe]
+            for tf_dir in tf_dirs:
+                _shutil.rmtree(tf_dir)
+                removed += 1
+                print(f"  Cleared {conf_dir.name}/{tf_dir.name}")
+            # Remove conf dir if now empty
+            if conf_dir.exists() and not any(conf_dir.iterdir()):
+                conf_dir.rmdir()
+
+        if removed:
+            print(f"\n  🧹 Cleared {removed} export dir(s)\n")
+        else:
+            print(f"\n  Nothing to clear\n")
+
+
 # Create instance of Class to export
 dm = DataManager({
     'INDICATORS_DIR': INDICATORS_DIR,
     'SCANNER_DIR': SCANNER_DIR,
     'TICKERS_DIR': TICKERS_DIR,
-    'SCREENSHOTS_DIR': SCREENSHOTS_DIR
+    'SCREENSHOTS_DIR': SCREENSHOTS_DIR,
+    'HTML_EXPORTS_DIR': HTML_EXPORTS_DIR,
 })

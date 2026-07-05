@@ -20,6 +20,9 @@ SCAN_LIST_DIR    = PROJECT_ROOT / "src" / "scans" / "scan_lists"
 # Screenshots taken from visualization application chart
 SCREENSHOTS_DIR = PROJECT_ROOT / "docs" / "screenshots"
 
+# Batch HTML replay exports
+HTML_EXPORTS_DIR = PROJECT_ROOT / "data" / "export-html"
+
 # Tickers Lists for Fetch (eg TSX, QQQ, NASDAQ)
 TICKERS_LIST    = PROJECT_ROOT / 'src/tickers/ticker_lists/TSX.csv'
 
