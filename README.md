@@ -6,6 +6,9 @@ Stock screener application that fetches ticker data from the Tiingo API, calcula
 - **Automated Data Pipeline**: Tickers → Indicators → Scans → Visualization
 - **Multi-Timeframe Analysis**: Support for daily, weekly, hourly, and minute timeframes
 - **Advanced Visualization**: TradingView-style charts using lightweight-charts library
+- **Bar-by-Bar Replay**: Step through price history with indicators computed in memory — no `--ind` run required
+- **HTML Export**: Export any ticker as a fully self-contained interactive replay file (works offline)
+- **Batch HTML Export + Browser**: Export all tickers at once and browse them with a cycling iframe browser served locally
 - **Flexible Data Management**: Version-controlled buffer system with save/load/delete capabilities
 - **Comprehensive Scanning**: Multiple indicator-based scan criteria
 - **Dynamic CLI**: Flexible specifications across commands
@@ -17,11 +20,14 @@ Stock screener application that fetches ticker data from the Tiingo API, calcula
 ```bash
 ./data/
 ├── tickers/              # Raw API data buffer
-│   └── tickers_*_*/
 ├── indicators/           # Calculated indicators buffer
-│   └── ind_conf_*/
-└── scans/                # Scan results buffer
-    └── scan_list_*/
+│   └── ind_conf_*/       # One subdir per indicator config
+├── scans/                # Scan results buffer
+└── export-html/          # Batch-exported HTML replay files
+    └── ind_conf_*/
+        └── {timeframe}/
+            ├── {TICKER}_{timeframe}_ind{N}.html
+            └── index.html    # Cycling browser entry point
 ```
 
 ### Data Workflow 
@@ -265,12 +271,12 @@ params = {
 ### Output Structure
 ```bash
 ./data/indicators/
-├── ind_conf_1_010124/           # Config-specific folder
+├── ind_conf_1/           # Config-specific folder
 │   ├── AAPL_daily_010124.csv
 │   ├── AAPL_4hour_010124.csv
 │   ├── BTCUSD_daily_010124.csv
 │   └── ...
-└── ind_conf_2_010124/           # Another config
+└── ind_conf_2/           # Another config
     ├── AAPL_daily_010124.csv
     ├── AAPL_4hour_010124.csv
     └── ...
@@ -421,6 +427,79 @@ scan_lists = {
 }
 ```
 
+## ▶️ Bar-by-Bar Replay
+
+Watch indicators develop bar by bar as price action plays out. Indicators are computed in memory from the tickers buffer — no `--ind` run required.
+
+```bash
+python app.py --replay --ticker AAPL --timeframe daily --ind-conf 0
+```
+
+### Replay Controls
+
+| Action | Key |
+|--------|-----|
+| Step backward / forward | `←` / `→` |
+| Jump 20 bars | `Shift+←` / `Shift+→` |
+| Jump to first / last bar | `Home` / `End` |
+| Play / pause | `Space` |
+| Faster / slower | `↑` / `↓` or `,` / `.` |
+| Reset speed (1.0x) | `/` |
+| Toggle auto-fit | `Backspace` |
+| Jump to bar number | type number + `Enter` |
+| Load any ticker | type symbol + `Enter` |
+| Exit | `Ctrl+C` |
+
+## 🌐 HTML Export & Browser
+
+### Single Ticker Export
+
+Export a single ticker as a fully self-contained HTML replay file (works offline, no server needed):
+
+```bash
+python app.py --replay --ticker AAPL --timeframe daily --ind-conf 0 --export-html
+```
+
+Saved to `docs/screenshots/`.
+
+### Batch Export
+
+Export all tickers in the buffer for a given timeframe and indicator config:
+
+```bash
+python app.py --export-html --timeframe daily --ind-conf 0
+```
+
+Saved to `data/export-html/ind_conf_{N}/{timeframe}/`. An `index.html` cycling browser is generated automatically.
+
+### Browser
+
+Open the cycling browser to flip through all exported tickers:
+
+```bash
+python app.py --browse --timeframe daily --ind-conf 0
+```
+
+Starts a local HTTP server and opens `http://localhost:8765/index.html` in your browser.
+
+**Browser controls:**
+
+| Action | Key / Control |
+|--------|---------------|
+| Next ticker | `]` or ▶ button |
+| Prev ticker | `[` or ◀ button |
+| Jump to ticker | `/` to focus search, type symbol, `Enter` |
+| Step replay bars | `←` / `→` (click inside chart first) |
+
+### Export Management
+
+```bash
+python app.py --list-exports                                       # list all exports
+python app.py --list-exports --timeframe daily --ind-conf 0        # filtered
+python app.py --clear-exports                                      # delete all
+python app.py --clear-exports --timeframe daily --ind-conf 0       # scoped delete
+```
+
 ## 🖥️ CLI Usage Guide
 
 - Values in `[brackets]` represent application CLI inputs.
@@ -431,10 +510,13 @@ scan_lists = {
 | Command | Description | Example |
 |---------|-------------|---------|
 | `--full-run` | Complete process: fetch > indicators > scan | `--full-run` |
-| `--tickers` | Download tickers from API to buffer | `--tickers daily` |
+| `--tickers` | Download tickers from API to buffer | `--tickers --timeframe daily` |
 | `--ind` | Calculate indicators from tickers buffer | `--ind --ind-conf 1` |
-| `--scan` | Run scanner on indicators buffer | `--scan --scan-list 1` |
-| `--vis` | Launch visualization | `--vis --ticker MSFT --timeframe d --ind-conf 1`<br> `--vis --ticker MSFT --timeframe w,d,4h,h --ind-conf 1,2,3,4`<br> `--vis --ticker MSFT,BTCUSD,AAPL,SOFI --timeframe w,d,4h,h --ind-conf 1` |
+| `--scan` | Run scanner on indicators buffer | `--scan --scan-list 1 --ind-conf 1` |
+| `--vis` | Launch visualization | `--vis --ticker MSFT --timeframe d --ind-conf 1` |
+| `--replay` | Bar-by-bar replay (indicators computed in memory) | `--replay --ticker AAPL --timeframe daily --ind-conf 0` |
+| `--export-html` | Batch export all tickers to HTML replay files | `--export-html --timeframe daily --ind-conf 0` |
+| `--browse` | Open cycling browser for exported HTML files | `--browse --timeframe daily --ind-conf 0` |
 
 **`--tickers` Options:**
 - `--timeframe [TIMEFRAME]` - Timeframes(s) to fetch (comma-separated e.g., "daily,weekly")
@@ -534,6 +616,7 @@ python app.py --vis --ticker AAPL --timeframe d,d,d,d --ind-conf 2 --end-date 20
 | `--list-ind-ver` | List saved indicator versions |
 | `--list-scans-ver` | List saved scan versions |
 | `--list-screenshots` | List saved screenshots |
+| `--list-exports` | List exported HTML replay files |
 
 ### STORAGE DATA MANAGEMENT
 | Category | Save | Load | Delete Single | Delete All |
@@ -550,6 +633,7 @@ python app.py --vis --ticker AAPL --timeframe d,d,d,d --ind-conf 2 --end-date 20
 | `--clear-ind` | Clear indicators buffer |
 | `--clear-scans` | Clear scans buffer |
 | `--clear-screenshots` | Clear screenshots buffer |
+| `--clear-exports` | Clear exported HTML replay files (supports `--timeframe` / `--ind-conf` filters) |
 
 ## 🚀 Installation
 
