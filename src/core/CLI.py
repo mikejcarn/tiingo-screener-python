@@ -24,6 +24,8 @@ def init_cli(vis, fetch, ind, scan, full_run):
                         help='Export replay as a self-contained interactive HTML file (use with --replay)')
     parser.add_argument('--browse', action='store_true',
                         help='Open the cycling browser for exported HTML replays (requires --timeframe and --ind-conf)')
+    parser.add_argument('--fps', type=int, default=8, metavar='N',
+                        help='Default playback FPS for the replay browser (default: 8)')
 
     # Data processing
     parser.add_argument('--tickers', action='store_true', help='Fetch ticker data')
@@ -123,7 +125,7 @@ def init_cli(vis, fetch, ind, scan, full_run):
             print(f"No exports found at {output_dir}")
             print(f"Run: python app.py --export-html --timeframe {tf_val} --ind-conf {ic_val}")
         else:
-            generate_browser_index(output_dir, tf_full, ic_val)
+            generate_browser_index(output_dir, tf_full, ic_val, fps=args.fps)
             class _Handler(http.server.SimpleHTTPRequestHandler):
                 def __init__(self, *a, **kw):
                     super().__init__(*a, directory=str(output_dir), **kw)

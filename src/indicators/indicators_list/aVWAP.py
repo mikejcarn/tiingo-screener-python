@@ -256,7 +256,7 @@ def calculate_avwap_channel(
     # -------------------------
     # Build params for get_indicators (EXCEPT OB)
     # -------------------------
-    base_anchors = [a for a in aVWAP_anchors if a not in ('OB', 'price_maxima_minima')]
+    base_anchors = [a for a in aVWAP_anchors if a not in ('OB', 'price_maxima_minima', 'BoS_CHoCH')]
 
     params = {}
     if 'peaks_valleys' in base_anchors:
@@ -274,17 +274,30 @@ def calculate_avwap_channel(
      
     if 'gaps' in base_anchors:
         params['gaps'] = {}
-    if 'BoS_CHoCH' in base_anchors and BoS_CHoCH_configs:
-        max_swing = max([cfg.get('swing_length', 25) for cfg in BoS_CHoCH_configs])
-        params['BoS_CHoCH'] = {'swing_length': max_swing}
 
-    # Compute base indicators (non-OB) - this is for other indicators that might need peaks/valleys
+    # Compute base indicators (non-OB, non-BoS_CHoCH)
     if base_anchors:
         df = get_indicators(df, base_anchors, params)
 
     # Compute OB per config if requested
     if OB and OB_configs:
         df = add_ob_per_config(df, OB_configs)
+
+    # Compute BoS_CHoCH for each unique swing length needed across all configs
+    if BoS_CHoCH and BoS_CHoCH_configs:
+        _bc_swings = set()
+        for _cfg in BoS_CHoCH_configs:
+            _sl = _cfg.get('swing_length', 25)
+            _bc_swings.add(_cfg.get('BoS_swing_length',   _sl))
+            _bc_swings.add(_cfg.get('CHoCH_swing_length', _sl))
+        _bc_base  = [c for c in ['Open', 'High', 'Low', 'Close', 'Volume', 'date'] if c in df.columns]
+        _bc_clean = df[_bc_base].copy()
+        for _sl in _bc_swings:
+            if f'BoS_{_sl}' not in df.columns:
+                _tmp = get_indicators(_bc_clean.copy(), ['BoS_CHoCH'], {'BoS_CHoCH': {'swing_length': _sl}})
+                for _col in [f'BoS_{_sl}', f'CHoCH_{_sl}', f'BoS_CHoCH_Break_Index_{_sl}']:
+                    if _col in _tmp.columns:
+                        df[_col] = _tmp[_col]
 
     # Compute QQEMOD signals per config if requested
     if 'QQEMOD' in aVWAP_anchors and QQEMOD_configs:
@@ -668,54 +681,59 @@ def calculate_avwap_channel(
 
             config_BoS = {}
 
-            # calculate_BoS_CHoCH produces suffixed columns (BoS_15, CHoCH_15, etc.)
-            _bos_col   = f'BoS_{max_swing}'
-            _choch_col = f'CHoCH_{max_swing}'
-            _break_col = f'BoS_CHoCH_Break_Index_{max_swing}'
-            if _bos_col in df.columns and _choch_col in df.columns:
-                if include_BoS and include_bull:
-                    for idx in df[df[_bos_col] == 1].index:
-                        if idx in seen_BoS_bull_indices:
-                            continue
-                        break_idx = int(df.loc[idx, _break_col]) if _break_col in df.columns and not pd.isna(df.loc[idx, _break_col]) else None
-                        if break_idx:
-                            vwap = process_BoS_CHoCH_range(idx, break_idx, 'bullish')
-                            if vwap is not None:
-                                config_BoS[f'aVWAP_BoS_bull_c{config_idx}_{idx}'] = vwap
-                                seen_BoS_bull_indices.add(idx)
+            # Resolve per-signal swing lengths; BoS_swing_length / CHoCH_swing_length
+            # fall back to the shared swing_length when not specified.
+            _sl              = config.get('swing_length', 25)
+            _bos_sl          = config.get('BoS_swing_length',   _sl)
+            _choch_sl        = config.get('CHoCH_swing_length',  _sl)
+            _bos_col         = f'BoS_{_bos_sl}'
+            _choch_col       = f'CHoCH_{_choch_sl}'
+            _break_bos_col   = f'BoS_CHoCH_Break_Index_{_bos_sl}'
+            _break_choch_col = f'BoS_CHoCH_Break_Index_{_choch_sl}'
 
-                if include_BoS and include_bear:
-                    for idx in df[df[_bos_col] == -1].index:
-                        if idx in seen_BoS_bear_indices:
-                            continue
-                        break_idx = int(df.loc[idx, _break_col]) if _break_col in df.columns and not pd.isna(df.loc[idx, _break_col]) else None
-                        if break_idx:
-                            vwap = process_BoS_CHoCH_range(idx, break_idx, 'bearish')
-                            if vwap is not None:
-                                config_BoS[f'aVWAP_BoS_bear_c{config_idx}_{idx}'] = vwap
-                                seen_BoS_bear_indices.add(idx)
+            if include_BoS and include_bull and _bos_col in df.columns:
+                for idx in df[df[_bos_col] == 1].index:
+                    if idx in seen_BoS_bull_indices:
+                        continue
+                    break_idx = int(df.loc[idx, _break_bos_col]) if _break_bos_col in df.columns and not pd.isna(df.loc[idx, _break_bos_col]) else None
+                    if break_idx:
+                        vwap = process_BoS_CHoCH_range(idx, break_idx, 'bullish')
+                        if vwap is not None:
+                            config_BoS[f'aVWAP_BoS_bull_c{config_idx}_{idx}'] = vwap
+                            seen_BoS_bull_indices.add(idx)
 
-                if include_CHoCH and include_bull:
-                    for idx in df[df[_choch_col] == 1].index:
-                        if idx in seen_CHoCH_bull_indices:
-                            continue
-                        break_idx = int(df.loc[idx, _break_col]) if _break_col in df.columns and not pd.isna(df.loc[idx, _break_col]) else None
-                        if break_idx:
-                            vwap = process_BoS_CHoCH_range(idx, break_idx, 'bullish')
-                            if vwap is not None:
-                                config_BoS[f'aVWAP_CHoCH_bull_c{config_idx}_{idx}'] = vwap
-                                seen_CHoCH_bull_indices.add(idx)
+            if include_BoS and include_bear and _bos_col in df.columns:
+                for idx in df[df[_bos_col] == -1].index:
+                    if idx in seen_BoS_bear_indices:
+                        continue
+                    break_idx = int(df.loc[idx, _break_bos_col]) if _break_bos_col in df.columns and not pd.isna(df.loc[idx, _break_bos_col]) else None
+                    if break_idx:
+                        vwap = process_BoS_CHoCH_range(idx, break_idx, 'bearish')
+                        if vwap is not None:
+                            config_BoS[f'aVWAP_BoS_bear_c{config_idx}_{idx}'] = vwap
+                            seen_BoS_bear_indices.add(idx)
 
-                if include_CHoCH and include_bear:
-                    for idx in df[df[_choch_col] == -1].index:
-                        if idx in seen_CHoCH_bear_indices:
-                            continue
-                        break_idx = int(df.loc[idx, _break_col]) if _break_col in df.columns and not pd.isna(df.loc[idx, _break_col]) else None
-                        if break_idx:
-                            vwap = process_BoS_CHoCH_range(idx, break_idx, 'bearish')
-                            if vwap is not None:
-                                config_BoS[f'aVWAP_CHoCH_bear_c{config_idx}_{idx}'] = vwap
-                                seen_CHoCH_bear_indices.add(idx)
+            if include_CHoCH and include_bull and _choch_col in df.columns:
+                for idx in df[df[_choch_col] == 1].index:
+                    if idx in seen_CHoCH_bull_indices:
+                        continue
+                    break_idx = int(df.loc[idx, _break_choch_col]) if _break_choch_col in df.columns and not pd.isna(df.loc[idx, _break_choch_col]) else None
+                    if break_idx:
+                        vwap = process_BoS_CHoCH_range(idx, break_idx, 'bullish')
+                        if vwap is not None:
+                            config_BoS[f'aVWAP_CHoCH_bull_c{config_idx}_{idx}'] = vwap
+                            seen_CHoCH_bull_indices.add(idx)
+
+            if include_CHoCH and include_bear and _choch_col in df.columns:
+                for idx in df[df[_choch_col] == -1].index:
+                    if idx in seen_CHoCH_bear_indices:
+                        continue
+                    break_idx = int(df.loc[idx, _break_choch_col]) if _break_choch_col in df.columns and not pd.isna(df.loc[idx, _break_choch_col]) else None
+                    if break_idx:
+                        vwap = process_BoS_CHoCH_range(idx, break_idx, 'bearish')
+                        if vwap is not None:
+                            config_BoS[f'aVWAP_CHoCH_bear_c{config_idx}_{idx}'] = vwap
+                            seen_CHoCH_bear_indices.add(idx)
 
             # Apply separate caps per signal type (per side)
             def _cap_prefix(prefix, cap):

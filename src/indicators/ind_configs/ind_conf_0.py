@@ -31,12 +31,12 @@ indicators = {  # List of available indicator configurations
     'daily': [
         'aVWAP',
         'candle_colors',
+        'BoS_CHoCH',
         # 'QQEMOD',
         # 'aVWAP_anchor_score',
         # 'banker_RSI',
         # 'SMA',
         # 'liquidity',
-        # 'BoS_CHoCH',
         # 'FVG',
         # 'OB',
     ],
@@ -206,12 +206,14 @@ params = {
                 },
                 'BoS_CHoCH_params': [
                     {
-                        'swing_length': 15,
+                        'swing_length':     15,  # fallback for both when specific keys absent
+                        'BoS_swing_length':   10, # shorter = more frequent BoS signals
+                        'CHoCH_swing_length': 20, # longer  = only significant structure shifts
                         'mode': 'both',
-                        'include_BoS':   False,
+                        'include_BoS':   True,
                         'include_CHoCH': True,
-                        'max_BoS_aVWAPs':   1,   # keep 2 BoS-anchored per side (bull + bear)
-                        'max_CHoCH_aVWAPs': 1,   # keep 1 CHoCH-anchored per side
+                        'max_BoS_aVWAPs':   0,
+                        'max_CHoCH_aVWAPs': 0,
                         'avg_lookback': 7,
                     },
                 ],
@@ -294,7 +296,12 @@ params = {
                 'max_unmitigated': 10,
                 'join_consecutive': False,
             },
-            'BoS_CHoCH': {'swing_lengths': [5], 'show_choch': True, 'show_bos': True },
+            'BoS_CHoCH': {
+                'BoS_swing_lengths':   [10],  # shorter lookback → more frequent BoS signals
+                'CHoCH_swing_lengths': [10],  # longer lookback  → only major structure shifts
+                'show_bos':   True,
+                'show_choch': True,
+            },
             'QQEMOD': {
                 'rsi_period': 6, 'rsi_period2': 5, 'sf': 5, 'sf2': 5,
                 'qqe_factor': 3.0, 'qqe_factor2': 1.61, 'threshold': 3,

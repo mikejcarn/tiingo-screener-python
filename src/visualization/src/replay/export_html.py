@@ -999,7 +999,9 @@ def _extract_bos_choch_avwap_events(raw_df, ind_conf, timeframe, colors):
     configs_out = []
 
     for config in bos_configs:
-        swing_length  = config.get('swing_length', 15)
+        _sl           = config.get('swing_length', 15)
+        bos_sl        = config.get('BoS_swing_length',   _sl)
+        choch_sl      = config.get('CHoCH_swing_length', _sl)
         mode          = config.get('mode', 'combined').lower()
         include_BoS   = config.get('include_BoS',   True)
         include_CHoCH = config.get('include_CHoCH', True)
@@ -1017,32 +1019,39 @@ def _extract_bos_choch_avwap_events(raw_df, ind_conf, timeframe, colors):
         else:
             include_bull, include_bear = True, True
 
-        bos_col   = f'BoS_{swing_length}'
-        choch_col = f'CHoCH_{swing_length}'
-        break_col = f'BoS_CHoCH_Break_Index_{swing_length}'
+        bos_col         = f'BoS_{bos_sl}'
+        choch_col       = f'CHoCH_{choch_sl}'
+        break_bos_col   = f'BoS_CHoCH_Break_Index_{bos_sl}'
+        break_choch_col = f'BoS_CHoCH_Break_Index_{choch_sl}'
 
-        if bos_col not in raw_df.columns or choch_col not in raw_df.columns:
+        has_bos   = bos_col   in raw_df.columns and break_bos_col   in raw_df.columns
+        has_choch = choch_col in raw_df.columns and break_choch_col in raw_df.columns
+        if not has_bos and not has_choch:
             continue
 
-        bos_vals   = raw_df[bos_col].values
-        choch_vals = raw_df[choch_col].values
-        break_vals = raw_df[break_col].values if break_col in raw_df.columns else None
-        if break_vals is None:
-            continue
+        bos_vals        = raw_df[bos_col].values        if has_bos   else None
+        break_bos_vals  = raw_df[break_bos_col].values  if has_bos   else None
+        choch_vals      = raw_df[choch_col].values       if has_choch else None
+        break_choch_vals = raw_df[break_choch_col].values if has_choch else None
 
         events = []
 
         # Process each signal type independently
         signal_specs = []
-        if include_BoS:
+        if include_BoS and has_bos:
             if include_bull: signal_specs.append(('BoS', 'bull',  1))
             if include_bear: signal_specs.append(('BoS', 'bear', -1))
-        if include_CHoCH:
+        if include_CHoCH and has_choch:
             if include_bull: signal_specs.append(('CHoCH', 'bull',  1))
             if include_bear: signal_specs.append(('CHoCH', 'bear', -1))
 
         for sig_type, direction, sig_val in signal_specs:
-            src_vals  = bos_vals if sig_type == 'BoS' else choch_vals
+            if sig_type == 'BoS':
+                src_vals   = bos_vals
+                break_vals = break_bos_vals
+            else:
+                src_vals   = choch_vals
+                break_vals = break_choch_vals
             for i in range(n_bars):
                 v = src_vals[i]
                 if v != sig_val:
@@ -1285,7 +1294,6 @@ def build_html(prepared_df, col_styles, ticker, timeframe, ind_conf,
   button:hover {{ background: #222222; }}
   button.active {{ background: #2962ff; border-color: #2962ff; color: #fff; }}
   #slider {{ flex: 1; min-width: 0; accent-color: #2962ff; cursor: pointer; }}
-  #bar-info {{ font-size: 12px; color: #666666; min-width: 200px; white-space: nowrap; }}
   .sep {{ width: 1px; height: 24px; background: #222222; }}
   label {{ font-size: 12px; color: #666666; display: flex; align-items: center; gap: 5px; white-space: nowrap; }}
   input[type=number] {{
@@ -1310,7 +1318,6 @@ def build_html(prepared_df, col_styles, ticker, timeframe, ind_conf,
   <button id="btn-end"   title="Last bar">&#x23ED;</button>
   <div class="sep"></div>
   <input type="range" id="slider" min="0" max="{n_bars - 1}" value="0">
-  <span id="bar-info">0 / {n_bars - 1}</span>
   <label>bar <input type="text" id="bar-jump-input" placeholder="#" autocomplete="off" style="width:46px;text-align:center"></label>
   <div class="sep"></div>
   <label>date <input type="text" id="date-input" placeholder="YYYY-MM-DD" autocomplete="off" spellcheck="false"></label>
@@ -1908,13 +1915,16 @@ def build_html(prepared_df, col_styles, ticker, timeframe, ind_conf,
       }}
     }}
 
-    const _bt = DATA.bars[n].t;
+    const _bt = DATA.bars[n].time;
     let _bd = '';
     if (typeof _bt === 'string') _bd = _bt.slice(0, 10);
     else if (typeof _bt === 'object' && _bt.year) _bd = _bt.year + '-' + String(_bt.month).padStart(2,'0') + '-' + String(_bt.day).padStart(2,'0');
     else if (typeof _bt === 'number') _bd = new Date(_bt * 1000).toISOString().slice(0, 10);
-    document.getElementById('bar-info').textContent = _bd + '  ' + n + ' / ' + (N - 1);
     document.getElementById('slider').value = n;
+    const _barInp  = document.getElementById('bar-jump-input');
+    const _dateInp = document.getElementById('date-input');
+    if (document.activeElement !== _barInp)  _barInp.value  = n;
+    if (document.activeElement !== _dateInp) _dateInp.value = _bd;
   }}
 
   // --- state ---
@@ -1948,6 +1958,12 @@ def build_html(prepared_df, col_styles, ticker, timeframe, ind_conf,
     else if (rafId) {{ cancelAnimationFrame(rafId); rafId = null; }}
   }}
 
+  // Apply ?fps=N from URL (set by the browser index)
+  (function() {{
+    const _p = parseInt(new URLSearchParams(location.search).get('fps'));
+    if (_p >= 1) document.getElementById('fps-input').value = _p;
+  }})();
+
   // --- controls ---
   document.getElementById('btn-start').onclick = () => jump(0);
   document.getElementById('btn-prev') .onclick = () => {{ setPlaying(false); jump(current - 1); }};
@@ -1970,31 +1986,39 @@ def build_html(prepared_df, col_styles, ticker, timeframe, ind_conf,
     }}
   }});
 
+  function _fmtDate(n) {{
+    const _t = DATA.bars[n].time;
+    if (typeof _t === 'string') return _t.slice(0, 10);
+    if (typeof _t === 'object' && _t.year) return _t.year + '-' + String(_t.month).padStart(2,'0') + '-' + String(_t.day).padStart(2,'0');
+    return new Date(_t * 1000).toISOString().slice(0, 10);
+  }}
+
   // Date jump input
+  document.getElementById('date-input').addEventListener('focus',   function()  {{ this.select(); }});
+  document.getElementById('date-input').addEventListener('blur',    function()  {{ this.value = _fmtDate(current); }});
   document.getElementById('date-input').addEventListener('keydown', function(e) {{
     if (e.key === 'Enter') {{
       const q = this.value.trim();
       let best = N - 1;
       for (let i = 0; i < N; i++) {{
-        const _t = DATA.bars[i].t;
-        const s = typeof _t === 'string' ? _t.slice(0,10)
-                : typeof _t === 'object' && _t.year ? _t.year+'-'+String(_t.month).padStart(2,'0')+'-'+String(_t.day).padStart(2,'0')
-                : new Date(_t*1000).toISOString().slice(0,10);
+        const s = _fmtDate(i);
         if (s >= q) {{ best = i; break; }}
       }}
       setPlaying(false); jump(best); this.blur();
     }}
-    if (e.key === 'Escape') {{ this.value = ''; this.blur(); }}
+    if (e.key === 'Escape') {{ this.blur(); }}
   }});
 
   // Bar jump input
+  document.getElementById('bar-jump-input').addEventListener('focus',   function()  {{ this.select(); }});
+  document.getElementById('bar-jump-input').addEventListener('blur',    function()  {{ this.value = current; }});
   document.getElementById('bar-jump-input').addEventListener('keydown', function(e) {{
     if (e.key === 'Enter') {{
       const n = parseInt(this.value);
       if (!isNaN(n)) {{ setPlaying(false); jump(n); }}
       this.blur();
     }}
-    if (e.key === 'Escape') {{ this.value = ''; this.blur(); }}
+    if (e.key === 'Escape') {{ this.blur(); }}
   }});
 
   // --- resize ---
@@ -2014,7 +2038,7 @@ def build_html(prepared_df, col_styles, ticker, timeframe, ind_conf,
 # Entry point
 # ---------------------------------------------------------------------------
 
-def generate_browser_index(output_dir: Path, timeframe: str, ind_conf: str) -> Path:
+def generate_browser_index(output_dir: Path, timeframe: str, ind_conf: str, fps: int = 8) -> Path:
     """Generate index.html in output_dir — a cycling iframe browser for all exported replays."""
     files = sorted(f.name for f in Path(output_dir).glob("*.html") if f.name != "index.html")
     if not files:
@@ -2043,127 +2067,142 @@ def generate_browser_index(output_dir: Path, timeframe: str, ind_conf: str) -> P
     padding: 5px 12px; cursor: pointer; border-radius: 3px; font-size: 13px;
   }}
   button:hover {{ background: #222; }}
-  #ticker-label {{ color: #fff; font-weight: bold; font-size: 14px; min-width: 80px; }}
-  #count {{ color: #555; font-size: 12px; }}
-  .sep {{ width: 1px; height: 24px; background: #222; flex-shrink: 0; }}
-  #search {{
-    background: #111; color: #ccc; border: 1px solid #333;
-    padding: 4px 8px; border-radius: 3px; font-size: 12px; width: 150px;
+  #count {{ color: #555; font-size: 12px; white-space: nowrap; }}
+  #hint {{ font-size: 11px; color: #2a2a2a; margin-left: auto; white-space: nowrap; }}
+  #ticker-wrap {{ position: relative; }}
+  #ticker-input {{
+    background: #111; color: #fff; border: 1px solid #333;
+    padding: 4px 10px; border-radius: 3px; font-size: 14px; font-weight: bold;
+    width: 130px; text-align: center; cursor: pointer;
   }}
-  #search:focus {{ outline: none; border-color: #555; }}
-  #hint {{ font-size: 11px; color: #383838; margin-left: auto; white-space: nowrap; }}
-  #main {{ display: flex; height: calc(100vh - 44px); }}
-  #sidebar {{
-    width: 160px; overflow-y: auto; background: #080808; border-right: 1px solid #1a1a1a;
-    flex-shrink: 0; transition: width 0.12s;
+  #ticker-input:focus {{ outline: none; border-color: #555; cursor: text; }}
+  #dropdown {{
+    display: none; position: absolute; top: calc(100% + 4px); left: 0;
+    background: #0d0d0d; border: 1px solid #2a2a2a; border-radius: 3px;
+    max-height: 260px; overflow-y: auto; z-index: 100; min-width: 100%;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.6);
   }}
-  #sidebar.hidden {{ width: 0; overflow: hidden; border: none; }}
-  .tk {{ padding: 6px 12px; font-size: 12px; cursor: pointer; color: #777; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }}
-  .tk:hover {{ background: #111; color: #fff; }}
-  .tk.active {{ color: #fff; background: #161616; }}
-  #frame {{ flex: 1; min-width: 0; height: 100%; border: none; display: block; }}
+  .dd-item {{
+    padding: 6px 12px; font-size: 12px; cursor: pointer; color: #888;
+    white-space: nowrap;
+  }}
+  .dd-item:hover, .dd-item.hi {{ background: #1a1a1a; color: #fff; }}
+  #frame {{ width: 100%; height: calc(100vh - 44px); border: none; display: block; }}
 </style>
 </head>
 <body>
 
 <div id="nav">
-  <button id="btn-list" title="Toggle ticker list">&#9776;</button>
-  <div class="sep"></div>
-  <button id="btn-prev">&#9664;</button>
-  <span id="ticker-label">—</span>
+  <button id="btn-prev" title="">&#9664;</button>
+  <div id="ticker-wrap">
+    <input id="ticker-input" type="text" autocomplete="off" spellcheck="false">
+    <div id="dropdown"></div>
+  </div>
   <span id="count"></span>
-  <button id="btn-next">&#9654;</button>
-  <div class="sep"></div>
-  <input id="search" type="text" placeholder="jump to ticker…" autocomplete="off" spellcheck="false">
-  <span id="hint" style="font-size:11px;color:#2a2a2a;margin-left:auto;white-space:nowrap">{timeframe} &nbsp;·&nbsp; conf {ind_conf} &nbsp;·&nbsp; {len(files)} tickers</span>
+  <button id="btn-next" title="">&#9654;</button>
+  <span id="hint">{timeframe} &nbsp;·&nbsp; conf {ind_conf} &nbsp;·&nbsp; {len(files)} tickers</span>
 </div>
 
-<div id="main">
-  <div id="sidebar"></div>
-  <iframe id="frame" src="" frameborder="0" allowfullscreen></iframe>
-</div>
+<iframe id="frame" src="" frameborder="0" allowfullscreen></iframe>
 
 <script>
 (function() {{
   const FILES  = {files_js};
   const LABELS = {labels_js};
   const TOTAL  = FILES.length;
+  const FPS    = {fps};
   let idx = 0;
+  let dropIdx = -1;
 
-  // Build sidebar ticker list
-  const sidebar = document.getElementById('sidebar');
-  LABELS.forEach(function(label, i) {{
-    const el = document.createElement('div');
-    el.className = 'tk';
-    el.textContent = label;
-    el.addEventListener('click', function() {{ go(i); }});
-    sidebar.appendChild(el);
-  }});
-  sidebar.classList.add('hidden');
-
-  document.getElementById('btn-list').addEventListener('click', function() {{
-    sidebar.classList.toggle('hidden');
-  }});
+  const tickerInput = document.getElementById('ticker-input');
+  const dropdown    = document.getElementById('dropdown');
 
   function go(n) {{
     idx = ((n % TOTAL) + TOTAL) % TOTAL;
-    document.getElementById('frame').src = FILES[idx];
-    document.getElementById('ticker-label').textContent = LABELS[idx];
+    document.getElementById('frame').src = FILES[idx] + '?fps=' + FPS;
     document.getElementById('count').textContent = (idx + 1) + ' / ' + TOTAL;
-    document.getElementById('search').value = '';
-    // Update URL hash for bookmarking
     window.location.hash = LABELS[idx];
-    // Prev/next tooltips
     document.getElementById('btn-prev').title = LABELS[((idx - 1) + TOTAL) % TOTAL];
     document.getElementById('btn-next').title = LABELS[(idx + 1) % TOTAL];
-    // Highlight active sidebar item and scroll into view
-    document.querySelectorAll('.tk').forEach(function(el, i) {{
-      el.classList.toggle('active', i === idx);
-    }});
-    const activeEl = sidebar.querySelectorAll('.tk')[idx];
-    if (activeEl) activeEl.scrollIntoView({{ block: 'nearest' }});
+    tickerInput.value = LABELS[idx];
   }}
+
+  function buildDropdown(q) {{
+    dropdown.innerHTML = '';
+    dropIdx = -1;
+    const up = q.trim().toUpperCase();
+    const matches = LABELS.reduce(function(acc, l, i) {{
+      if (!up || l.startsWith(up)) acc.push({{ l: l, i: i }});
+      return acc;
+    }}, []);
+    if (!matches.length) {{ dropdown.style.display = 'none'; return; }}
+    matches.forEach(function(m) {{
+      const el = document.createElement('div');
+      el.className = 'dd-item';
+      el.textContent = m.l;
+      el.addEventListener('mousedown', function(e) {{ e.preventDefault(); }});
+      el.addEventListener('click', function() {{ go(m.i); tickerInput.blur(); }});
+      dropdown.appendChild(el);
+    }});
+    dropdown.style.display = 'block';
+  }}
+
+  function moveDrop(delta) {{
+    const items = dropdown.querySelectorAll('.dd-item');
+    if (!items.length) return;
+    items[dropIdx] && items[dropIdx].classList.remove('hi');
+    dropIdx = Math.max(0, Math.min(items.length - 1, dropIdx + delta));
+    items[dropIdx].classList.add('hi');
+    items[dropIdx].scrollIntoView({{ block: 'nearest' }});
+  }}
+
+  tickerInput.addEventListener('focus', function() {{
+    this.select();
+    buildDropdown('');
+  }});
+  tickerInput.addEventListener('input', function() {{
+    buildDropdown(this.value);
+  }});
+  tickerInput.addEventListener('blur', function() {{
+    dropdown.style.display = 'none';
+    dropIdx = -1;
+    this.value = LABELS[idx];
+  }});
+  tickerInput.addEventListener('keydown', function(e) {{
+    if (e.key === 'ArrowDown') {{ e.preventDefault(); moveDrop(dropIdx < 0 ? 0 : 1); return; }}
+    if (e.key === 'ArrowUp')   {{ e.preventDefault(); moveDrop(-1); return; }}
+    if (e.key === 'Enter') {{
+      const items = dropdown.querySelectorAll('.dd-item');
+      if (dropIdx >= 0 && items[dropIdx]) {{
+        const label = items[dropIdx].textContent;
+        const i = LABELS.indexOf(label);
+        if (i >= 0) go(i);
+      }} else {{
+        const q = this.value.trim().toUpperCase();
+        const i = LABELS.findIndex(function(l) {{ return l === q; }});
+        if (i >= 0) go(i);
+      }}
+      this.blur();
+    }}
+    if (e.key === 'Escape') {{ this.blur(); }}
+  }});
 
   document.getElementById('btn-prev').addEventListener('click', function() {{ go(idx - 1); }});
   document.getElementById('btn-next').addEventListener('click', function() {{ go(idx + 1); }});
 
   document.addEventListener('keydown', function(e) {{
-    if (document.activeElement === document.getElementById('search')) return;
-    if (e.key === '[')  {{ e.preventDefault(); go(idx - 1); }}
-    if (e.key === ']')  {{ e.preventDefault(); go(idx + 1); }}
-    if (e.key === '/')  {{ e.preventDefault(); document.getElementById('search').focus(); }}
+    if (document.activeElement === tickerInput) return;
+    if (e.key === '[') {{ e.preventDefault(); go(idx - 1); }}
+    if (e.key === ']') {{ e.preventDefault(); go(idx + 1); }}
+    if (e.key === '/') {{ e.preventDefault(); tickerInput.focus(); }}
   }});
 
-  // Receive [ ] forwarded via postMessage from the iframe (chart captures keyboard focus)
   window.addEventListener('message', function(e) {{
     if (!e.data || !e.data.key) return;
     if (e.data.key === '[') go(idx - 1);
     if (e.data.key === ']') go(idx + 1);
   }});
 
-  const searchEl = document.getElementById('search');
-  searchEl.addEventListener('keydown', function(e) {{
-    if (e.key === 'Enter') {{
-      const q = this.value.trim().toUpperCase();
-      const i = LABELS.findIndex(function(l) {{ return l === q; }});
-      if (i >= 0) {{ go(i); this.blur(); }}
-      else {{ this.style.color = '#f66'; setTimeout(function() {{ searchEl.style.color = ''; }}, 600); }}
-    }}
-    if (e.key === 'Escape') {{ this.value = ''; this.blur(); }}
-  }});
-
-  // Live filter: highlight first match as user types
-  searchEl.addEventListener('input', function() {{
-    const q = this.value.trim().toUpperCase();
-    if (!q) return;
-    const i = LABELS.findIndex(function(l) {{ return l.startsWith(q); }});
-    if (i >= 0) {{
-      document.getElementById('ticker-label').textContent = LABELS[i] + '…';
-      document.getElementById('count').textContent = '';
-    }}
-  }});
-
-  // Restore from URL hash or start at first ticker
   const startLabel = decodeURIComponent(window.location.hash.slice(1)).toUpperCase();
   const startIdx = LABELS.findIndex(function(l) {{ return l === startLabel; }});
   go(startIdx >= 0 ? startIdx : 0);
