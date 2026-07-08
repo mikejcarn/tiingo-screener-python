@@ -551,38 +551,23 @@ def _aVWAP_visualization(subchart, df):
         ).set(_line_set_df(df, col))
 
     # -------------------------
-    # BoS/CHoCH Bearish - with tiered styling
+    # BoS/CHoCH aVWAPs — 4 separate prefixes, BoS stronger (0.75), CHoCH softer (0.5)
     # -------------------------
-    BoS_CHoCH_bear_cols = [col for col in df.columns if col.startswith('aVWAP_BoS_CHoCH_bear_')]
-    for col in BoS_CHoCH_bear_cols:
-        cfg = _cfg_idx(col)
-        width = 2 if cfg == 0 else 1
-        style = 'solid' if cfg == 0 else 'dotted'
-        
-        subchart.create_line(
-            price_line=False,
-            price_label=False,
-            color=colors['red'],
-            width=width,
-            style=style
-        ).set(_line_set_df(df, col))
-
-    # -------------------------
-    # BoS/CHoCH Bullish - with tiered styling
-    # -------------------------
-    BoS_CHoCH_bull_cols = [col for col in df.columns if col.startswith('aVWAP_BoS_CHoCH_bull_')]
-    for col in BoS_CHoCH_bull_cols:
-        cfg = _cfg_idx(col)
-        width = 2 if cfg == 0 else 1
-        style = 'solid' if cfg == 0 else 'dotted'
-        
-        subchart.create_line(
-            price_line=False,
-            price_label=False,
-            color=colors['teal'],
-            width=width,
-            style=style
-        ).set(_line_set_df(df, col))
+    _bc_prefix_colors = [
+        ('aVWAP_BoS_bear_',   colors['red_trans_3']),
+        ('aVWAP_BoS_bull_',   colors['teal_trans_3']),
+        ('aVWAP_CHoCH_bear_', colors['red_trans_2']),
+        ('aVWAP_CHoCH_bull_', colors['teal_trans_2']),
+    ]
+    for prefix, clr in _bc_prefix_colors:
+        for col in [c for c in df.columns if c.startswith(prefix)]:
+            cfg = _cfg_idx(col)
+            width = 2 if cfg == 0 else 1
+            style = 'solid' if cfg == 0 else 'dotted'
+            subchart.create_line(
+                price_line=False, price_label=False,
+                color=clr, width=width, style=style
+            ).set(_line_set_df(df, col))
 
     # QQEMOD lines are clipped to real candles only — padded rows have close=NaN
     # and are explicitly populated with the last real value by prepare_dataframe,

@@ -28,6 +28,14 @@ _RECOMPUTED_PREFIXES = (
     'aVWAP_QQEMOD_bull_c',
     'aVWAP_price_maxima_minima_valley_',
     'aVWAP_price_maxima_minima_peak_',
+    'aVWAP_OB_bull_',
+    'aVWAP_OB_bear_',
+    'aVWAP_BoS_bull_',
+    'aVWAP_BoS_bear_',
+    'aVWAP_CHoCH_bull_',
+    'aVWAP_CHoCH_bear_',
+    'aVWAP_peak_c',
+    'aVWAP_valley_c',
 )
 
 _SEGMENT_COLS = frozenset({
@@ -84,10 +92,14 @@ def _col_styles(df, colors):
             _add(col, colors['red_trans_3'], _w(cfg), _s(cfg))
         elif col.startswith('aVWAP_valley_'):
             _add(col, colors['teal_trans_3'], _w(cfg), _s(cfg))
-        elif col.startswith('aVWAP_BoS_CHoCH_bear_'):
-            _add(col, colors['red'], _w(cfg), _s(cfg))
-        elif col.startswith('aVWAP_BoS_CHoCH_bull_'):
-            _add(col, colors['teal'], _w(cfg), _s(cfg))
+        elif col.startswith('aVWAP_BoS_bear_'):
+            _add(col, colors['red_trans_3'], _w(cfg), _s(cfg))
+        elif col.startswith('aVWAP_BoS_bull_'):
+            _add(col, colors['teal_trans_3'], _w(cfg), _s(cfg))
+        elif col.startswith('aVWAP_CHoCH_bear_'):
+            _add(col, colors['red_trans_2'], _w(cfg), _s(cfg))
+        elif col.startswith('aVWAP_CHoCH_bull_'):
+            _add(col, colors['teal_trans_2'], _w(cfg), _s(cfg))
         elif col.startswith('aVWAP_OB_bull_ghost_'):
             _add(col, colors['teal_OB_ghost'], 1)
         elif col.startswith('aVWAP_OB_bear_ghost_'):
@@ -778,6 +790,435 @@ def _extract_liquidity_events(raw_df, ind_conf, timeframe, colors):
 
 
 # ---------------------------------------------------------------------------
+# OB aVWAP extraction  (Track 2 — historical recomputation per bar)
+# ---------------------------------------------------------------------------
+
+def _extract_ob_avwap_events(raw_df, ind_conf, timeframe, colors):
+    """Extract OB aVWAP anchor events + precomputed VWAP paths for Track 2 HTML replay.
+
+    At each bar n the JS re-evaluates unmitigated vs mitigated status and applies
+    max_unmit/max_mit caps in-time, fixing the lookahead bug where max_unmitigated=1
+    would only reveal the final surviving anchor instead of the current one.
+    Returns a list of config dicts (one per OB_params entry).
+    """
+    try:
+        from src.indicators.indicators import load_indicator_config
+        result = load_indicator_config(ind_conf, timeframe)
+        if not result:
+            return None
+        ind_list, params = result
+        if 'aVWAP' not in ind_list:
+            return None
+        avwap_params = params.get('aVWAP', {})
+        if not avwap_params.get('OB', False):
+            return None
+        ob_configs = avwap_params.get('OB_params', [])
+        if isinstance(ob_configs, dict):
+            ob_configs = [ob_configs]
+        if not ob_configs:
+            return None
+    except Exception as e:
+        print(f"  Warning: could not load OB aVWAP params: {e}")
+        return None
+
+    from smartmoneyconcepts import smc as _smc
+    from src.visualization.src.replay.vwap import build_cumulative_arrays
+
+    col_lower = {c.lower(): c for c in raw_df.columns}
+    needed = ['open', 'high', 'low', 'close', 'volume']
+    if not all(k in col_lower for k in needed):
+        return None
+
+    ohlcv = raw_df[[col_lower[k] for k in needed]].copy()
+    ohlcv.columns = needed
+    n_bars = len(raw_df)
+    cum_tpv, cum_vol = build_cumulative_arrays(raw_df)
+
+    configs_out = []
+
+    for config in ob_configs:
+        periods         = config.get('periods', 25)
+        max_unmitigated = config.get('max_unmitigated_aVWAPs', None)
+        max_mitigated   = config.get('max_mitigated_aVWAPs', None)
+        faded           = config.get('faded', False)
+        extend_to_end   = config.get('extend_to_end', False)
+        show_ghost      = faded and extend_to_end
+        mode            = config.get('mode', 'combined').lower()
+
+        if mode in ('bullish', 'valleys', 'bull', 'valley'):
+            include_bull, include_bear = True, False
+        elif mode in ('bearish', 'peaks', 'bear', 'peak'):
+            include_bull, include_bear = False, True
+        elif mode in ('none', 'off', 'false'):
+            continue
+        else:
+            include_bull, include_bear = True, True
+
+        try:
+            swing_hl  = _smc.swing_highs_lows(ohlcv, swing_length=periods)
+            ob_result = _smc.ob(ohlcv, swing_hl, close_mitigation=False)
+        except Exception:
+            continue
+
+        n_res   = len(ob_result)
+        ob_col  = ob_result['OB'].values             if 'OB'             in ob_result.columns else None
+        mit_col = ob_result['MitigatedIndex'].values if 'MitigatedIndex' in ob_result.columns else None
+
+        if ob_col is None:
+            continue
+
+        hl_vals    = swing_hl['HighLow'].values if 'HighLow' in swing_hl.columns else None
+        sh_indices = np.where(hl_vals == 1)[0]  if hl_vals is not None else np.array([], dtype=int)
+        sl_indices = np.where(hl_vals == -1)[0] if hl_vals is not None else np.array([], dtype=int)
+        high_arr   = ohlcv['high'].values
+        low_arr    = ohlcv['low'].values
+        close_arr  = ohlcv['close'].values
+
+        events = []
+        for i in range(min(n_bars, n_res)):
+            v = ob_col[i]
+            if v == 0 or pd.isna(v):
+                continue
+            direction = 'bull' if v > 0 else 'bear'
+            if (direction == 'bull' and not include_bull) or \
+               (direction == 'bear' and not include_bear):
+                continue
+
+            mi  = mit_col[i] if mit_col is not None else None
+            end = int(mi) if mi is not None and not pd.isna(mi) and mi > 0 else n_bars - 1
+            end = min(end, n_bars - 1)
+            is_mitigated = end < n_bars - 1
+
+            # visible_from: same formula as _extract_ob_events
+            is_bull      = (direction == 'bull')
+            ref_indices  = sh_indices if is_bull else sl_indices
+            level_arr    = high_arr   if is_bull else low_arr
+            visible_from = i
+
+            if hl_vals is not None:
+                pos = int(np.searchsorted(ref_indices, i, side='left')) - 1
+                if pos >= 0:
+                    sh_bar   = int(ref_indices[pos])
+                    sh_level = float(level_arr[sh_bar])
+                    close_idx = n_bars - 1
+                    for j in range(sh_bar + 1, n_bars):
+                        if (is_bull  and close_arr[j] > sh_level) or \
+                           (not is_bull and close_arr[j] < sh_level):
+                            close_idx = j
+                            break
+                    visible_from = max(close_idx, sh_bar + periods)
+
+            # Precompute VWAP path from anchor bar to end of data
+            ab       = i
+            base_tpv = cum_tpv[ab - 1] if ab > 0 else 0.0
+            base_vol = cum_vol[ab - 1] if ab > 0 else 0.0
+            seg_tpv  = cum_tpv[ab:] - base_tpv
+            seg_vol  = cum_vol[ab:] - base_vol
+            with np.errstate(divide='ignore', invalid='ignore'):
+                path = np.where(seg_vol > 0, seg_tpv / seg_vol, np.nan)
+            vals = [None if (isinstance(val, float) and val != val) else float(val) for val in path]
+
+            clr  = colors['teal_OB'] if direction == 'bull' else colors['red_OB']
+            gclr = colors.get('teal_OB_ghost' if direction == 'bull' else 'red_OB_ghost', clr)
+
+            events.append({
+                's':    ab,
+                'e':    end,
+                'm':    is_mitigated,
+                'vf':   visible_from,
+                'dir':  direction,
+                'vals': vals,
+                'clr':  clr,
+                'gclr': gclr,
+            })
+
+        if events:
+            configs_out.append({
+                'events':     events,
+                'max_unmit':  max_unmitigated,
+                'max_mit':    max_mitigated,
+                'show_ghost': show_ghost,
+            })
+
+    return configs_out if configs_out else None
+
+
+# ---------------------------------------------------------------------------
+# BoS/CHoCH aVWAP extraction  (Track 2 — historical recomputation per bar)
+# ---------------------------------------------------------------------------
+
+def _extract_bos_choch_avwap_events(raw_df, ind_conf, timeframe, colors):
+    """Extract BoS/CHoCH aVWAP anchor events + precomputed VWAP paths for Track 2 HTML replay.
+
+    visible_from = break_bar: the anchor can't be confirmed until the break bar,
+    so the aVWAP only appears in replay once the break is confirmed.
+    max_aVWAPs cap is re-evaluated in-time at each bar (per side if per_side=True).
+    Returns a list of config dicts (one per BoS_CHoCH_params entry).
+    """
+    try:
+        from src.indicators.indicators import load_indicator_config
+        result = load_indicator_config(ind_conf, timeframe)
+        if not result:
+            return None
+        ind_list, params = result
+        if 'aVWAP' not in ind_list:
+            return None
+        avwap_params = params.get('aVWAP', {})
+        if not avwap_params.get('BoS_CHoCH', False):
+            return None
+        bos_configs = avwap_params.get('BoS_CHoCH_params', [])
+        if isinstance(bos_configs, dict):
+            bos_configs = [bos_configs]
+        if not bos_configs:
+            return None
+    except Exception as e:
+        print(f"  Warning: could not load BoS/CHoCH aVWAP params: {e}")
+        return None
+
+    from src.visualization.src.replay.vwap import build_cumulative_arrays
+
+    col_lower = {c.lower(): c for c in raw_df.columns}
+    low_col  = col_lower.get('low',  None)
+    high_col = col_lower.get('high', None)
+    if low_col is None or high_col is None:
+        return None
+
+    low_vals  = raw_df[low_col].values
+    high_vals = raw_df[high_col].values
+    n_bars    = len(raw_df)
+    cum_tpv, cum_vol = build_cumulative_arrays(raw_df)
+
+    # Colors: BoS = stronger signal (0.75 opacity), CHoCH = weaker (0.5 opacity)
+    _clr = {
+        ('BoS',   'bull'): colors['teal_trans_3'],
+        ('BoS',   'bear'): colors['red_trans_3'],
+        ('CHoCH', 'bull'): colors['teal_trans_2'],
+        ('CHoCH', 'bear'): colors['red_trans_2'],
+    }
+
+    configs_out = []
+
+    for config in bos_configs:
+        swing_length  = config.get('swing_length', 15)
+        mode          = config.get('mode', 'combined').lower()
+        include_BoS   = config.get('include_BoS',   True)
+        include_CHoCH = config.get('include_CHoCH', True)
+        # Per-side caps for each signal type (fall back to combined max_aVWAPs)
+        _fallback     = config.get('max_aVWAPs', None)
+        max_bos_cap   = config.get('max_BoS_aVWAPs',   _fallback)
+        max_choch_cap = config.get('max_CHoCH_aVWAPs', _fallback)
+
+        if mode in ('bullish', 'bull', 'valleys', 'valley'):
+            include_bull, include_bear = True, False
+        elif mode in ('bearish', 'bear', 'peaks', 'peak'):
+            include_bull, include_bear = False, True
+        elif mode in ('none', 'off', 'false'):
+            continue
+        else:
+            include_bull, include_bear = True, True
+
+        bos_col   = f'BoS_{swing_length}'
+        choch_col = f'CHoCH_{swing_length}'
+        break_col = f'BoS_CHoCH_Break_Index_{swing_length}'
+
+        if bos_col not in raw_df.columns or choch_col not in raw_df.columns:
+            continue
+
+        bos_vals   = raw_df[bos_col].values
+        choch_vals = raw_df[choch_col].values
+        break_vals = raw_df[break_col].values if break_col in raw_df.columns else None
+        if break_vals is None:
+            continue
+
+        events = []
+
+        # Process each signal type independently
+        signal_specs = []
+        if include_BoS:
+            if include_bull: signal_specs.append(('BoS', 'bull',  1))
+            if include_bear: signal_specs.append(('BoS', 'bear', -1))
+        if include_CHoCH:
+            if include_bull: signal_specs.append(('CHoCH', 'bull',  1))
+            if include_bear: signal_specs.append(('CHoCH', 'bear', -1))
+
+        for sig_type, direction, sig_val in signal_specs:
+            src_vals  = bos_vals if sig_type == 'BoS' else choch_vals
+            for i in range(n_bars):
+                v = src_vals[i]
+                if v != sig_val:
+                    continue
+                bi = break_vals[i]
+                if isinstance(bi, float) and bi != bi:
+                    continue
+                break_bar = int(bi)
+                if break_bar <= i or break_bar >= n_bars:
+                    continue
+
+                if direction == 'bull':
+                    anchor_bar = int(np.argmin(low_vals[i:break_bar + 1])) + i
+                else:
+                    anchor_bar = int(np.argmax(high_vals[i:break_bar + 1])) + i
+
+                ab       = anchor_bar
+                base_tpv = cum_tpv[ab - 1] if ab > 0 else 0.0
+                base_vol = cum_vol[ab - 1] if ab > 0 else 0.0
+                seg_tpv  = cum_tpv[ab:] - base_tpv
+                seg_vol  = cum_vol[ab:] - base_vol
+                with np.errstate(divide='ignore', invalid='ignore'):
+                    path = np.where(seg_vol > 0, seg_tpv / seg_vol, np.nan)
+                vals = [None if (isinstance(v2, float) and v2 != v2) else float(v2) for v2 in path]
+
+                events.append({
+                    's':   i,
+                    'ab':  ab,
+                    'vf':  break_bar,
+                    'dir': direction,
+                    'st':  sig_type,    # 'BoS' or 'CHoCH'
+                    'vals': vals,
+                    'clr': _clr[(sig_type, direction)],
+                })
+
+        if events:
+            configs_out.append({
+                'events':    events,
+                'max_bos':   max_bos_cap,
+                'max_choch': max_choch_cap,
+            })
+
+    return configs_out if configs_out else None
+
+
+# ---------------------------------------------------------------------------
+# Peaks/valleys aVWAP extraction  (Track 2 — historical recomputation per bar)
+# ---------------------------------------------------------------------------
+
+def _extract_peaks_valleys_avwap_events(raw_df, ind_conf, timeframe, colors):
+    """Extract peaks/valleys aVWAP anchor events + precomputed VWAP paths for Track 2 HTML replay.
+
+    Peak/valley detection mirrors the peaks_valleys indicator: rolling(periods, center=True).
+    visible_from = anchor_bar + periods // 2  (forward lookahead of the centered window).
+    max_aVWAPs cap is re-evaluated in-time per direction (peaks vs valleys) at each bar.
+    Returns a list of config dicts.
+    """
+    try:
+        from src.indicators.indicators import load_indicator_config
+        result = load_indicator_config(ind_conf, timeframe)
+        if not result:
+            return None
+        ind_list, params = result
+        if 'aVWAP' not in ind_list:
+            return None
+        avwap_params = params.get('aVWAP', {})
+    except Exception as e:
+        print(f"  Warning: could not load peaks/valleys aVWAP params: {e}")
+        return None
+
+    show_peaks   = avwap_params.get('peaks',         False)
+    show_valleys = avwap_params.get('valleys',        False)
+    show_pv      = avwap_params.get('peaks_valleys',  False)
+
+    peaks_cfgs   = avwap_params.get('peaks_params',         [])
+    valleys_cfgs = avwap_params.get('valleys_params',       [])
+    pv_cfgs      = avwap_params.get('peaks_valleys_params', [])
+
+    if isinstance(peaks_cfgs,   dict): peaks_cfgs   = [peaks_cfgs]
+    if isinstance(valleys_cfgs, dict): valleys_cfgs = [valleys_cfgs]
+    if isinstance(pv_cfgs,      dict): pv_cfgs      = [pv_cfgs]
+
+    # Build list of (direction, periods, max_aVWAPs) to process
+    groups = []
+    if show_peaks:
+        for cfg in peaks_cfgs:
+            groups.append(('peak',   cfg.get('periods', 25), cfg.get('max_aVWAPs', None)))
+    if show_valleys:
+        for cfg in valleys_cfgs:
+            groups.append(('valley', cfg.get('periods', 25), cfg.get('max_aVWAPs', None)))
+    if show_pv:
+        for cfg in pv_cfgs:
+            groups.append(('both',   cfg.get('periods', 25), cfg.get('max_aVWAPs', None)))
+
+    if not groups:
+        return None
+
+    from src.visualization.src.replay.vwap import build_cumulative_arrays
+
+    col_lower = {c.lower(): c for c in raw_df.columns}
+    high_col  = col_lower.get('high', None)
+    low_col   = col_lower.get('low',  None)
+    if high_col is None or low_col is None:
+        return None
+
+    high_arr = raw_df[high_col].values.astype(float)
+    low_arr  = raw_df[low_col].values.astype(float)
+    n_bars   = len(raw_df)
+    cum_tpv, cum_vol = build_cumulative_arrays(raw_df)
+
+    peak_clr   = colors['red_trans_3']
+    valley_clr = colors['teal_trans_3']
+
+    # Cache peak/valley detection per periods to avoid recomputation across configs
+    _cache = {}
+
+    def _detect(periods):
+        if periods in _cache:
+            return _cache[periods]
+        high_s   = pd.Series(high_arr)
+        low_s    = pd.Series(low_arr)
+        roll_max = high_s.rolling(periods, center=True, min_periods=1).max()
+        roll_min = low_s.rolling(periods, center=True, min_periods=1).min()
+        peaks    = list(high_s[high_s == roll_max].index)
+        valleys  = list(low_s[low_s == roll_min].index)
+        _cache[periods] = (peaks, valleys)
+        return peaks, valleys
+
+    def _vwap_vals(ab):
+        base_tpv = cum_tpv[ab - 1] if ab > 0 else 0.0
+        base_vol = cum_vol[ab - 1] if ab > 0 else 0.0
+        seg_tpv  = cum_tpv[ab:] - base_tpv
+        seg_vol  = cum_vol[ab:] - base_vol
+        with np.errstate(divide='ignore', invalid='ignore'):
+            path = np.where(seg_vol > 0, seg_tpv / seg_vol, np.nan)
+        return [None if (isinstance(v, float) and v != v) else float(v) for v in path]
+
+    configs_out = []
+
+    for direction, periods, max_cap in groups:
+        peak_bars, valley_bars = _detect(periods)
+        half = periods // 2
+        events = []
+
+        if direction in ('peak', 'both'):
+            for ab in peak_bars:
+                vf = min(ab + half, n_bars - 1)
+                events.append({
+                    's':   ab,
+                    'vf':  vf,
+                    'dir': 'peak',
+                    'vals': _vwap_vals(ab),
+                    'clr': peak_clr,
+                })
+
+        if direction in ('valley', 'both'):
+            for ab in valley_bars:
+                vf = min(ab + half, n_bars - 1)
+                events.append({
+                    's':   ab,
+                    'vf':  vf,
+                    'dir': 'valley',
+                    'vals': _vwap_vals(ab),
+                    'clr': valley_clr,
+                })
+
+        if events:
+            configs_out.append({
+                'events':  events,
+                'max_cap': max_cap,
+            })
+
+    return configs_out if configs_out else None
+
+
+# ---------------------------------------------------------------------------
 # HTML template
 # ---------------------------------------------------------------------------
 
@@ -794,7 +1235,9 @@ _LW_LINE_STYLES = {
 
 def build_html(prepared_df, col_styles, ticker, timeframe, ind_conf,
                ob_data=None, qqemod_data=None, fvg_data=None,
-               bos_data=None, liq_data=None, pmm_data=None, colors=None):
+               bos_data=None, liq_data=None, pmm_data=None,
+               ob_avwap_data=None, bos_choch_avwap_data=None,
+               pv_avwap_data=None, colors=None):
     bars = _build_data(prepared_df, col_styles)
     n_bars = len(bars)
 
@@ -808,12 +1251,15 @@ def build_html(prepared_df, col_styles, ticker, timeframe, ind_conf,
     }
 
     payload = {'bars': bars, 'lines': lines_meta}
-    if ob_data     is not None: payload['ob']  = ob_data
-    if qqemod_data is not None: payload['qq']  = qqemod_data
-    if fvg_data    is not None: payload['fvg'] = fvg_data
-    if bos_data    is not None: payload['bos'] = bos_data
-    if liq_data    is not None: payload['liq'] = liq_data
-    if pmm_data    is not None: payload['pmm'] = pmm_data
+    if ob_data       is not None: payload['ob']      = ob_data
+    if qqemod_data   is not None: payload['qq']      = qqemod_data
+    if fvg_data      is not None: payload['fvg']     = fvg_data
+    if bos_data      is not None: payload['bos']     = bos_data
+    if liq_data      is not None: payload['liq']     = liq_data
+    if pmm_data      is not None: payload['pmm']     = pmm_data
+    if ob_avwap_data       is not None: payload['ob_avwap']        = ob_avwap_data
+    if bos_choch_avwap_data is not None: payload['bos_choch_avwap'] = bos_choch_avwap_data
+    if pv_avwap_data        is not None: payload['pv_avwap']        = pv_avwap_data
 
     data_json = json.dumps(payload, separators=(',', ':'))
     lw_js = _lw_js()
@@ -839,7 +1285,7 @@ def build_html(prepared_df, col_styles, ticker, timeframe, ind_conf,
   button:hover {{ background: #222222; }}
   button.active {{ background: #2962ff; border-color: #2962ff; color: #fff; }}
   #slider {{ flex: 1; min-width: 0; accent-color: #2962ff; cursor: pointer; }}
-  #bar-info {{ font-size: 12px; color: #666666; min-width: 90px; white-space: nowrap; }}
+  #bar-info {{ font-size: 12px; color: #666666; min-width: 200px; white-space: nowrap; }}
   .sep {{ width: 1px; height: 24px; background: #222222; }}
   label {{ font-size: 12px; color: #666666; display: flex; align-items: center; gap: 5px; white-space: nowrap; }}
   input[type=number] {{
@@ -847,6 +1293,11 @@ def build_html(prepared_df, col_styles, ticker, timeframe, ind_conf,
     padding: 4px 6px; border-radius: 3px; font-size: 12px; text-align: center;
   }}
   input[type=number]::-webkit-inner-spin-button {{ opacity: 1; }}
+  #date-input {{
+    width: 95px; background: #111111; color: #cccccc; border: 1px solid #333333;
+    padding: 4px 6px; border-radius: 3px; font-size: 12px;
+  }}
+  #date-input:focus {{ outline: none; border-color: #555555; }}
 </style>
 </head>
 <body>
@@ -860,6 +1311,9 @@ def build_html(prepared_df, col_styles, ticker, timeframe, ind_conf,
   <div class="sep"></div>
   <input type="range" id="slider" min="0" max="{n_bars - 1}" value="0">
   <span id="bar-info">0 / {n_bars - 1}</span>
+  <label>bar <input type="text" id="bar-jump-input" placeholder="#" autocomplete="off" style="width:46px;text-align:center"></label>
+  <div class="sep"></div>
+  <label>date <input type="text" id="date-input" placeholder="YYYY-MM-DD" autocomplete="off" spellcheck="false"></label>
   <div class="sep"></div>
   <label>fps <input type="number" id="fps-input" value="8" min="1" max="60"></label>
 </div>
@@ -1033,6 +1487,54 @@ def build_html(prepared_df, col_styles, ticker, timeframe, ind_conf,
     }}
   }}
 
+  // Track 2: OB aVWAP — per-config, one solid + one optional ghost series per event
+  const obAvwapSeries = [];
+  const obAvwapGhost  = [];
+  if (DATA.ob_avwap) {{
+    for (const cfg of DATA.ob_avwap) {{
+      for (const ev of cfg.events) {{
+        obAvwapSeries.push(chart.addLineSeries({{
+          color: ev.clr, lineWidth: 2, lineStyle: 0,
+          priceLineVisible: false, lastValueVisible: false, crosshairMarkerVisible: false,
+        }}));
+        if (cfg.show_ghost) {{
+          obAvwapGhost.push(chart.addLineSeries({{
+            color: ev.gclr, lineWidth: 1, lineStyle: 1,
+            priceLineVisible: false, lastValueVisible: false, crosshairMarkerVisible: false,
+          }}));
+        }} else {{
+          obAvwapGhost.push(null);
+        }}
+      }}
+    }}
+  }}
+
+  // Track 2: BoS/CHoCH aVWAP — per-config, one series per event
+  const bosChochAvwapSeries = [];
+  if (DATA.bos_choch_avwap) {{
+    for (const cfg of DATA.bos_choch_avwap) {{
+      for (const ev of cfg.events) {{
+        bosChochAvwapSeries.push(chart.addLineSeries({{
+          color: ev.clr, lineWidth: 2, lineStyle: 0,
+          priceLineVisible: false, lastValueVisible: false, crosshairMarkerVisible: false,
+        }}));
+      }}
+    }}
+  }}
+
+  // Track 2: Peaks/valleys aVWAP — per-config, one series per event
+  const pvAvwapSeries = [];
+  if (DATA.pv_avwap) {{
+    for (const cfg of DATA.pv_avwap) {{
+      for (const ev of cfg.events) {{
+        pvAvwapSeries.push(chart.addLineSeries({{
+          color: ev.clr, lineWidth: 2, lineStyle: 0,
+          priceLineVisible: false, lastValueVisible: false, crosshairMarkerVisible: false,
+        }}));
+      }}
+    }}
+  }}
+
   // --- shared segment renderer (OB / FVG / Liquidity) ---
   // key -2 = not yet visible,  -1 = hidden (displaced/mitigated),  >=0 = active endBar
   function _renderSegs(segData, series, keys, n) {{
@@ -1125,6 +1627,187 @@ def build_html(prepared_df, col_styles, ticker, timeframe, ind_conf,
     return pts;
   }}
 
+  // Build OB aVWAP path pts up to bar n for a given event
+  function _obVwapPts(ev, upTo) {{
+    const vals = ev.vals;
+    if (!vals) return [];
+    const endIdx = Math.min(upTo - ev.s + 1, vals.length);
+    const pts = [];
+    for (let k = 0; k < endIdx; k++) {{
+      const v = vals[k];
+      if (v !== null) pts.push({{ time: DATA.bars[ev.s + k].time, value: v }});
+    }}
+    return pts;
+  }}
+
+  // OB aVWAP Track 2: re-evaluate caps in-time at each bar
+  function _renderObAvwap(n) {{
+    if (!DATA.ob_avwap) return;
+    let serIdx = 0;
+    for (const cfg of DATA.ob_avwap) {{
+      const events   = cfg.events;
+      const maxUnmit = cfg.max_unmit;
+      const maxMit   = cfg.max_mit;
+
+      // Classify events visible at bar n into unmitigated vs mitigated per side
+      const unmitBull = [], unmitBear = [], mitBull = [], mitBear = [];
+      for (let i = 0; i < events.length; i++) {{
+        const ev = events[i];
+        if (ev.vf > n) continue;
+        if (ev.m && ev.e <= n) {{
+          (ev.dir === 'bull' ? mitBull : mitBear).push(i);
+        }} else {{
+          (ev.dir === 'bull' ? unmitBull : unmitBear).push(i);
+        }}
+      }}
+
+      // Sort descending by start bar (most recent first) then apply per-side caps
+      const byS = (a, b) => events[b].s - events[a].s;
+      unmitBull.sort(byS); unmitBear.sort(byS);
+      mitBull.sort(byS);   mitBear.sort(byS);
+
+      const capU = (maxUnmit !== null && maxUnmit !== undefined) ? maxUnmit : Infinity;
+      const capM = (maxMit   !== null && maxMit   !== undefined) ? maxMit   : Infinity;
+
+      const activeUnmit = new Set([...unmitBull.slice(0, capU), ...unmitBear.slice(0, capU)]);
+      const activeMit   = new Set([...mitBull.slice(0, capM),   ...mitBear.slice(0, capM)]);
+
+      for (let i = 0; i < events.length; i++) {{
+        const ser  = obAvwapSeries[serIdx + i];
+        const gser = obAvwapGhost[serIdx + i];
+        const ev   = events[i];
+
+        if (activeUnmit.has(i)) {{
+          ser.setData(_obVwapPts(ev, n));
+          if (gser) gser.setData([]);
+        }} else if (activeMit.has(i)) {{
+          ser.setData(_obVwapPts(ev, ev.e));   // solid stops at mitigation bar
+          if (gser) {{                          // ghost extends from mitigation to n
+            const vals = ev.vals;
+            const gPts = [];
+            const gStart = ev.e - ev.s;
+            const gEnd   = Math.min(n - ev.s + 1, vals.length);
+            for (let k = gStart; k < gEnd; k++) {{
+              const v = vals[k];
+              if (v !== null) gPts.push({{ time: DATA.bars[ev.s + k].time, value: v }});
+            }}
+            gser.setData(gPts);
+          }}
+        }} else {{
+          ser.setData([]);
+          if (gser) gser.setData([]);
+        }}
+      }}
+      serIdx += events.length;
+    }}
+  }}
+
+  // Build peaks/valleys aVWAP path pts up to bar n (vals array starts at anchor bar ev.s)
+  function _pvVwapPts(ev, n) {{
+    const vals = ev.vals;
+    if (!vals) return [];
+    const endIdx = Math.min(n - ev.s + 1, vals.length);
+    const pts = [];
+    for (let k = 0; k < endIdx; k++) {{
+      const v = vals[k];
+      if (v !== null) pts.push({{ time: DATA.bars[ev.s + k].time, value: v }});
+    }}
+    return pts;
+  }}
+
+  // Peaks/valleys aVWAP Track 2: re-evaluate caps in-time at each bar
+  function _renderPvAvwap(n) {{
+    if (!DATA.pv_avwap) return;
+    let serIdx = 0;
+    for (const cfg of DATA.pv_avwap) {{
+      const events = cfg.events;
+      const maxCap = cfg.max_cap;
+
+      // Collect visible events (anchor confirmed by bar n), split by direction
+      const visPeaks = [], visValleys = [];
+      for (let i = 0; i < events.length; i++) {{
+        const ev = events[i];
+        if (ev.vf > n) continue;
+        (ev.dir === 'peak' ? visPeaks : visValleys).push(i);
+      }}
+
+      // Sort descending by anchor bar (most recent first), apply per-direction cap
+      const byS = (a, b) => events[b].s - events[a].s;
+      visPeaks.sort(byS); visValleys.sort(byS);
+
+      const cap = (maxCap !== null && maxCap !== undefined) ? maxCap : Infinity;
+      const activeSet = new Set([...visPeaks.slice(0, cap), ...visValleys.slice(0, cap)]);
+
+      for (let i = 0; i < events.length; i++) {{
+        const ser = pvAvwapSeries[serIdx + i];
+        if (activeSet.has(i)) {{
+          ser.setData(_pvVwapPts(events[i], n));
+        }} else {{
+          ser.setData([]);
+        }}
+      }}
+      serIdx += events.length;
+    }}
+  }}
+
+  // Build BoS/CHoCH aVWAP path pts up to bar n (vals array starts at anchor bar ev.ab)
+  function _bcVwapPts(ev, n) {{
+    const vals = ev.vals;
+    if (!vals) return [];
+    const endIdx = Math.min(n - ev.ab + 1, vals.length);
+    const pts = [];
+    for (let k = 0; k < endIdx; k++) {{
+      const v = vals[k];
+      if (v !== null) pts.push({{ time: DATA.bars[ev.ab + k].time, value: v }});
+    }}
+    return pts;
+  }}
+
+  // BoS/CHoCH aVWAP Track 2: re-evaluate caps in-time at each bar
+  function _renderBosChochAvwap(n) {{
+    if (!DATA.bos_choch_avwap) return;
+    let serIdx = 0;
+    for (const cfg of DATA.bos_choch_avwap) {{
+      const events   = cfg.events;
+      const maxBos   = cfg.max_bos;
+      const maxChoch = cfg.max_choch;
+
+      // Collect events whose break bar has been reached, split by signal type × side
+      const bosBull = [], bosBear = [], chochBull = [], chochBear = [];
+      for (let i = 0; i < events.length; i++) {{
+        const ev = events[i];
+        if (ev.vf > n) continue;
+        if (ev.st === 'BoS') {{
+          (ev.dir === 'bull' ? bosBull : bosBear).push(i);
+        }} else {{
+          (ev.dir === 'bull' ? chochBull : chochBear).push(i);
+        }}
+      }}
+
+      // Sort descending by signal bar (most recent first) then apply per-side caps
+      const byS = (a, b) => events[b].s - events[a].s;
+      bosBull.sort(byS); bosBear.sort(byS); chochBull.sort(byS); chochBear.sort(byS);
+
+      const capB = (maxBos   !== null && maxBos   !== undefined) ? maxBos   : Infinity;
+      const capC = (maxChoch !== null && maxChoch !== undefined) ? maxChoch : Infinity;
+
+      const activeSet = new Set([
+        ...bosBull.slice(0, capB),   ...bosBear.slice(0, capB),
+        ...chochBull.slice(0, capC), ...chochBear.slice(0, capC),
+      ]);
+
+      for (let i = 0; i < events.length; i++) {{
+        const ser = bosChochAvwapSeries[serIdx + i];
+        if (activeSet.has(i)) {{
+          ser.setData(_bcVwapPts(events[i], n));
+        }} else {{
+          ser.setData([]);
+        }}
+      }}
+      serIdx += events.length;
+    }}
+  }}
+
   // --- render ---
   function render(n) {{
     const slice = DATA.bars.slice(0, n + 1);
@@ -1180,6 +1863,15 @@ def build_html(prepared_df, col_styles, ticker, timeframe, ind_conf,
     // PMM aVWAPs (greedy extrema, evolving per bar)
     _renderPmm(n);
 
+    // OB aVWAP (Track 2: in-time cap evaluation)
+    _renderObAvwap(n);
+
+    // BoS/CHoCH aVWAP (Track 2: in-time cap evaluation)
+    _renderBosChochAvwap(n);
+
+    // Peaks/valleys aVWAP (Track 2: in-time cap evaluation)
+    _renderPvAvwap(n);
+
     // QQEMOD aVWAP committed anchors
     if (DATA.qq) {{
       for (let i = 0; i < DATA.qq.anchors.length; i++) {{
@@ -1216,7 +1908,12 @@ def build_html(prepared_df, col_styles, ticker, timeframe, ind_conf,
       }}
     }}
 
-    document.getElementById('bar-info').textContent = n + ' / ' + (N - 1);
+    const _bt = DATA.bars[n].t;
+    let _bd = '';
+    if (typeof _bt === 'string') _bd = _bt.slice(0, 10);
+    else if (typeof _bt === 'object' && _bt.year) _bd = _bt.year + '-' + String(_bt.month).padStart(2,'0') + '-' + String(_bt.day).padStart(2,'0');
+    else if (typeof _bt === 'number') _bd = new Date(_bt * 1000).toISOString().slice(0, 10);
+    document.getElementById('bar-info').textContent = _bd + '  ' + n + ' / ' + (N - 1);
     document.getElementById('slider').value = n;
   }}
 
@@ -1266,6 +1963,38 @@ def build_html(prepared_df, col_styles, ticker, timeframe, ind_conf,
     if (e.key === ' ')          {{ e.preventDefault(); setPlaying(!playing); }}
     if (e.key === 'Home')       jump(0);
     if (e.key === 'End')        jump(N - 1);
+    // Forward cycling keys to parent browser (postMessage works across iframe boundaries)
+    if (e.key === '[' || e.key === ']') {{
+      e.preventDefault();
+      try {{ window.parent.postMessage({{ key: e.key }}, '*'); }} catch(_) {{}}
+    }}
+  }});
+
+  // Date jump input
+  document.getElementById('date-input').addEventListener('keydown', function(e) {{
+    if (e.key === 'Enter') {{
+      const q = this.value.trim();
+      let best = N - 1;
+      for (let i = 0; i < N; i++) {{
+        const _t = DATA.bars[i].t;
+        const s = typeof _t === 'string' ? _t.slice(0,10)
+                : typeof _t === 'object' && _t.year ? _t.year+'-'+String(_t.month).padStart(2,'0')+'-'+String(_t.day).padStart(2,'0')
+                : new Date(_t*1000).toISOString().slice(0,10);
+        if (s >= q) {{ best = i; break; }}
+      }}
+      setPlaying(false); jump(best); this.blur();
+    }}
+    if (e.key === 'Escape') {{ this.value = ''; this.blur(); }}
+  }});
+
+  // Bar jump input
+  document.getElementById('bar-jump-input').addEventListener('keydown', function(e) {{
+    if (e.key === 'Enter') {{
+      const n = parseInt(this.value);
+      if (!isNaN(n)) {{ setPlaying(false); jump(n); }}
+      this.blur();
+    }}
+    if (e.key === 'Escape') {{ this.value = ''; this.blur(); }}
   }});
 
   // --- resize ---
@@ -1307,7 +2036,7 @@ def generate_browser_index(output_dir: Path, timeframe: str, ind_conf: str) -> P
   body {{ background: #000; color: #ccc; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', monospace; overflow: hidden; }}
   #nav {{
     height: 44px; display: flex; align-items: center; gap: 10px;
-    padding: 0 14px; background: #000; border-bottom: 1px solid #222;
+    padding: 0 14px; background: #000; border-bottom: 1px solid #222; flex-shrink: 0;
   }}
   button {{
     background: #111; color: #ccc; border: 1px solid #333;
@@ -1323,39 +2052,80 @@ def generate_browser_index(output_dir: Path, timeframe: str, ind_conf: str) -> P
   }}
   #search:focus {{ outline: none; border-color: #555; }}
   #hint {{ font-size: 11px; color: #383838; margin-left: auto; white-space: nowrap; }}
-  #frame {{ display: block; width: 100vw; height: calc(100vh - 44px); border: none; }}
+  #main {{ display: flex; height: calc(100vh - 44px); }}
+  #sidebar {{
+    width: 160px; overflow-y: auto; background: #080808; border-right: 1px solid #1a1a1a;
+    flex-shrink: 0; transition: width 0.12s;
+  }}
+  #sidebar.hidden {{ width: 0; overflow: hidden; border: none; }}
+  .tk {{ padding: 6px 12px; font-size: 12px; cursor: pointer; color: #777; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }}
+  .tk:hover {{ background: #111; color: #fff; }}
+  .tk.active {{ color: #fff; background: #161616; }}
+  #frame {{ flex: 1; min-width: 0; height: 100%; border: none; display: block; }}
 </style>
 </head>
 <body>
 
 <div id="nav">
+  <button id="btn-list" title="Toggle ticker list">&#9776;</button>
+  <div class="sep"></div>
   <button id="btn-prev">&#9664;</button>
   <span id="ticker-label">—</span>
   <span id="count"></span>
   <button id="btn-next">&#9654;</button>
   <div class="sep"></div>
   <input id="search" type="text" placeholder="jump to ticker…" autocomplete="off" spellcheck="false">
-  <span id="hint">[ &nbsp; ] &nbsp; cycle &nbsp;·&nbsp; / &nbsp; search &nbsp;·&nbsp; {timeframe} &nbsp;·&nbsp; conf {ind_conf}</span>
+  <span id="hint" style="font-size:11px;color:#2a2a2a;margin-left:auto;white-space:nowrap">{timeframe} &nbsp;·&nbsp; conf {ind_conf} &nbsp;·&nbsp; {len(files)} tickers</span>
 </div>
 
-<iframe id="frame" src="" frameborder="0" allowfullscreen></iframe>
+<div id="main">
+  <div id="sidebar"></div>
+  <iframe id="frame" src="" frameborder="0" allowfullscreen></iframe>
+</div>
 
 <script>
 (function() {{
   const FILES  = {files_js};
   const LABELS = {labels_js};
+  const TOTAL  = FILES.length;
   let idx = 0;
 
+  // Build sidebar ticker list
+  const sidebar = document.getElementById('sidebar');
+  LABELS.forEach(function(label, i) {{
+    const el = document.createElement('div');
+    el.className = 'tk';
+    el.textContent = label;
+    el.addEventListener('click', function() {{ go(i); }});
+    sidebar.appendChild(el);
+  }});
+  sidebar.classList.add('hidden');
+
+  document.getElementById('btn-list').addEventListener('click', function() {{
+    sidebar.classList.toggle('hidden');
+  }});
+
   function go(n) {{
-    idx = ((n % FILES.length) + FILES.length) % FILES.length;
+    idx = ((n % TOTAL) + TOTAL) % TOTAL;
     document.getElementById('frame').src = FILES[idx];
     document.getElementById('ticker-label').textContent = LABELS[idx];
-    document.getElementById('count').textContent = (idx + 1) + ' / ' + FILES.length;
+    document.getElementById('count').textContent = (idx + 1) + ' / ' + TOTAL;
     document.getElementById('search').value = '';
+    // Update URL hash for bookmarking
+    window.location.hash = LABELS[idx];
+    // Prev/next tooltips
+    document.getElementById('btn-prev').title = LABELS[((idx - 1) + TOTAL) % TOTAL];
+    document.getElementById('btn-next').title = LABELS[(idx + 1) % TOTAL];
+    // Highlight active sidebar item and scroll into view
+    document.querySelectorAll('.tk').forEach(function(el, i) {{
+      el.classList.toggle('active', i === idx);
+    }});
+    const activeEl = sidebar.querySelectorAll('.tk')[idx];
+    if (activeEl) activeEl.scrollIntoView({{ block: 'nearest' }});
   }}
 
-  document.getElementById('btn-prev').addEventListener('click', () => go(idx - 1));
-  document.getElementById('btn-next').addEventListener('click', () => go(idx + 1));
+  document.getElementById('btn-prev').addEventListener('click', function() {{ go(idx - 1); }});
+  document.getElementById('btn-next').addEventListener('click', function() {{ go(idx + 1); }});
 
   document.addEventListener('keydown', function(e) {{
     if (document.activeElement === document.getElementById('search')) return;
@@ -1364,29 +2134,39 @@ def generate_browser_index(output_dir: Path, timeframe: str, ind_conf: str) -> P
     if (e.key === '/')  {{ e.preventDefault(); document.getElementById('search').focus(); }}
   }});
 
+  // Receive [ ] forwarded via postMessage from the iframe (chart captures keyboard focus)
+  window.addEventListener('message', function(e) {{
+    if (!e.data || !e.data.key) return;
+    if (e.data.key === '[') go(idx - 1);
+    if (e.data.key === ']') go(idx + 1);
+  }});
+
   const searchEl = document.getElementById('search');
   searchEl.addEventListener('keydown', function(e) {{
     if (e.key === 'Enter') {{
       const q = this.value.trim().toUpperCase();
-      const i = LABELS.findIndex(l => l === q);
+      const i = LABELS.findIndex(function(l) {{ return l === q; }});
       if (i >= 0) {{ go(i); this.blur(); }}
-      else {{ this.style.color = '#f66'; setTimeout(() => this.style.color = '', 600); }}
+      else {{ this.style.color = '#f66'; setTimeout(function() {{ searchEl.style.color = ''; }}, 600); }}
     }}
     if (e.key === 'Escape') {{ this.value = ''; this.blur(); }}
   }});
 
-  // live filter: show first match as user types
+  // Live filter: highlight first match as user types
   searchEl.addEventListener('input', function() {{
     const q = this.value.trim().toUpperCase();
     if (!q) return;
-    const i = LABELS.findIndex(l => l.startsWith(q));
+    const i = LABELS.findIndex(function(l) {{ return l.startsWith(q); }});
     if (i >= 0) {{
       document.getElementById('ticker-label').textContent = LABELS[i] + '…';
       document.getElementById('count').textContent = '';
     }}
   }});
 
-  go(0);
+  // Restore from URL hash or start at first ticker
+  const startLabel = decodeURIComponent(window.location.hash.slice(1)).toUpperCase();
+  const startIdx = LABELS.findIndex(function(l) {{ return l === startLabel; }});
+  go(startIdx >= 0 ? startIdx : 0);
 }})();
 </script>
 </body>
@@ -1400,28 +2180,36 @@ def generate_browser_index(output_dir: Path, timeframe: str, ind_conf: str) -> P
 def export_replay_html(prepared_df, colors, ticker, timeframe, ind_conf, output_dir, raw_df=None, out_path=None):
     # smc-based extractors (FVG, OB, Liquidity) need a volume column that
     # prepare_dataframe drops when show_volume=False.  Use raw_df when available.
-    ohlcv_df    = raw_df if raw_df is not None else prepared_df
-    col_styles  = _col_styles(prepared_df, colors)
-    ob_data     = _extract_ob_events(ohlcv_df, ind_conf, timeframe, colors)
-    qqemod_data = _extract_qqemod_events(ohlcv_df, ind_conf, timeframe, colors)
-    fvg_data    = _extract_fvg_events(ohlcv_df, ind_conf, timeframe, colors)
-    bos_data    = _extract_bos_choch_events(ohlcv_df, colors)
-    liq_data    = _extract_liquidity_events(ohlcv_df, ind_conf, timeframe, colors)
-    pmm_data    = _extract_pmm_events(ohlcv_df, ind_conf, timeframe)
+    ohlcv_df     = raw_df if raw_df is not None else prepared_df
+    col_styles   = _col_styles(prepared_df, colors)
+    ob_data      = _extract_ob_events(ohlcv_df, ind_conf, timeframe, colors)
+    qqemod_data  = _extract_qqemod_events(ohlcv_df, ind_conf, timeframe, colors)
+    fvg_data     = _extract_fvg_events(ohlcv_df, ind_conf, timeframe, colors)
+    bos_data     = _extract_bos_choch_events(ohlcv_df, colors)
+    liq_data     = _extract_liquidity_events(ohlcv_df, ind_conf, timeframe, colors)
+    pmm_data     = _extract_pmm_events(ohlcv_df, ind_conf, timeframe)
+    ob_avwap_data        = _extract_ob_avwap_events(ohlcv_df, ind_conf, timeframe, colors)
+    bos_choch_avwap_data = _extract_bos_choch_avwap_events(ohlcv_df, ind_conf, timeframe, colors)
+    pv_avwap_data        = _extract_peaks_valleys_avwap_events(ohlcv_df, ind_conf, timeframe, colors)
 
-    n_ob  = len(ob_data['events'])      if ob_data     else 0
-    n_qq  = len(qqemod_data['anchors']) if qqemod_data else 0
-    n_fvg = len(fvg_data['events'])     if fvg_data    else 0
-    n_bos = len(bos_data['events'])     if bos_data    else 0
-    n_liq = len(liq_data['events'])     if liq_data    else 0
-    n_pmm = sum(len(pmm_data.get(d, {}).get('slots', [])) for d in ('valley', 'peak')) if pmm_data else 0
+    n_ob          = len(ob_data['events'])      if ob_data      else 0
+    n_qq          = len(qqemod_data['anchors']) if qqemod_data  else 0
+    n_fvg         = len(fvg_data['events'])     if fvg_data     else 0
+    n_bos         = len(bos_data['events'])     if bos_data     else 0
+    n_liq         = len(liq_data['events'])     if liq_data     else 0
+    n_pmm         = sum(len(pmm_data.get(d, {}).get('slots', [])) for d in ('valley', 'peak')) if pmm_data else 0
+    n_ob_avwap    = sum(len(c['events']) for c in ob_avwap_data)        if ob_avwap_data        else 0
+    n_bos_avwap   = sum(len(c['events']) for c in bos_choch_avwap_data) if bos_choch_avwap_data else 0
+    n_pv_avwap    = sum(len(c['events']) for c in pv_avwap_data)        if pv_avwap_data        else 0
     print(f"  [Export] OB:{n_ob}  QQEMOD:{n_qq}  FVG:{n_fvg}  "
-          f"BoS/CHoCH:{n_bos}  Liq:{n_liq}  PMM slots:{n_pmm}")
+          f"BoS/CHoCH:{n_bos}  Liq:{n_liq}  PMM slots:{n_pmm}  "
+          f"OBaVWAP:{n_ob_avwap}  BoSaVWAP:{n_bos_avwap}  PVaVWAP:{n_pv_avwap}")
 
     html = build_html(prepared_df, col_styles, ticker, timeframe, ind_conf,
                       ob_data=ob_data, qqemod_data=qqemod_data, fvg_data=fvg_data,
                       bos_data=bos_data, liq_data=liq_data, pmm_data=pmm_data,
-                      colors=colors)
+                      ob_avwap_data=ob_avwap_data, bos_choch_avwap_data=bos_choch_avwap_data,
+                      pv_avwap_data=pv_avwap_data, colors=colors)
 
     if out_path is not None:
         out = Path(out_path)
@@ -1431,5 +2219,6 @@ def export_replay_html(prepared_df, colors, ticker, timeframe, ind_conf, output_
     out.write_text(html, encoding='utf-8')
     print(f"[Export] Saved {out}  ({len(html) // 1024} KB,  {len(prepared_df)} bars,  "
           f"{len(col_styles)} T1 lines,  OB:{n_ob}  QQEMOD:{n_qq}  FVG:{n_fvg}  "
-          f"BoS/CHoCH:{n_bos}  Liq:{n_liq}  PMM:{n_pmm})")
+          f"BoS/CHoCH:{n_bos}  Liq:{n_liq}  PMM:{n_pmm}  "
+          f"OBaVWAP:{n_ob_avwap}  BoSaVWAP:{n_bos_avwap})")
     return out

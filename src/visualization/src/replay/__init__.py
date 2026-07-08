@@ -580,9 +580,9 @@ def _load_ob_params(ind_conf: str, timeframe: str) -> Optional[dict]:
         ind_list, params = result
         if 'OB' in ind_list:
             return params.get('OB', {}) or {}
-        # Fall back to aVWAP OB_params if show_OB is enabled there
+        # Fall back to aVWAP OB_params if show_OB is enabled there (only when aVWAP.OB is True)
         avwap_params = params.get('aVWAP', {})
-        if 'aVWAP' in ind_list and avwap_params:
+        if 'aVWAP' in ind_list and avwap_params and avwap_params.get('OB', False):
             ob_configs = avwap_params.get('OB_params', [])
             if isinstance(ob_configs, dict):
                 ob_configs = [ob_configs]

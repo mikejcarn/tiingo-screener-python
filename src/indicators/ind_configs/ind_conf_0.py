@@ -155,16 +155,16 @@ params = {
 
         'daily': {
             'aVWAP': {
-                'peaks': False,
-                'valleys': False,
+                'peaks': True,
+                'valleys': True,
                 'peaks_avg': False,
                 'valleys_avg': False,
                 'peaks_valleys': False,
                 'peaks_valleys_avg': False,
-                'price_maxima_minima': True,
+                'price_maxima_minima': False,
                 'QQEMOD': True,
                 'QQEMOD_avg': False,
-                'OB': True,
+                'OB': False,
                 'OB_avg': False,
                 'gaps': False,
                 'gaps_avg': False,
@@ -173,8 +173,14 @@ params = {
                 'All_avg': False,
                 'aVWAP_channel': False,
                 'peaks_params': [
+                    { 'periods': 100, 'max_aVWAPs': 1, 'avg_lookback': 20, },
+                    { 'periods': 200, 'max_aVWAPs': 1, 'avg_lookback': 20, },
+                    { 'periods': 300, 'max_aVWAPs': 1, 'avg_lookback': 20, },
                 ],
                 'valleys_params': [
+                    { 'periods': 100, 'max_aVWAPs': 1, 'avg_lookback': 20, },
+                    { 'periods': 200, 'max_aVWAPs': 1, 'avg_lookback': 20, },
+                    { 'periods': 300, 'max_aVWAPs': 1, 'avg_lookback': 20, },
                 ],
                 'peaks_valleys_params': [
                     { 'periods': 20, 'max_aVWAPs': None, 'avg_lookback': 20, },
@@ -184,7 +190,7 @@ params = {
                     'valley_to_peak':   False,   # solid teal:   valley anchor → next red candle
                     'peak_to_peak':     True,    # dotted red:   peak anchor → next peak anchor
                     'valley_to_valley': True,    # dotted teal:  valley anchor → next valley anchor
-                    'max_anchors':      5,       # keep N most recent bear + N most recent bull anchors
+                    'max_anchors':      1,       # keep N most recent bear + N most recent bull anchors
                     'extend_to_end':    False,   # run each aVWAP to the last bar
                     'qqe_params': {
                         'rsi_period': 6, 'rsi_period2': 5, 'sf': 5, 'sf2': 5,
@@ -198,17 +204,27 @@ params = {
                     'max_anchors': 1,
                     'min_swing_spacing': 1,
                 },
-                'BoS_CHoCH_params': [ {'mode': 'bullish', 'swing_length': 15, 'max_aVWAPs': 5, 'avg_lookback': 7}, ],
+                'BoS_CHoCH_params': [
+                    {
+                        'swing_length': 15,
+                        'mode': 'both',
+                        'include_BoS':   False,
+                        'include_CHoCH': True,
+                        'max_BoS_aVWAPs':   1,   # keep 2 BoS-anchored per side (bull + bear)
+                        'max_CHoCH_aVWAPs': 1,   # keep 1 CHoCH-anchored per side
+                        'avg_lookback': 7,
+                    },
+                ],
                 'OB_params': [
                     {
                         'mode': 'combined',       # 'combined'/'bullish'/'bearish'/'none'
                         'periods': 5,            # swing lookback for OB detection
                         'max_aVWAPs': None,       # cap on aVWAPs per side (None = no cap)
                         'max_mitigated_aVWAPs': None,    # keep last N mitigated OB aVWAPs (None = no cap)
-                        'max_unmitigated_aVWAPs': None,  # keep last N unmitigated OB aVWAPs (None = no cap)
+                        'max_unmitigated_aVWAPs': 1,  # keep last N unmitigated OB aVWAPs (None = no cap)
                         'extend_to_end': False,    # extend mitigated aVWAPs to current bar
                         'faded': True,            # render the post-mitigation extension at low opacity
-                        'show_OB': True,               # also render horizontal OB boxes
+                        'show_OB': False,               # also render horizontal OB boxes
                         'OB_max_mitigated': None, # cap OB boxes independently (None = no cap)
                         'OB_max_unmitigated': 1,
                         'OB_max_per_side': True,  # True = cap applies per bull/bear side; False = combined pool
