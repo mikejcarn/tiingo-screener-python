@@ -1990,11 +1990,13 @@ def build_html(prepared_df, col_styles, ticker, timeframe, ind_conf,
     if (e.target.tagName === 'INPUT') return;
     if (e.key === 'ArrowLeft')  {{ setPlaying(false); jump(current - (e.shiftKey ? 20 : 1)); }}
     if (e.key === 'ArrowRight') {{ setPlaying(false); jump(current + (e.shiftKey ? 20 : 1)); }}
+    if (e.key === 'ArrowUp')   {{ e.preventDefault(); const fi = document.getElementById('fps-input'); fi.value = Math.min(60, (parseInt(fi.value) || 8) + 1); }}
+    if (e.key === 'ArrowDown') {{ e.preventDefault(); const fi = document.getElementById('fps-input'); fi.value = Math.max(1,  (parseInt(fi.value) || 8) - 1); }}
     if (e.key === ' ')          {{ e.preventDefault(); setPlaying(!playing); }}
     if (e.key === 'Home')       jump(0);
     if (e.key === 'End')        jump(N - 1);
     // Forward cycling keys to parent browser (postMessage works across iframe boundaries)
-    if (e.key === '[' || e.key === ']') {{
+    if (e.key === '[' || e.key === ']' || e.key === '-' || e.key === '=' || e.key === '\\\\') {{
       e.preventDefault();
       try {{ window.parent.postMessage({{ key: e.key }}, '*'); }} catch(_) {{}}
     }}
@@ -2047,9 +2049,12 @@ def build_html(prepared_df, col_styles, ticker, timeframe, ind_conf,
     if (e.key === 'Escape') {{ this.blur(); }}
   }});
 
-  // Receive digit keys forwarded from parent browser index (when iframe not yet focused)
+  // Receive keys forwarded from parent browser index (when iframe not yet focused)
   window.addEventListener('message', function(e) {{
     if (!e.data || !e.data.key) return;
+    if (e.data.key === ' ') {{ setPlaying(!playing); return; }}
+    if (e.data.key === 'ArrowUp')   {{ const fi = document.getElementById('fps-input'); fi.value = Math.min(60, (parseInt(fi.value) || 8) + 1); return; }}
+    if (e.data.key === 'ArrowDown') {{ const fi = document.getElementById('fps-input'); fi.value = Math.max(1,  (parseInt(fi.value) || 8) - 1); return; }}
     if (/^[0-9]$/.test(e.data.key)) {{
       const inp = document.getElementById('bar-jump-input');
       inp.focus(); inp.value = e.data.key;
@@ -2124,10 +2129,19 @@ def generate_browser_index(output_dir: Path, timeframe: str, ind_conf: str, fps:
   #count {{ color: #555; font-size: 12px; white-space: nowrap; }}
   #hint {{ font-size: 11px; color: #2a2a2a; margin-left: auto; white-space: nowrap; }}
   .nav-sep {{ width: 1px; height: 24px; background: #222; flex-shrink: 0; }}
-  .lock-btn {{ padding: 4px 8px; font-size: 11px; }}
-  .lock-btn.active {{ background: #2962ff; border-color: #2962ff; color: #fff; }}
-  #lock-bar-val {{ width: 55px; text-align: center; background: #111; color: #ccc; border: 1px solid #333; padding: 3px 6px; border-radius: 3px; font-size: 12px; }}
-  #lock-date-val {{ width: 100px; background: #111; color: #ccc; border: 1px solid #333; padding: 3px 6px; border-radius: 3px; font-size: 12px; }}
+  #lock-wrap {{ display: flex; align-items: center; }}
+  #lock-mode-btn {{
+    background: #111; color: #555; border: 1px solid #2a2a2a; border-right: none;
+    padding: 4px 9px; border-radius: 3px 0 0 3px; font-size: 12px;
+    cursor: pointer; user-select: none; white-space: nowrap;
+  }}
+  #lock-mode-btn:hover {{ color: #ccc; }}
+  #lock-val-inp {{
+    background: #111; color: #ccc; border: 1px solid #2a2a2a; border-left: none;
+    padding: 4px 8px; border-radius: 0 3px 3px 0; font-size: 12px; width: 110px;
+  }}
+  #lock-val-inp:disabled {{ color: #2a2a2a; pointer-events: none; }}
+  #lock-val-inp:not(:disabled):focus {{ outline: none; }}
   #ticker-wrap {{ position: relative; }}
   #ticker-input {{
     background: #111; color: #fff; border: 1px solid #333;
@@ -2160,12 +2174,10 @@ def generate_browser_index(output_dir: Path, timeframe: str, ind_conf: str, fps:
   <span id="count"></span>
   <button id="btn-next" title="">&#9654;</button>
   <div class="nav-sep"></div>
-  <button class="lock-btn active" id="lk-start" title="Load at first bar">start</button>
-  <button class="lock-btn" id="lk-bar"   title="Load at bar number">#</button>
-  <input  id="lock-bar-val"  type="text" placeholder="bar #"      autocomplete="off" style="display:none">
-  <button class="lock-btn" id="lk-date"  title="Load at date">date</button>
-  <input  id="lock-date-val" type="text" placeholder="YYYY-MM-DD" autocomplete="off" style="display:none">
-  <button class="lock-btn" id="lk-end"   title="Load at last bar">end</button>
+  <div id="lock-wrap">
+    <div id="lock-mode-btn" title="Lock mode (\\ to cycle)">start</div>
+    <input id="lock-val-inp" type="text" disabled autocomplete="off" spellcheck="false" placeholder="">
+  </div>
   <span id="hint">{timeframe} &nbsp;·&nbsp; conf {ind_conf} &nbsp;·&nbsp; {len(files)} tickers</span>
 </div>
 
@@ -2179,38 +2191,40 @@ def generate_browser_index(output_dir: Path, timeframe: str, ind_conf: str, fps:
   const FPS    = {fps};
   let idx = 0;
   let dropIdx = -1;
-  let lockMode = 'start';
+  let lockMode    = 'start';
+  let lockBarVal  = '';
+  let lockDateVal = '';
+  const LOCK_MODES = ['start', 'bar', 'date', 'end'];
 
   const tickerInput = document.getElementById('ticker-input');
   const dropdown    = document.getElementById('dropdown');
 
+  function buildLockParam() {{
+    if (lockMode === 'end')                  return '&lock=end';
+    if (lockMode === 'bar'  && lockBarVal)   return '&lock=bar:'  + lockBarVal;
+    if (lockMode === 'date' && lockDateVal)  return '&lock=date:' + encodeURIComponent(lockDateVal);
+    return '';
+  }}
+
+  function updateLockDisplay() {{
+    const btn = document.getElementById('lock-mode-btn');
+    btn.textContent = lockMode;
+    btn.classList.toggle('has-lock', lockMode !== 'start');
+    const inp = document.getElementById('lock-val-inp');
+    const needsVal = lockMode === 'bar' || lockMode === 'date';
+    inp.disabled    = !needsVal;
+    inp.placeholder = lockMode === 'bar' ? 'bar #' : lockMode === 'date' ? 'YYYY-MM-DD' : '';
+    inp.value       = lockMode === 'bar' ? lockBarVal : lockMode === 'date' ? lockDateVal : '';
+  }}
+
   function go(n) {{
     idx = ((n % TOTAL) + TOTAL) % TOTAL;
-    let lockParam = '';
-    if (lockMode === 'end') {{
-      lockParam = '&lock=end';
-    }} else if (lockMode === 'bar') {{
-      const v = document.getElementById('lock-bar-val').value.trim();
-      if (v) lockParam = '&lock=bar:' + v;
-    }} else if (lockMode === 'date') {{
-      const v = document.getElementById('lock-date-val').value.trim();
-      if (v) lockParam = '&lock=date:' + encodeURIComponent(v);
-    }}
-    document.getElementById('frame').src = FILES[idx] + '?fps=' + FPS + lockParam;
+    document.getElementById('frame').src = FILES[idx] + '?fps=' + FPS + buildLockParam();
     document.getElementById('count').textContent = (idx + 1) + ' / ' + TOTAL;
     window.location.hash = LABELS[idx];
     document.getElementById('btn-prev').title = LABELS[((idx - 1) + TOTAL) % TOTAL];
     document.getElementById('btn-next').title = LABELS[(idx + 1) % TOTAL];
     tickerInput.value = LABELS[idx];
-  }}
-
-  function setLock(mode) {{
-    lockMode = mode;
-    ['start', 'bar', 'date', 'end'].forEach(function(m) {{
-      document.getElementById('lk-' + m).classList.toggle('active', m === mode);
-    }});
-    document.getElementById('lock-bar-val').style.display  = (mode === 'bar')  ? '' : 'none';
-    document.getElementById('lock-date-val').style.display = (mode === 'date') ? '' : 'none';
   }}
 
   function buildDropdown(q) {{
@@ -2265,6 +2279,9 @@ def generate_browser_index(output_dir: Path, timeframe: str, ind_conf: str, fps:
         const label = items[dropIdx].textContent;
         const i = LABELS.indexOf(label);
         if (i >= 0) go(i);
+      }} else if (items.length === 1) {{
+        const i = LABELS.indexOf(items[0].textContent);
+        if (i >= 0) go(i);
       }} else {{
         const q = this.value.trim().toUpperCase();
         const i = LABELS.findIndex(function(l) {{ return l === q; }});
@@ -2278,21 +2295,48 @@ def generate_browser_index(output_dir: Path, timeframe: str, ind_conf: str, fps:
   document.getElementById('btn-prev').addEventListener('click', function() {{ go(idx - 1); }});
   document.getElementById('btn-next').addEventListener('click', function() {{ go(idx + 1); }});
 
-  document.getElementById('lk-start').addEventListener('click', function() {{ setLock('start'); go(idx); }});
-  document.getElementById('lk-bar')  .addEventListener('click', function() {{ setLock('bar');   document.getElementById('lock-bar-val').focus(); }});
-  document.getElementById('lk-date') .addEventListener('click', function() {{ setLock('date');  document.getElementById('lock-date-val').focus(); }});
-  document.getElementById('lk-end')  .addEventListener('click', function() {{ setLock('end');   go(idx); }});
+  const lkValInp = document.getElementById('lock-val-inp');
 
-  document.getElementById('lock-bar-val').addEventListener('input',  function() {{ this.value = this.value.replace(/[^0-9]/g, ''); }});
-  document.getElementById('lock-bar-val').addEventListener('change', function() {{ go(idx); }});
-  document.getElementById('lock-date-val').addEventListener('input',  function() {{ this.value = this.value.replace(/[^0-9\-]/g, ''); }});
-  document.getElementById('lock-date-val').addEventListener('change', function() {{ go(idx); }});
+  function cycleLock() {{
+    lockMode = LOCK_MODES[(LOCK_MODES.indexOf(lockMode) + 1) % LOCK_MODES.length];
+    updateLockDisplay();
+    if (lockMode === 'bar' || lockMode === 'date') {{
+      lkValInp.focus(); lkValInp.select();
+    }} else {{
+      go(idx);
+    }}
+  }}
+
+  document.getElementById('lock-mode-btn').addEventListener('click', cycleLock);
+
+  lkValInp.addEventListener('input', function() {{
+    if (lockMode === 'bar') this.value = this.value.replace(/[^0-9]/g, '');
+    else this.value = this.value.replace(/[^0-9\-]/g, '');
+  }});
+  lkValInp.addEventListener('keydown', function(e) {{
+    if (e.key === 'Enter') {{
+      if (lockMode === 'bar')  lockBarVal  = this.value.trim();
+      if (lockMode === 'date') lockDateVal = this.value.trim();
+      updateLockDisplay(); go(idx); this.blur();
+    }}
+    if (e.key === 'Escape') {{
+      this.value = lockMode === 'bar' ? lockBarVal : lockDateVal;
+      this.blur();
+    }}
+    if (e.key === '\\\\') {{
+      e.preventDefault();
+      if (lockMode === 'bar')  lockBarVal  = this.value.trim();
+      if (lockMode === 'date') lockDateVal = this.value.trim();
+      cycleLock();
+    }}
+  }});
 
   document.addEventListener('keydown', function(e) {{
     if (document.activeElement.tagName === 'INPUT') return;
-    if (e.key === '[') {{ e.preventDefault(); go(idx - 1); }}
-    if (e.key === ']') {{ e.preventDefault(); go(idx + 1); }}
+    if (e.key === '[' || e.key === '=') {{ e.preventDefault(); go(idx - 1); }}
+    if (e.key === ']' || e.key === '-') {{ e.preventDefault(); go(idx + 1); }}
     if (e.key === '/') {{ e.preventDefault(); tickerInput.focus(); }}
+    if (e.key === ' ' || e.key === 'ArrowUp' || e.key === 'ArrowDown') {{ e.preventDefault(); try {{ document.getElementById('frame').contentWindow.postMessage({{ key: e.key }}, '*'); }} catch(_) {{}} }}
     if (e.key.length === 1 && /[a-zA-Z]/.test(e.key) && !e.ctrlKey && !e.metaKey && !e.altKey) {{
       e.preventDefault();
       tickerInput.focus();
@@ -2303,12 +2347,14 @@ def generate_browser_index(output_dir: Path, timeframe: str, ind_conf: str, fps:
       e.preventDefault();
       try {{ document.getElementById('frame').contentWindow.postMessage({{ key: e.key }}, '*'); }} catch(_) {{}}
     }}
+    if (e.key === '\\\\') {{ cycleLock(); }}
   }});
 
   window.addEventListener('message', function(e) {{
     if (!e.data || !e.data.key) return;
-    if (e.data.key === '[') go(idx - 1);
-    if (e.data.key === ']') go(idx + 1);
+    if (e.data.key === '[' || e.data.key === '=') go(idx - 1);
+    if (e.data.key === ']' || e.data.key === '-') go(idx + 1);
+    if (e.data.key === '\\\\') {{ cycleLock(); }}
     if (e.data.key.length === 1 && /[a-zA-Z]/.test(e.data.key)) {{
       tickerInput.focus();
       tickerInput.value = e.data.key.toUpperCase();
