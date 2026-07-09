@@ -149,7 +149,7 @@ def _load_for_replay(ticker: str, timeframe: str, ind_conf: str) -> Optional[pd.
 # Public entry point
 # ---------------------------------------------------------------------------
 
-def batch_export_html(timeframe: str, ind_conf: str) -> None:
+def batch_export_html(timeframe: str, ind_conf: str, min_bars: int = None) -> None:
     """Export all tickers in the tickers buffer to self-contained HTML replay files.
 
     Output: docs/exports/ind_conf_{N}/{timeframe}/{TICKER}_{timeframe}_ind{N}.html
@@ -189,6 +189,10 @@ def batch_export_html(timeframe: str, ind_conf: str) -> None:
             raw_df = _load_for_replay(ticker, tf, ind_conf)
             if raw_df is None or raw_df.empty:
                 print("skip (no data)")
+                failed.append(ticker)
+                continue
+            if min_bars is not None and len(raw_df) < min_bars:
+                print(f"skip ({len(raw_df)} bars < {min_bars})")
                 failed.append(ticker)
                 continue
             prepared_df, _ = prepare_dataframe(raw_df, show_volume=False, padding_ratio=0)

@@ -18,7 +18,9 @@ indicators = {  # List of available indicator configurations
         # 'WAE',
         # 'supertrend',
         # 'TTM_squeeze',
-        # 'divergence_Vortex', 'divergence_Fisher', 'divergence_OBV'
+        # 'divergence_Vortex', 
+        # 'divergence_Fisher', 
+        # 'divergence_OBV'
     ],
 
     'weekly': [
@@ -31,7 +33,7 @@ indicators = {  # List of available indicator configurations
     'daily': [
         'aVWAP',
         'candle_colors',
-        'BoS_CHoCH',
+        # 'BoS_CHoCH',
         # 'QQEMOD',
         # 'aVWAP_anchor_score',
         # 'banker_RSI',
@@ -155,7 +157,7 @@ params = {
 
         'daily': {
             'aVWAP': {
-                'peaks': True,
+                'peaks': False,
                 'valleys': True,
                 'peaks_avg': False,
                 'valleys_avg': False,
@@ -173,13 +175,17 @@ params = {
                 'All_avg': False,
                 'aVWAP_channel': False,
                 'peaks_params': [
+                    { 'periods': 50, 'max_aVWAPs': 1, 'avg_lookback': 20, },
                     { 'periods': 100, 'max_aVWAPs': 1, 'avg_lookback': 20, },
+                    { 'periods': 150, 'max_aVWAPs': 1, 'avg_lookback': 20, },
                     { 'periods': 200, 'max_aVWAPs': 1, 'avg_lookback': 20, },
-                    { 'periods': 300, 'max_aVWAPs': 1, 'avg_lookback': 20, },
                 ],
                 'valleys_params': [
+                    { 'periods': 50, 'max_aVWAPs': 1, 'avg_lookback': 20, },
                     { 'periods': 100, 'max_aVWAPs': 1, 'avg_lookback': 20, },
+                    { 'periods': 150, 'max_aVWAPs': 1, 'avg_lookback': 20, },
                     { 'periods': 200, 'max_aVWAPs': 1, 'avg_lookback': 20, },
+                    { 'periods': 250, 'max_aVWAPs': 1, 'avg_lookback': 20, },
                     { 'periods': 300, 'max_aVWAPs': 1, 'avg_lookback': 20, },
                 ],
                 'peaks_valleys_params': [
@@ -188,9 +194,9 @@ params = {
                 'QQEMOD_params': {
                     'peak_to_valley':   False,   # solid red:    peak anchor → next teal candle
                     'valley_to_peak':   False,   # solid teal:   valley anchor → next red candle
-                    'peak_to_peak':     True,    # dotted red:   peak anchor → next peak anchor
+                    'peak_to_peak':     False,    # dotted red:   peak anchor → next peak anchor
                     'valley_to_valley': True,    # dotted teal:  valley anchor → next valley anchor
-                    'max_anchors':      1,       # keep N most recent bear + N most recent bull anchors
+                    'max_anchors':      5,       # keep N most recent bear + N most recent bull anchors
                     'extend_to_end':    False,   # run each aVWAP to the last bar
                     'qqe_params': {
                         'rsi_period': 6, 'rsi_period2': 5, 'sf': 5, 'sf2': 5,

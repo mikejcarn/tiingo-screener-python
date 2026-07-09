@@ -1318,7 +1318,7 @@ def build_html(prepared_df, col_styles, ticker, timeframe, ind_conf,
   <button id="btn-end"   title="Last bar">&#x23ED;</button>
   <div class="sep"></div>
   <input type="range" id="slider" min="0" max="{n_bars - 1}" value="0">
-  <label>bar <input type="text" id="bar-jump-input" placeholder="#" autocomplete="off" style="width:46px;text-align:center"></label>
+  <label>bar <input type="text" id="bar-jump-input" placeholder="#" autocomplete="off" style="width:46px;text-align:center"> / {n_bars - 1}</label>
   <div class="sep"></div>
   <label>date <input type="text" id="date-input" placeholder="YYYY-MM-DD" autocomplete="off" spellcheck="false"></label>
   <div class="sep"></div>
@@ -1963,6 +1963,20 @@ def build_html(prepared_df, col_styles, ticker, timeframe, ind_conf,
     const _p = parseInt(new URLSearchParams(location.search).get('fps'));
     if (_p >= 1) document.getElementById('fps-input').value = _p;
   }})();
+
+  // Double-click on chart → jump to that bar
+  document.getElementById('chart').addEventListener('dblclick', function(e) {{
+    const rect = this.getBoundingClientRect();
+    const t = chart.timeScale().coordinateToTime(e.clientX - rect.left);
+    if (t === null || t === undefined) return;
+    let best = 0;
+    for (let i = 0; i < N; i++) {{
+      if (DATA.bars[i].time <= t) best = i;
+      else break;
+    }}
+    setPlaying(false);
+    jump(best);
+  }});
 
   // --- controls ---
   document.getElementById('btn-start').onclick = () => jump(0);

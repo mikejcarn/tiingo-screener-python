@@ -22,6 +22,8 @@ def init_cli(vis, fetch, ind, scan, full_run):
                         help='Bar-by-bar replay from indicator buffer (requires --ticker, --timeframe, --ind-conf)')
     parser.add_argument('--export-html', action='store_true',
                         help='Export replay as a self-contained interactive HTML file (use with --replay)')
+    parser.add_argument('--min-bars', type=int, default=None, metavar='N',
+                        help='Skip tickers with fewer than N bars during --export-html batch export')
     parser.add_argument('--browse', action='store_true',
                         help='Open the cycling browser for exported HTML replays (requires --timeframe and --ind-conf)')
     parser.add_argument('--fps', type=int, default=8, metavar='N',
@@ -106,7 +108,7 @@ def init_cli(vis, fetch, ind, scan, full_run):
         from src.visualization.src.replay import batch_export_html
         tf_val = timeframes[0] if timeframes else 'daily'
         ic_val = args.ind_conf or '0'
-        batch_export_html(tf_val, ic_val)
+        batch_export_html(tf_val, ic_val, min_bars=args.min_bars)
 
     elif args.browse:
         import http.server
