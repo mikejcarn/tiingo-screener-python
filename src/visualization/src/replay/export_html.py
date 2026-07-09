@@ -1998,6 +1998,17 @@ def build_html(prepared_df, col_styles, ticker, timeframe, ind_conf,
       e.preventDefault();
       try {{ window.parent.postMessage({{ key: e.key }}, '*'); }} catch(_) {{}}
     }}
+    // Digit key → seed bar jump input
+    if (/^[0-9]$/.test(e.key) && !e.ctrlKey && !e.metaKey) {{
+      e.preventDefault();
+      const inp = document.getElementById('bar-jump-input');
+      inp.focus(); inp.value = e.key;
+    }}
+    // Letter key → seed ticker input in parent browser
+    if (e.key.length === 1 && /[a-zA-Z]/.test(e.key) && !e.ctrlKey && !e.metaKey && !e.altKey) {{
+      e.preventDefault();
+      try {{ window.parent.postMessage({{ key: e.key }}, '*'); }} catch(_) {{}}
+    }}
   }});
 
   function _fmtDate(n) {{
@@ -2026,6 +2037,7 @@ def build_html(prepared_df, col_styles, ticker, timeframe, ind_conf,
   // Bar jump input
   document.getElementById('bar-jump-input').addEventListener('focus',   function()  {{ this.select(); }});
   document.getElementById('bar-jump-input').addEventListener('blur',    function()  {{ this.value = current; }});
+  document.getElementById('bar-jump-input').addEventListener('input',   function()  {{ this.value = this.value.replace(/[^0-9]/g, ''); }});
   document.getElementById('bar-jump-input').addEventListener('keydown', function(e) {{
     if (e.key === 'Enter') {{
       const n = parseInt(this.value);
@@ -2035,6 +2047,15 @@ def build_html(prepared_df, col_styles, ticker, timeframe, ind_conf,
     if (e.key === 'Escape') {{ this.blur(); }}
   }});
 
+  // Receive digit keys forwarded from parent browser index (when iframe not yet focused)
+  window.addEventListener('message', function(e) {{
+    if (!e.data || !e.data.key) return;
+    if (/^[0-9]$/.test(e.data.key)) {{
+      const inp = document.getElementById('bar-jump-input');
+      inp.focus(); inp.value = e.data.key;
+    }}
+  }});
+
   // --- resize ---
   window.addEventListener('resize', () => {{
     chart.applyOptions({{ width: container.clientWidth, height: container.clientHeight }});
@@ -2042,6 +2063,25 @@ def build_html(prepared_df, col_styles, ticker, timeframe, ind_conf,
 
   // --- init ---
   render(0);
+
+  // Apply ?lock= param: jump to a specific bar/date on load
+  (function() {{
+    const lock = new URLSearchParams(location.search).get('lock');
+    if (!lock) return;
+    if (lock === 'end') {{ jump(N - 1); return; }}
+    if (lock.startsWith('bar:')) {{
+      const n = parseInt(lock.slice(4));
+      if (!isNaN(n)) jump(Math.max(0, Math.min(N - 1, n)));
+      return;
+    }}
+    if (lock.startsWith('date:')) {{
+      const q = lock.slice(5);
+      for (let i = 0; i < N; i++) {{
+        if (_fmtDate(i) >= q) {{ jump(i); return; }}
+      }}
+      jump(N - 1);
+    }}
+  }})();
 }})();
 </script>
 </body>
@@ -2083,6 +2123,11 @@ def generate_browser_index(output_dir: Path, timeframe: str, ind_conf: str, fps:
   button:hover {{ background: #222; }}
   #count {{ color: #555; font-size: 12px; white-space: nowrap; }}
   #hint {{ font-size: 11px; color: #2a2a2a; margin-left: auto; white-space: nowrap; }}
+  .nav-sep {{ width: 1px; height: 24px; background: #222; flex-shrink: 0; }}
+  .lock-btn {{ padding: 4px 8px; font-size: 11px; }}
+  .lock-btn.active {{ background: #2962ff; border-color: #2962ff; color: #fff; }}
+  #lock-bar-val {{ width: 55px; text-align: center; background: #111; color: #ccc; border: 1px solid #333; padding: 3px 6px; border-radius: 3px; font-size: 12px; }}
+  #lock-date-val {{ width: 100px; background: #111; color: #ccc; border: 1px solid #333; padding: 3px 6px; border-radius: 3px; font-size: 12px; }}
   #ticker-wrap {{ position: relative; }}
   #ticker-input {{
     background: #111; color: #fff; border: 1px solid #333;
@@ -2114,6 +2159,13 @@ def generate_browser_index(output_dir: Path, timeframe: str, ind_conf: str, fps:
   </div>
   <span id="count"></span>
   <button id="btn-next" title="">&#9654;</button>
+  <div class="nav-sep"></div>
+  <button class="lock-btn active" id="lk-start" title="Load at first bar">start</button>
+  <button class="lock-btn" id="lk-bar"   title="Load at bar number">#</button>
+  <input  id="lock-bar-val"  type="text" placeholder="bar #"      autocomplete="off" style="display:none">
+  <button class="lock-btn" id="lk-date"  title="Load at date">date</button>
+  <input  id="lock-date-val" type="text" placeholder="YYYY-MM-DD" autocomplete="off" style="display:none">
+  <button class="lock-btn" id="lk-end"   title="Load at last bar">end</button>
   <span id="hint">{timeframe} &nbsp;·&nbsp; conf {ind_conf} &nbsp;·&nbsp; {len(files)} tickers</span>
 </div>
 
@@ -2127,18 +2179,38 @@ def generate_browser_index(output_dir: Path, timeframe: str, ind_conf: str, fps:
   const FPS    = {fps};
   let idx = 0;
   let dropIdx = -1;
+  let lockMode = 'start';
 
   const tickerInput = document.getElementById('ticker-input');
   const dropdown    = document.getElementById('dropdown');
 
   function go(n) {{
     idx = ((n % TOTAL) + TOTAL) % TOTAL;
-    document.getElementById('frame').src = FILES[idx] + '?fps=' + FPS;
+    let lockParam = '';
+    if (lockMode === 'end') {{
+      lockParam = '&lock=end';
+    }} else if (lockMode === 'bar') {{
+      const v = document.getElementById('lock-bar-val').value.trim();
+      if (v) lockParam = '&lock=bar:' + v;
+    }} else if (lockMode === 'date') {{
+      const v = document.getElementById('lock-date-val').value.trim();
+      if (v) lockParam = '&lock=date:' + encodeURIComponent(v);
+    }}
+    document.getElementById('frame').src = FILES[idx] + '?fps=' + FPS + lockParam;
     document.getElementById('count').textContent = (idx + 1) + ' / ' + TOTAL;
     window.location.hash = LABELS[idx];
     document.getElementById('btn-prev').title = LABELS[((idx - 1) + TOTAL) % TOTAL];
     document.getElementById('btn-next').title = LABELS[(idx + 1) % TOTAL];
     tickerInput.value = LABELS[idx];
+  }}
+
+  function setLock(mode) {{
+    lockMode = mode;
+    ['start', 'bar', 'date', 'end'].forEach(function(m) {{
+      document.getElementById('lk-' + m).classList.toggle('active', m === mode);
+    }});
+    document.getElementById('lock-bar-val').style.display  = (mode === 'bar')  ? '' : 'none';
+    document.getElementById('lock-date-val').style.display = (mode === 'date') ? '' : 'none';
   }}
 
   function buildDropdown(q) {{
@@ -2175,7 +2247,9 @@ def generate_browser_index(output_dir: Path, timeframe: str, ind_conf: str, fps:
     buildDropdown('');
   }});
   tickerInput.addEventListener('input', function() {{
-    buildDropdown(this.value);
+    const clean = this.value.replace(/[^a-zA-Z0-9]/g, '').toUpperCase();
+    if (clean !== this.value) this.value = clean;
+    buildDropdown(clean);
   }});
   tickerInput.addEventListener('blur', function() {{
     dropdown.style.display = 'none';
@@ -2204,17 +2278,42 @@ def generate_browser_index(output_dir: Path, timeframe: str, ind_conf: str, fps:
   document.getElementById('btn-prev').addEventListener('click', function() {{ go(idx - 1); }});
   document.getElementById('btn-next').addEventListener('click', function() {{ go(idx + 1); }});
 
+  document.getElementById('lk-start').addEventListener('click', function() {{ setLock('start'); go(idx); }});
+  document.getElementById('lk-bar')  .addEventListener('click', function() {{ setLock('bar');   document.getElementById('lock-bar-val').focus(); }});
+  document.getElementById('lk-date') .addEventListener('click', function() {{ setLock('date');  document.getElementById('lock-date-val').focus(); }});
+  document.getElementById('lk-end')  .addEventListener('click', function() {{ setLock('end');   go(idx); }});
+
+  document.getElementById('lock-bar-val').addEventListener('input',  function() {{ this.value = this.value.replace(/[^0-9]/g, ''); }});
+  document.getElementById('lock-bar-val').addEventListener('change', function() {{ go(idx); }});
+  document.getElementById('lock-date-val').addEventListener('input',  function() {{ this.value = this.value.replace(/[^0-9\-]/g, ''); }});
+  document.getElementById('lock-date-val').addEventListener('change', function() {{ go(idx); }});
+
   document.addEventListener('keydown', function(e) {{
-    if (document.activeElement === tickerInput) return;
+    if (document.activeElement.tagName === 'INPUT') return;
     if (e.key === '[') {{ e.preventDefault(); go(idx - 1); }}
     if (e.key === ']') {{ e.preventDefault(); go(idx + 1); }}
     if (e.key === '/') {{ e.preventDefault(); tickerInput.focus(); }}
+    if (e.key.length === 1 && /[a-zA-Z]/.test(e.key) && !e.ctrlKey && !e.metaKey && !e.altKey) {{
+      e.preventDefault();
+      tickerInput.focus();
+      tickerInput.value = e.key.toUpperCase();
+      buildDropdown(e.key.toUpperCase());
+    }}
+    if (/^[0-9]$/.test(e.key) && !e.ctrlKey && !e.metaKey) {{
+      e.preventDefault();
+      try {{ document.getElementById('frame').contentWindow.postMessage({{ key: e.key }}, '*'); }} catch(_) {{}}
+    }}
   }});
 
   window.addEventListener('message', function(e) {{
     if (!e.data || !e.data.key) return;
     if (e.data.key === '[') go(idx - 1);
     if (e.data.key === ']') go(idx + 1);
+    if (e.data.key.length === 1 && /[a-zA-Z]/.test(e.data.key)) {{
+      tickerInput.focus();
+      tickerInput.value = e.data.key.toUpperCase();
+      buildDropdown(e.data.key.toUpperCase());
+    }}
   }});
 
   const startLabel = decodeURIComponent(window.location.hash.slice(1)).toUpperCase();
