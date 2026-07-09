@@ -1996,7 +1996,7 @@ def build_html(prepared_df, col_styles, ticker, timeframe, ind_conf,
     if (e.key === 'Home')       jump(0);
     if (e.key === 'End')        jump(N - 1);
     // Forward cycling keys to parent browser (postMessage works across iframe boundaries)
-    if (e.key === '[' || e.key === ']' || e.key === '-' || e.key === '=' || e.key === '\\\\') {{
+    if (e.key === '[' || e.key === ']' || e.key === '-' || e.key === '=' || e.key === '\\\\' || e.key === '?' || e.key === 'Escape') {{
       e.preventDefault();
       try {{ window.parent.postMessage({{ key: e.key }}, '*'); }} catch(_) {{}}
     }}
@@ -2094,6 +2094,92 @@ def build_html(prepared_df, col_styles, ticker, timeframe, ind_conf,
 
 
 # ---------------------------------------------------------------------------
+# Help page
+# ---------------------------------------------------------------------------
+
+def _help_html(timeframe: str, ind_conf: str) -> str:
+    return f"""<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Help</title>
+<style>
+  * {{ box-sizing: border-box; margin: 0; padding: 0; }}
+  body {{ background: #000; color: #555; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', monospace; padding: 48px 56px; line-height: 1.7; }}
+  h1 {{ color: #888; font-size: 13px; font-weight: 400; margin-bottom: 36px; letter-spacing: 0.04em; }}
+  h2 {{ color: #444; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.12em; margin: 28px 0 10px; }}
+  table {{ border-collapse: collapse; }}
+  td {{ font-size: 13px; vertical-align: top; padding-right: 28px; padding-bottom: 3px; }}
+  td:last-child {{ color: #444; padding-right: 0; }}
+  kbd {{
+    display: inline-block; background: #0d0d0d; border: 1px solid #222;
+    border-radius: 3px; padding: 1px 6px; font-size: 11px; color: #777;
+    font-family: inherit; white-space: nowrap;
+  }}
+</style>
+</head>
+<body>
+<h1>Replay Browser &nbsp;&middot;&nbsp; {timeframe} &nbsp;&middot;&nbsp; conf {ind_conf}</h1>
+
+<h2>Ticker Navigation</h2>
+<table>
+  <tr><td><kbd>[</kbd> <kbd>=</kbd></td><td>Previous ticker</td></tr>
+  <tr><td><kbd>]</kbd> <kbd>-</kbd></td><td>Next ticker</td></tr>
+  <tr><td><kbd>/</kbd></td><td>Focus ticker search</td></tr>
+  <tr><td>Letter keys</td><td>Seed ticker search (auto-loads when one match remains)</td></tr>
+  <tr><td><kbd>Enter</kbd></td><td>Load ticker</td></tr>
+  <tr><td><kbd>Esc</kbd></td><td>Cancel search</td></tr>
+</table>
+
+<h2>Load Lock &nbsp;<span style="color:#2a2a2a;font-weight:400;text-transform:none;letter-spacing:0">— \\ cycles mode</span></h2>
+<table>
+  <tr><td><kbd>start</kbd></td><td>Load each ticker at bar 0 (default)</td></tr>
+  <tr><td><kbd>bar</kbd></td><td>Load at a specific bar number &mdash; type value, Enter to commit</td></tr>
+  <tr><td><kbd>date</kbd></td><td>Load at first bar on or after a date &mdash; type YYYY-MM-DD, Enter</td></tr>
+  <tr><td><kbd>end</kbd></td><td>Load at the last bar</td></tr>
+</table>
+
+<h2>Replay Playback</h2>
+<table>
+  <tr><td><kbd>Space</kbd></td><td>Play / pause</td></tr>
+  <tr><td><kbd>↑</kbd> <kbd>↓</kbd></td><td>FPS +1 / −1</td></tr>
+  <tr><td><kbd>←</kbd> <kbd>→</kbd></td><td>Step back / forward one bar</td></tr>
+  <tr><td><kbd>Shift</kbd> + <kbd>←</kbd> <kbd>→</kbd></td><td>Jump 20 bars</td></tr>
+  <tr><td><kbd>Home</kbd></td><td>First bar</td></tr>
+  <tr><td><kbd>End</kbd></td><td>Last bar</td></tr>
+  <tr><td>Double-click chart</td><td>Jump to that bar</td></tr>
+</table>
+
+<h2>Bar Jump</h2>
+<table>
+  <tr><td>Digit keys</td><td>Seed bar number input</td></tr>
+  <tr><td><kbd>Enter</kbd></td><td>Jump to bar</td></tr>
+</table>
+
+<h2>Date Jump</h2>
+<table>
+  <tr><td>date input</td><td>Type YYYY-MM-DD, Enter to jump to first bar on or after that date</td></tr>
+</table>
+
+<h2>Help</h2>
+<table>
+  <tr><td><kbd>?</kbd></td><td>Show / hide this page</td></tr>
+  <tr><td><kbd>Esc</kbd></td><td>Close this page</td></tr>
+</table>
+
+<script>
+document.addEventListener('keydown', function(e) {{
+  if (e.key === 'Escape' || e.key === '?') {{
+    e.preventDefault();
+    try {{ window.parent.postMessage({{ key: e.key }}, '*'); }} catch(_) {{}}
+  }}
+}});
+</script>
+</body>
+</html>"""
+
+
+# ---------------------------------------------------------------------------
 # Entry point
 # ---------------------------------------------------------------------------
 
@@ -2127,7 +2213,7 @@ def generate_browser_index(output_dir: Path, timeframe: str, ind_conf: str, fps:
   }}
   button:hover {{ background: #222; }}
   #count {{ color: #555; font-size: 12px; white-space: nowrap; }}
-  #hint {{ font-size: 11px; color: #2a2a2a; margin-left: auto; white-space: nowrap; }}
+  #hint {{ font-size: 11px; color: #2a2a2a; white-space: nowrap; }}
   .nav-sep {{ width: 1px; height: 24px; background: #222; flex-shrink: 0; }}
   #lock-wrap {{ display: flex; align-items: center; }}
   #lock-mode-btn {{
@@ -2142,6 +2228,9 @@ def generate_browser_index(output_dir: Path, timeframe: str, ind_conf: str, fps:
   }}
   #lock-val-inp:disabled {{ color: #2a2a2a; pointer-events: none; }}
   #lock-val-inp:not(:disabled):focus {{ outline: none; }}
+  #btn-help {{ margin-left: auto; background: #111; color: #444; border: 1px solid #222; padding: 3px 9px; font-size: 13px; cursor: pointer; border-radius: 3px; }}
+  #btn-help:hover {{ color: #aaa; }}
+  #btn-help.active {{ color: #ccc; border-color: #555; }}
   #ticker-wrap {{ position: relative; }}
   #ticker-input {{
     background: #111; color: #fff; border: 1px solid #333;
@@ -2178,7 +2267,9 @@ def generate_browser_index(output_dir: Path, timeframe: str, ind_conf: str, fps:
     <div id="lock-mode-btn" title="Lock mode (\\ to cycle)">start</div>
     <input id="lock-val-inp" type="text" disabled autocomplete="off" spellcheck="false" placeholder="">
   </div>
-  <span id="hint">{timeframe} &nbsp;·&nbsp; conf {ind_conf} &nbsp;·&nbsp; {len(files)} tickers</span>
+  <div class="nav-sep"></div>
+  <span id="hint">{timeframe} &nbsp;·&nbsp; conf {ind_conf}</span>
+  <button id="btn-help" title="Help (?)">?</button>
 </div>
 
 <iframe id="frame" src="" frameborder="0" allowfullscreen></iframe>
@@ -2193,7 +2284,8 @@ def generate_browser_index(output_dir: Path, timeframe: str, ind_conf: str, fps:
   let dropIdx = -1;
   let lockMode    = 'start';
   let lockBarVal  = '';
-  let lockDateVal = '';
+  let lockDateVal  = '';
+  let showingHelp  = false;
   const LOCK_MODES = ['start', 'bar', 'date', 'end'];
 
   const tickerInput = document.getElementById('ticker-input');
@@ -2218,6 +2310,8 @@ def generate_browser_index(output_dir: Path, timeframe: str, ind_conf: str, fps:
   }}
 
   function go(n) {{
+    showingHelp = false;
+    document.getElementById('btn-help').classList.remove('active');
     idx = ((n % TOTAL) + TOTAL) % TOTAL;
     document.getElementById('frame').src = FILES[idx] + '?fps=' + FPS + buildLockParam();
     document.getElementById('count').textContent = (idx + 1) + ' / ' + TOTAL;
@@ -2226,6 +2320,13 @@ def generate_browser_index(output_dir: Path, timeframe: str, ind_conf: str, fps:
     document.getElementById('btn-next').title = LABELS[(idx + 1) % TOTAL];
     tickerInput.value = LABELS[idx];
   }}
+
+  function showHelp() {{
+    showingHelp = true;
+    document.getElementById('frame').src = 'help.html';
+    document.getElementById('btn-help').classList.add('active');
+  }}
+  function hideHelp() {{ showingHelp = false; go(idx); }}
 
   function buildDropdown(q) {{
     dropdown.innerHTML = '';
@@ -2294,6 +2395,7 @@ def generate_browser_index(output_dir: Path, timeframe: str, ind_conf: str, fps:
 
   document.getElementById('btn-prev').addEventListener('click', function() {{ go(idx - 1); }});
   document.getElementById('btn-next').addEventListener('click', function() {{ go(idx + 1); }});
+  document.getElementById('btn-help').addEventListener('click', function() {{ showingHelp ? hideHelp() : showHelp(); }});
 
   const lkValInp = document.getElementById('lock-val-inp');
 
@@ -2348,6 +2450,8 @@ def generate_browser_index(output_dir: Path, timeframe: str, ind_conf: str, fps:
       try {{ document.getElementById('frame').contentWindow.postMessage({{ key: e.key }}, '*'); }} catch(_) {{}}
     }}
     if (e.key === '\\\\') {{ cycleLock(); }}
+    if (e.key === '?') {{ showingHelp ? hideHelp() : showHelp(); }}
+    if (e.key === 'Escape' && showingHelp) {{ hideHelp(); }}
   }});
 
   window.addEventListener('message', function(e) {{
@@ -2355,6 +2459,8 @@ def generate_browser_index(output_dir: Path, timeframe: str, ind_conf: str, fps:
     if (e.data.key === '[' || e.data.key === '=') go(idx - 1);
     if (e.data.key === ']' || e.data.key === '-') go(idx + 1);
     if (e.data.key === '\\\\') {{ cycleLock(); }}
+    if (e.data.key === '?') {{ showingHelp ? hideHelp() : showHelp(); }}
+    if (e.data.key === 'Escape' && showingHelp) {{ hideHelp(); }}
     if (e.data.key.length === 1 && /[a-zA-Z]/.test(e.data.key)) {{
       tickerInput.focus();
       tickerInput.value = e.data.key.toUpperCase();
@@ -2372,6 +2478,7 @@ def generate_browser_index(output_dir: Path, timeframe: str, ind_conf: str, fps:
 """
     out = Path(output_dir) / "index.html"
     out.write_text(html, encoding="utf-8")
+    (Path(output_dir) / "help.html").write_text(_help_html(timeframe, ind_conf), encoding="utf-8")
     return out
 
 
