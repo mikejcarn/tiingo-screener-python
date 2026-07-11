@@ -2185,7 +2185,7 @@ document.addEventListener('keydown', function(e) {{
 
 def generate_browser_index(output_dir: Path, timeframe: str, ind_conf: str, fps: int = 8) -> Path:
     """Generate index.html in output_dir — a cycling iframe browser for all exported replays."""
-    files = sorted(f.name for f in Path(output_dir).glob("*.html") if f.name != "index.html")
+    files = sorted(f.name for f in Path(output_dir).glob("*.html") if f.name not in ("index.html", "help.html"))
     if not files:
         return None
 
@@ -2250,6 +2250,21 @@ def generate_browser_index(output_dir: Path, timeframe: str, ind_conf: str, fps:
   }}
   .dd-item:hover, .dd-item.hi {{ background: #1a1a1a; color: #fff; }}
   #frame {{ width: 100%; height: calc(100vh - 44px); border: none; display: block; }}
+  #help-overlay {{
+    display: none; position: fixed; top: 44px; left: 0; right: 0; bottom: 0;
+    background: #000; z-index: 200; padding: 48px 56px; overflow-y: auto;
+    color: #555; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', monospace; line-height: 1.7;
+  }}
+  #help-overlay h1 {{ color: #888; font-size: 13px; font-weight: 400; margin-bottom: 36px; letter-spacing: 0.04em; }}
+  #help-overlay h2 {{ color: #444; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.12em; margin: 28px 0 10px; }}
+  #help-overlay table {{ border-collapse: collapse; }}
+  #help-overlay td {{ font-size: 13px; vertical-align: top; padding-right: 28px; padding-bottom: 3px; }}
+  #help-overlay td:last-child {{ color: #444; padding-right: 0; }}
+  #help-overlay kbd {{
+    display: inline-block; background: #0d0d0d; border: 1px solid #222;
+    border-radius: 3px; padding: 1px 6px; font-size: 11px; color: #777;
+    font-family: inherit; white-space: nowrap;
+  }}
 </style>
 </head>
 <body>
@@ -2273,6 +2288,50 @@ def generate_browser_index(output_dir: Path, timeframe: str, ind_conf: str, fps:
 </div>
 
 <iframe id="frame" src="" frameborder="0" allowfullscreen></iframe>
+
+<div id="help-overlay">
+<h1>Replay Browser &nbsp;&middot;&nbsp; {timeframe} &nbsp;&middot;&nbsp; conf {ind_conf}</h1>
+<h2>Ticker Navigation</h2>
+<table>
+  <tr><td><kbd>[</kbd> <kbd>=</kbd></td><td>Previous ticker</td></tr>
+  <tr><td><kbd>]</kbd> <kbd>-</kbd></td><td>Next ticker</td></tr>
+  <tr><td><kbd>/</kbd></td><td>Focus ticker search</td></tr>
+  <tr><td>Letter keys</td><td>Seed ticker search (auto-loads when one match remains)</td></tr>
+  <tr><td><kbd>Enter</kbd></td><td>Load ticker</td></tr>
+  <tr><td><kbd>Esc</kbd></td><td>Cancel search</td></tr>
+</table>
+<h2>Load Lock &nbsp;<span style="color:#2a2a2a;font-weight:400;text-transform:none;letter-spacing:0">&#x2014; \\ cycles mode</span></h2>
+<table>
+  <tr><td><kbd>start</kbd></td><td>Load each ticker at bar 0 (default)</td></tr>
+  <tr><td><kbd>bar</kbd></td><td>Load at a specific bar number &mdash; type value, Enter to commit</td></tr>
+  <tr><td><kbd>date</kbd></td><td>Load at first bar on or after a date &mdash; type YYYY-MM-DD, Enter</td></tr>
+  <tr><td><kbd>end</kbd></td><td>Load at the last bar</td></tr>
+</table>
+<h2>Replay Playback</h2>
+<table>
+  <tr><td><kbd>Space</kbd></td><td>Play / pause</td></tr>
+  <tr><td><kbd>&#x2191;</kbd> <kbd>&#x2193;</kbd></td><td>FPS +1 / &minus;1</td></tr>
+  <tr><td><kbd>&#x2190;</kbd> <kbd>&#x2192;</kbd></td><td>Step back / forward one bar</td></tr>
+  <tr><td><kbd>Shift</kbd> + <kbd>&#x2190;</kbd> <kbd>&#x2192;</kbd></td><td>Jump 20 bars</td></tr>
+  <tr><td><kbd>Home</kbd></td><td>First bar</td></tr>
+  <tr><td><kbd>End</kbd></td><td>Last bar</td></tr>
+  <tr><td>Double-click chart</td><td>Jump to that bar</td></tr>
+</table>
+<h2>Bar Jump</h2>
+<table>
+  <tr><td>Digit keys</td><td>Seed bar number input</td></tr>
+  <tr><td><kbd>Enter</kbd></td><td>Jump to bar</td></tr>
+</table>
+<h2>Date Jump</h2>
+<table>
+  <tr><td>date input</td><td>Type YYYY-MM-DD, Enter to jump to first bar on or after that date</td></tr>
+</table>
+<h2>Help</h2>
+<table>
+  <tr><td><kbd>?</kbd></td><td>Show / hide this page</td></tr>
+  <tr><td><kbd>Esc</kbd></td><td>Close this page</td></tr>
+</table>
+</div>
 
 <script>
 (function() {{
@@ -2312,6 +2371,7 @@ def generate_browser_index(output_dir: Path, timeframe: str, ind_conf: str, fps:
   function go(n) {{
     showingHelp = false;
     document.getElementById('btn-help').classList.remove('active');
+    document.getElementById('help-overlay').style.display = 'none';
     idx = ((n % TOTAL) + TOTAL) % TOTAL;
     document.getElementById('frame').src = FILES[idx] + '?fps=' + FPS + buildLockParam();
     document.getElementById('count').textContent = (idx + 1) + ' / ' + TOTAL;
@@ -2323,10 +2383,14 @@ def generate_browser_index(output_dir: Path, timeframe: str, ind_conf: str, fps:
 
   function showHelp() {{
     showingHelp = true;
-    document.getElementById('frame').src = 'help.html';
+    document.getElementById('help-overlay').style.display = 'block';
     document.getElementById('btn-help').classList.add('active');
   }}
-  function hideHelp() {{ showingHelp = false; go(idx); }}
+  function hideHelp() {{
+    showingHelp = false;
+    document.getElementById('help-overlay').style.display = 'none';
+    document.getElementById('btn-help').classList.remove('active');
+  }}
 
   function buildDropdown(q) {{
     dropdown.innerHTML = '';
@@ -2433,10 +2497,19 @@ def generate_browser_index(output_dir: Path, timeframe: str, ind_conf: str, fps:
     }}
   }});
 
+  let _cycleLastT = 0;
   document.addEventListener('keydown', function(e) {{
     if (document.activeElement.tagName === 'INPUT') return;
-    if (e.key === '[' || e.key === '=') {{ e.preventDefault(); go(idx - 1); }}
-    if (e.key === ']' || e.key === '-') {{ e.preventDefault(); go(idx + 1); }}
+    if (e.key === '[' || e.key === '=') {{
+      e.preventDefault();
+      const _now = Date.now();
+      if (!e.repeat || _now - _cycleLastT >= 250) {{ _cycleLastT = _now; go(idx - 1); }}
+    }}
+    if (e.key === ']' || e.key === '-') {{
+      e.preventDefault();
+      const _now = Date.now();
+      if (!e.repeat || _now - _cycleLastT >= 250) {{ _cycleLastT = _now; go(idx + 1); }}
+    }}
     if (e.key === '/') {{ e.preventDefault(); tickerInput.focus(); }}
     if (e.key === ' ' || e.key === 'ArrowUp' || e.key === 'ArrowDown') {{ e.preventDefault(); try {{ document.getElementById('frame').contentWindow.postMessage({{ key: e.key }}, '*'); }} catch(_) {{}} }}
     if (e.key.length === 1 && /[a-zA-Z]/.test(e.key) && !e.ctrlKey && !e.metaKey && !e.altKey) {{

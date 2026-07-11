@@ -133,12 +133,15 @@ def init_cli(vis, fetch, ind, scan, full_run):
                     super().__init__(*a, directory=str(output_dir), **kw)
                 def log_message(self, *a):
                     pass
+            class _Server(http.server.HTTPServer):
+                def handle_error(self, request, client_address):
+                    pass
             port = 8765
             try:
-                server = http.server.HTTPServer(('localhost', port), _Handler)
+                server = _Server(('localhost', port), _Handler)
             except OSError:
                 port = 8766
-                server = http.server.HTTPServer(('localhost', port), _Handler)
+                server = _Server(('localhost', port), _Handler)
             threading.Thread(target=server.serve_forever, daemon=True).start()
             url = f'http://localhost:{port}/index.html'
             print(f"Replay browser: {url}  (Ctrl+C to stop)")
