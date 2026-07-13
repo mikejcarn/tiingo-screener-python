@@ -31,15 +31,15 @@ indicators = {  # List of available indicator configurations
     ],
 
     'daily': [
-        'aVWAP',
-        'candle_colors',
+        # 'aVWAP',
+        # 'candle_colors',
         # 'BoS_CHoCH',
         # 'QQEMOD',
         # 'aVWAP_anchor_score',
         # 'banker_RSI',
         # 'SMA',
         # 'liquidity',
-        # 'FVG',
+        'FVG',
         # 'OB',
     ],
 
@@ -158,7 +158,7 @@ params = {
         'daily': {
             'aVWAP': {
                 'peaks': False,
-                'valleys': True,
+                'valleys': False,
                 'peaks_avg': False,
                 'valleys_avg': False,
                 'peaks_valleys': False,
@@ -194,8 +194,8 @@ params = {
                 'QQEMOD_params': {
                     'peak_to_valley':   False,   # solid red:    peak anchor → next teal candle
                     'valley_to_peak':   False,   # solid teal:   valley anchor → next red candle
-                    'peak_to_peak':     False,    # dotted red:   peak anchor → next peak anchor
-                    'valley_to_valley': True,    # dotted teal:  valley anchor → next valley anchor
+                    'peak_to_peak':     True,    # dotted red:   peak anchor → next peak anchor
+                    'valley_to_valley': False,    # dotted teal:  valley anchor → next valley anchor
                     'max_anchors':      5,       # keep N most recent bear + N most recent bull anchors
                     'extend_to_end':    False,   # run each aVWAP to the last bar
                     'qqe_params': {

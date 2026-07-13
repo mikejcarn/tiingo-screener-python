@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Replay Browser — daily / ind_conf_0</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: #000; color: #ccc; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', monospace; overflow: hidden; }
+  #nav {
+    height: 44px; display: flex; align-items: center; gap: 10px;
+    padding: 0 14px; background: #000; border-bottom: 1px solid #222; flex-shrink: 0;
+  }
+  button {
+    background: #111; color: #ccc; border: 1px solid #333;
+    padding: 5px 12px; cursor: pointer; border-radius: 3px; font-size: 13px;
+  }
+  button:hover { background: #222; }
+  #count { color: #555; font-size: 12px; white-space: nowrap; }
+  #hint { font-size: 11px; color: #2a2a2a; white-space: nowrap; }
+  .nav-sep { width: 1px; height: 24px; background: #222; flex-shrink: 0; }
+  #lock-wrap { display: flex; align-items: center; }
+  #lock-mode-btn {
+    background: #111; color: #555; border: 1px solid #2a2a2a; border-right: none;
+    padding: 4px 9px; border-radius: 3px 0 0 3px; font-size: 12px;
+    cursor: pointer; user-select: none; white-space: nowrap;
+  }
+  #lock-mode-btn:hover { color: #ccc; }
+  #lock-val-inp {
+    background: #111; color: #ccc; border: 1px solid #2a2a2a; border-left: none;
+    padding: 4px 8px; border-radius: 0 3px 3px 0; font-size: 12px; width: 110px;
+  }
+  #lock-val-inp:disabled { color: #2a2a2a; pointer-events: none; }
+  #lock-val-inp:not(:disabled):focus { outline: none; }
+  #btn-help { margin-left: auto; background: #111; color: #444; border: 1px solid #222; padding: 3px 9px; font-size: 13px; cursor: pointer; border-radius: 3px; }
+  #btn-help:hover { color: #aaa; }
+  #btn-help.active { color: #ccc; border-color: #555; }
+  #ticker-wrap { position: relative; }
+  #ticker-input {
+    background: #111; color: #fff; border: 1px solid #333;
+    padding: 4px 10px; border-radius: 3px; font-size: 14px; font-weight: bold;
+    width: 130px; text-align: center; cursor: pointer;
+  }
+  #ticker-input:focus { outline: none; border-color: #555; cursor: text; }
+  #dropdown {
+    display: none; position: absolute; top: calc(100% + 4px); left: 0;
+    background: #0d0d0d; border: 1px solid #2a2a2a; border-radius: 3px;
+    max-height: 260px; overflow-y: auto; z-index: 100; min-width: 100%;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.6);
+  }
+  .dd-item {
+    padding: 6px 12px; font-size: 12px; cursor: pointer; color: #888;
+    white-space: nowrap;
+  }
+  .dd-item:hover, .dd-item.hi { background: #1a1a1a; color: #fff; }
+  #frame { width: 100%; height: calc(100vh - 44px); border: none; display: block; }
+  #help-overlay {
+    display: none; position: fixed; top: 44px; left: 0; right: 0; bottom: 0;
+    background: #000; z-index: 200; padding: 48px 56px; overflow-y: auto;
+    color: #555; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', monospace; line-height: 1.7;
+  }
+  #help-overlay h1 { color: #888; font-size: 13px; font-weight: 400; margin-bottom: 36px; letter-spacing: 0.04em; }
+  #help-overlay h2 { color: #444; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.12em; margin: 28px 0 10px; }
+  #help-overlay table { border-collapse: collapse; }
+  #help-overlay td { font-size: 13px; vertical-align: top; padding-right: 28px; padding-bottom: 3px; }
+  #help-overlay td:last-child { color: #444; padding-right: 0; }
+  #help-overlay kbd {
+    display: inline-block; background: #0d0d0d; border: 1px solid #222;
+    border-radius: 3px; padding: 1px 6px; font-size: 11px; color: #777;
+    font-family: inherit; white-space: nowrap;
+  }
+</style>
+</head>
+<body>
+
+<div id="nav">
+  <button id="btn-prev" title="">&#9664;</button>
+  <div id="ticker-wrap">
+    <input id="ticker-input" type="text" autocomplete="off" spellcheck="false">
+    <div id="dropdown"></div>
+  </div>
+  <span id="count"></span>
+  <button id="btn-next" title="">&#9654;</button>
+  <div class="nav-sep"></div>
+  <div id="lock-wrap">
+    <div id="lock-mode-btn" title="Lock mode (\ to cycle)">start</div>
+    <input id="lock-val-inp" type="text" disabled autocomplete="off" spellcheck="false" placeholder="">
+  </div>
+  <div class="nav-sep"></div>
+  <span id="hint">daily &nbsp;·&nbsp; conf 0</span>
+  <button id="btn-help" title="Help (?)">?</button>
+</div>
+
+<iframe id="frame" src="" frameborder="0" allowfullscreen></iframe>
+
+<div id="help-overlay">
+<h1>Replay Browser &nbsp;&middot;&nbsp; daily &nbsp;&middot;&nbsp; conf 0</h1>
+<h2>Ticker Navigation</h2>
+<table>
+  <tr><td><kbd>[</kbd> <kbd>=</kbd></td><td>Previous ticker</td></tr>
+  <tr><td><kbd>]</kbd> <kbd>-</kbd></td><td>Next ticker</td></tr>
+  <tr><td><kbd>/</kbd></td><td>Focus ticker search</td></tr>
+  <tr><td>Letter keys</td><td>Seed ticker search (auto-loads when one match remains)</td></tr>
+  <tr><td><kbd>Enter</kbd></td><td>Load ticker</td></tr>
+  <tr><td><kbd>Esc</kbd></td><td>Cancel search</td></tr>
+</table>
+<h2>Load Lock &nbsp;<span style="color:#2a2a2a;font-weight:400;text-transform:none;letter-spacing:0">&#x2014; \ cycles mode</span></h2>
+<table>
+  <tr><td><kbd>start</kbd></td><td>Load each ticker at bar 0 (default)</td></tr>
+  <tr><td><kbd>bar</kbd></td><td>Load at a specific bar number &mdash; type value, Enter to commit</td></tr>
+  <tr><td><kbd>date</kbd></td><td>Load at first bar on or after a date &mdash; type YYYY-MM-DD, Enter</td></tr>
+  <tr><td><kbd>end</kbd></td><td>Load at the last bar</td></tr>
+</table>
+<h2>Replay Playback</h2>
+<table>
+  <tr><td><kbd>Space</kbd></td><td>Play / pause</td></tr>
+  <tr><td><kbd>&#x2191;</kbd> <kbd>&#x2193;</kbd></td><td>FPS +1 / &minus;1</td></tr>
+  <tr><td><kbd>&#x2190;</kbd> <kbd>&#x2192;</kbd></td><td>Step back / forward one bar</td></tr>
+  <tr><td><kbd>Shift</kbd> + <kbd>&#x2190;</kbd> <kbd>&#x2192;</kbd></td><td>Jump 20 bars</td></tr>
+  <tr><td><kbd>Home</kbd></td><td>First bar</td></tr>
+  <tr><td><kbd>End</kbd></td><td>Last bar</td></tr>
+  <tr><td>Double-click chart</td><td>Jump to that bar</td></tr>
+</table>
+<h2>Bar Jump</h2>
+<table>
+  <tr><td>Digit keys</td><td>Seed bar number input</td></tr>
+  <tr><td><kbd>Enter</kbd></td><td>Jump to bar</td></tr>
+</table>
+<h2>Date Jump</h2>
+<table>
+  <tr><td>date input</td><td>Type YYYY-MM-DD, Enter to jump to first bar on or after that date</td></tr>
+</table>
+<h2>Help</h2>
+<table>
+  <tr><td><kbd>?</kbd></td><td>Show / hide this page</td></tr>
+  <tr><td><kbd>Esc</kbd></td><td>Close this page</td></tr>
+</table>
+</div>
+
+<script>
+(function() {
+  const FILES  = ["AAPL_daily_ind0.html", "ABX_daily_ind0.html", "ACB_daily_ind0.html"];
+  const LABELS = ["AAPL", "ABX", "ACB"];
+  const TOTAL  = FILES.length;
+  const FPS    = 6;
+  let idx = 0;
+  let dropIdx = -1;
+  let lockMode    = 'start';
+  let lockBarVal  = '';
+  let lockDateVal  = '';
+  let showingHelp  = false;
+  const LOCK_MODES = ['start', 'bar', 'date', 'end'];
+
+  const tickerInput = document.getElementById('ticker-input');
+  const dropdown    = document.getElementById('dropdown');
+
+  function buildLockParam() {
+    if (lockMode === 'end')                  return '&lock=end';
+    if (lockMode === 'bar'  && lockBarVal)   return '&lock=bar:'  + lockBarVal;
+    if (lockMode === 'date' && lockDateVal)  return '&lock=date:' + encodeURIComponent(lockDateVal);
+    return '';
+  }
+
+  function updateLockDisplay() {
+    const btn = document.getElementById('lock-mode-btn');
+    btn.textContent = lockMode;
+    btn.classList.toggle('has-lock', lockMode !== 'start');
+    const inp = document.getElementById('lock-val-inp');
+    const needsVal = lockMode === 'bar' || lockMode === 'date';
+    inp.disabled    = !needsVal;
+    inp.placeholder = lockMode === 'bar' ? 'bar #' : lockMode === 'date' ? 'YYYY-MM-DD' : '';
+    inp.value       = lockMode === 'bar' ? lockBarVal : lockMode === 'date' ? lockDateVal : '';
+  }
+
+  function go(n) {
+    showingHelp = false;
+    document.getElementById('btn-help').classList.remove('active');
+    document.getElementById('help-overlay').style.display = 'none';
+    idx = ((n % TOTAL) + TOTAL) % TOTAL;
+    document.getElementById('frame').src = FILES[idx] + '?fps=' + FPS + buildLockParam();
+    document.getElementById('count').textContent = (idx + 1) + ' / ' + TOTAL;
+    window.location.hash = LABELS[idx];
+    document.getElementById('btn-prev').title = LABELS[((idx - 1) + TOTAL) % TOTAL];
+    document.getElementById('btn-next').title = LABELS[(idx + 1) % TOTAL];
+    tickerInput.value = LABELS[idx];
+  }
+
+  function showHelp() {
+    showingHelp = true;
+    document.getElementById('help-overlay').style.display = 'block';
+    document.getElementById('btn-help').classList.add('active');
+  }
+  function hideHelp() {
+    showingHelp = false;
+    document.getElementById('help-overlay').style.display = 'none';
+    document.getElementById('btn-help').classList.remove('active');
+  }
+
+  function buildDropdown(q) {
+    dropdown.innerHTML = '';
+    dropIdx = -1;
+    const up = q.trim().toUpperCase();
+    const matches = LABELS.reduce(function(acc, l, i) {
+      if (!up || l.startsWith(up)) acc.push({ l: l, i: i });
+      return acc;
+    }, []);
+    if (!matches.length) { dropdown.style.display = 'none'; return; }
+    matches.forEach(function(m) {
+      const el = document.createElement('div');
+      el.className = 'dd-item';
+      el.textContent = m.l;
+      el.addEventListener('mousedown', function(e) { e.preventDefault(); });
+      el.addEventListener('click', function() { go(m.i); tickerInput.blur(); });
+      dropdown.appendChild(el);
+    });
+    dropdown.style.display = 'block';
+  }
+
+  function moveDrop(delta) {
+    const items = dropdown.querySelectorAll('.dd-item');
+    if (!items.length) return;
+    items[dropIdx] && items[dropIdx].classList.remove('hi');
+    dropIdx = Math.max(0, Math.min(items.length - 1, dropIdx + delta));
+    items[dropIdx].classList.add('hi');
+    items[dropIdx].scrollIntoView({ block: 'nearest' });
+  }
+
+  tickerInput.addEventListener('focus', function() {
+    this.select();
+    buildDropdown('');
+  });
+  tickerInput.addEventListener('input', function() {
+    const clean = this.value.replace(/[^a-zA-Z0-9]/g, '').toUpperCase();
+    if (clean !== this.value) this.value = clean;
+    buildDropdown(clean);
+  });
+  tickerInput.addEventListener('blur', function() {
+    dropdown.style.display = 'none';
+    dropIdx = -1;
+    this.value = LABELS[idx];
+  });
+  tickerInput.addEventListener('keydown', function(e) {
+    if (e.key === 'ArrowDown') { e.preventDefault(); moveDrop(dropIdx < 0 ? 0 : 1); return; }
+    if (e.key === 'ArrowUp')   { e.preventDefault(); moveDrop(-1); return; }
+    if (e.key === 'Enter') {
+      const items = dropdown.querySelectorAll('.dd-item');
+      if (dropIdx >= 0 && items[dropIdx]) {
+        const label = items[dropIdx].textContent;
+        const i = LABELS.indexOf(label);
+        if (i >= 0) go(i);
+      } else if (items.length === 1) {
+        const i = LABELS.indexOf(items[0].textContent);
+        if (i >= 0) go(i);
+      } else {
+        const q = this.value.trim().toUpperCase();
+        const i = LABELS.findIndex(function(l) { return l === q; });
+        if (i >= 0) go(i);
+      }
+      this.blur();
+    }
+    if (e.key === 'Escape') { this.blur(); }
+  });
+
+  document.getElementById('btn-prev').addEventListener('click', function() { go(idx - 1); });
+  document.getElementById('btn-next').addEventListener('click', function() { go(idx + 1); });
+  document.getElementById('btn-help').addEventListener('click', function() { showingHelp ? hideHelp() : showHelp(); });
+
+  const lkValInp = document.getElementById('lock-val-inp');
+
+  function cycleLock() {
+    lockMode = LOCK_MODES[(LOCK_MODES.indexOf(lockMode) + 1) % LOCK_MODES.length];
+    updateLockDisplay();
+    if (lockMode === 'bar' || lockMode === 'date') {
+      lkValInp.focus(); lkValInp.select();
+    } else {
+      go(idx);
+    }
+  }
+
+  document.getElementById('lock-mode-btn').addEventListener('click', cycleLock);
+
+  lkValInp.addEventListener('input', function() {
+    if (lockMode === 'bar') this.value = this.value.replace(/[^0-9]/g, '');
+    else this.value = this.value.replace(/[^0-9\-]/g, '');
+  });
+  lkValInp.addEventListener('keydown', function(e) {
+    if (e.key === 'Enter') {
+      if (lockMode === 'bar')  lockBarVal  = this.value.trim();
+      if (lockMode === 'date') lockDateVal = this.value.trim();
+      updateLockDisplay(); go(idx); this.blur();
+    }
+    if (e.key === 'Escape') {
+      this.value = lockMode === 'bar' ? lockBarVal : lockDateVal;
+      this.blur();
+    }
+    if (e.key === '\\') {
+      e.preventDefault();
+      if (lockMode === 'bar')  lockBarVal  = this.value.trim();
+      if (lockMode === 'date') lockDateVal = this.value.trim();
+      cycleLock();
+    }
+  });
+
+  let _cycleLastT = 0;
+  document.addEventListener('keydown', function(e) {
+    if (document.activeElement.tagName === 'INPUT') return;
+    if (e.key === '[' || e.key === '=') {
+      e.preventDefault();
+      const _now = Date.now();
+      if (!e.repeat || _now - _cycleLastT >= 250) { _cycleLastT = _now; go(idx - 1); }
+    }
+    if (e.key === ']' || e.key === '-') {
+      e.preventDefault();
+      const _now = Date.now();
+      if (!e.repeat || _now - _cycleLastT >= 250) { _cycleLastT = _now; go(idx + 1); }
+    }
+    if (e.key === '/') { e.preventDefault(); tickerInput.focus(); }
+    if (e.key === ' ' || e.key === 'ArrowUp' || e.key === 'ArrowDown') { e.preventDefault(); try { document.getElementById('frame').contentWindow.postMessage({ key: e.key }, '*'); } catch(_) {} }
+    if (e.key.length === 1 && /[a-zA-Z]/.test(e.key) && !e.ctrlKey && !e.metaKey && !e.altKey) {
+      e.preventDefault();
+      tickerInput.focus();
+      tickerInput.value = e.key.toUpperCase();
+      buildDropdown(e.key.toUpperCase());
+    }
+    if (/^[0-9]$/.test(e.key) && !e.ctrlKey && !e.metaKey) {
+      e.preventDefault();
+      try { document.getElementById('frame').contentWindow.postMessage({ key: e.key }, '*'); } catch(_) {}
+    }
+    if (e.key === '\\') { cycleLock(); }
+    if (e.key === '?') { showingHelp ? hideHelp() : showHelp(); }
+    if (e.key === 'Escape' && showingHelp) { hideHelp(); }
+  });
+
+  window.addEventListener('message', function(e) {
+    if (!e.data || !e.data.key) return;
+    if (e.data.key === '[' || e.data.key === '=') go(idx - 1);
+    if (e.data.key === ']' || e.data.key === '-') go(idx + 1);
+    if (e.data.key === '\\') { cycleLock(); }
+    if (e.data.key === '?') { showingHelp ? hideHelp() : showHelp(); }
+    if (e.data.key === 'Escape' && showingHelp) { hideHelp(); }
+    if (e.data.key.length === 1 && /[a-zA-Z]/.test(e.data.key)) {
+      tickerInput.focus();
+      tickerInput.value = e.data.key.toUpperCase();
+      buildDropdown(e.data.key.toUpperCase());
+    }
+  });
+
+  const startLabel = decodeURIComponent(window.location.hash.slice(1)).toUpperCase();
+  const startIdx = LABELS.findIndex(function(l) { return l === startLabel; });
+  go(startIdx >= 0 ? startIdx : 0);
+})();
+</script>
+</body>
+</html>

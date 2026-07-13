@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Help</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: #000; color: #555; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', monospace; padding: 48px 56px; line-height: 1.7; }
+  h1 { color: #888; font-size: 13px; font-weight: 400; margin-bottom: 36px; letter-spacing: 0.04em; }
+  h2 { color: #444; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.12em; margin: 28px 0 10px; }
+  table { border-collapse: collapse; }
+  td { font-size: 13px; vertical-align: top; padding-right: 28px; padding-bottom: 3px; }
+  td:last-child { color: #444; padding-right: 0; }
+  kbd {
+    display: inline-block; background: #0d0d0d; border: 1px solid #222;
+    border-radius: 3px; padding: 1px 6px; font-size: 11px; color: #777;
+    font-family: inherit; white-space: nowrap;
+  }
+</style>
+</head>
+<body>
+<h1>Replay Browser &nbsp;&middot;&nbsp; daily &nbsp;&middot;&nbsp; conf 0</h1>
+
+<h2>Ticker Navigation</h2>
+<table>
+  <tr><td><kbd>[</kbd> <kbd>=</kbd></td><td>Previous ticker</td></tr>
+  <tr><td><kbd>]</kbd> <kbd>-</kbd></td><td>Next ticker</td></tr>
+  <tr><td><kbd>/</kbd></td><td>Focus ticker search</td></tr>
+  <tr><td>Letter keys</td><td>Seed ticker search (auto-loads when one match remains)</td></tr>
+  <tr><td><kbd>Enter</kbd></td><td>Load ticker</td></tr>
+  <tr><td><kbd>Esc</kbd></td><td>Cancel search</td></tr>
+</table>
+
+<h2>Load Lock &nbsp;<span style="color:#2a2a2a;font-weight:400;text-transform:none;letter-spacing:0">— \ cycles mode</span></h2>
+<table>
+  <tr><td><kbd>start</kbd></td><td>Load each ticker at bar 0 (default)</td></tr>
+  <tr><td><kbd>bar</kbd></td><td>Load at a specific bar number &mdash; type value, Enter to commit</td></tr>
+  <tr><td><kbd>date</kbd></td><td>Load at first bar on or after a date &mdash; type YYYY-MM-DD, Enter</td></tr>
+  <tr><td><kbd>end</kbd></td><td>Load at the last bar</td></tr>
+</table>
+
+<h2>Replay Playback</h2>
+<table>
+  <tr><td><kbd>Space</kbd></td><td>Play / pause</td></tr>
+  <tr><td><kbd>↑</kbd> <kbd>↓</kbd></td><td>FPS +1 / −1</td></tr>
+  <tr><td><kbd>←</kbd> <kbd>→</kbd></td><td>Step back / forward one bar</td></tr>
+  <tr><td><kbd>Shift</kbd> + <kbd>←</kbd> <kbd>→</kbd></td><td>Jump 20 bars</td></tr>
+  <tr><td><kbd>Home</kbd></td><td>First bar</td></tr>
+  <tr><td><kbd>End</kbd></td><td>Last bar</td></tr>
+  <tr><td>Double-click chart</td><td>Jump to that bar</td></tr>
+</table>
+
+<h2>Bar Jump</h2>
+<table>
+  <tr><td>Digit keys</td><td>Seed bar number input</td></tr>
+  <tr><td><kbd>Enter</kbd></td><td>Jump to bar</td></tr>
+</table>
+
+<h2>Date Jump</h2>
+<table>
+  <tr><td>date input</td><td>Type YYYY-MM-DD, Enter to jump to first bar on or after that date</td></tr>
+</table>
+
+<h2>Help</h2>
+<table>
+  <tr><td><kbd>?</kbd></td><td>Show / hide this page</td></tr>
+  <tr><td><kbd>Esc</kbd></td><td>Close this page</td></tr>
+</table>
+
+<script>
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'Escape' || e.key === '?') {
+    e.preventDefault();
+    try { window.parent.postMessage({ key: e.key }, '*'); } catch(_) {}
+  }
+});
+</script>
+</body>
+</html>
